@@ -11,9 +11,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarProvider,
   SidebarTrigger,
-  SidebarInset,
-  SidebarFooter,
 } from '@/components/ui/sidebar';
 import {
   LineChart,
