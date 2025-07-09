@@ -34,3 +34,13 @@ export interface Ticket {
   attendeeEmail: string;
   purchaseDate: string;
 }
+
+export type SubscriptionPlan = 'Free' | 'Starter' | 'Pro';
+
+export interface UserProfile {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  subscriptionPlan: SubscriptionPlan;
+}

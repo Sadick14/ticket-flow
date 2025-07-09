@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 
@@ -29,39 +30,42 @@ export function Header() {
   const closeMobileMenu = () => setMobileMenuOpen(false);
   const { user, signInWithGoogle, signOut } = useAuth();
 
-  const UserMenu = () => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || 'User'} />
-            <AvatarFallback>{user?.displayName?.charAt(0) || 'U'}</AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user?.displayName}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user?.email}
-            </p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/dashboard">
-            <LayoutDashboard className="mr-2 h-4 w-4" />
-            <span>Dashboard</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={signOut}>
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
+  const UserMenu = () => {
+    if (!user) return null;
+    return (
+        <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <Avatar className="h-8 w-8">
+                <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
+                <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+            </Avatar>
+            </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuLabel className="font-normal">
+            <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{user.displayName}</p>
+                <p className="text-xs leading-none text-muted-foreground">
+                {user.email}
+                </p>
+            </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+            <Link href="/dashboard">
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                <span>Dashboard</span>
+            </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={signOut}>
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Log out</span>
+            </DropdownMenuItem>
+        </DropdownMenuContent>
+        </DropdownMenu>
+    )
+  };
 
   return (
     <header className="bg-card/80 backdrop-blur-sm border-b sticky top-0 z-50">
@@ -78,8 +82,13 @@ export function Header() {
             <NavLink href="/create">Create Event</NavLink>
             <NavLink href="/tickets">My Tickets</NavLink>
           </div>
-          <div className="hidden md:flex items-center">
-             {user ? <UserMenu /> : <Button onClick={signInWithGoogle}>Sign In</Button>}
+          <div className="hidden md:flex items-center gap-4">
+             {user ? (
+                <>
+                    <Badge variant="outline">{user.subscriptionPlan} Plan</Badge>
+                    <UserMenu />
+                </>
+             ) : <Button onClick={signInWithGoogle}>Sign In</Button>}
           </div>
           <div className="md:hidden">
             <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -105,8 +114,20 @@ export function Header() {
                     <NavLink href="/tickets" onClick={closeMobileMenu}>My Tickets</NavLink>
                     {user ? (
                       <>
-                        <NavLink href="/dashboard" onClick={closeMobileMenu}>Dashboard</NavLink>
-                        <Button onClick={() => { signOut(); closeMobileMenu(); }}>Sign Out</Button>
+                        <div className="border-t pt-4">
+                            <div className="flex items-center gap-3 px-4 mb-4">
+                                <Avatar className="h-9 w-9">
+                                    <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
+                                    <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="text-sm font-medium">{user.displayName}</p>
+                                    <Badge variant="outline" className="mt-1">{user.subscriptionPlan} Plan</Badge>
+                                </div>
+                            </div>
+                            <NavLink href="/dashboard" onClick={closeMobileMenu}>Dashboard</NavLink>
+                            <Button onClick={() => { signOut(); closeMobileMenu(); }}>Sign Out</Button>
+                        </div>
                       </>
                     ) : (
                       <Button onClick={() => { signInWithGoogle(); closeMobileMenu(); }}>Sign In with Google</Button>

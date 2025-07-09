@@ -8,13 +8,33 @@ import {
   GoogleAuthProvider, 
   signInWithPopup, 
   signOut as firebaseSignOut,
-  User 
+  User as FirebaseUser
 } from 'firebase/auth';
-import { app } from '@/lib/firebase'; // Make sure you have this file
+import { app } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+import type { UserProfile, SubscriptionPlan } from '@/lib/types';
+
+// In a real app, this would be fetched from a database like Firestore.
+const userProfilesDB: Record<string, UserProfile> = {};
+
+const getOrCreateUserProfile = (user: FirebaseUser): UserProfile => {
+  if (userProfilesDB[user.uid]) {
+    return userProfilesDB[user.uid];
+  }
+  const newUserProfile: UserProfile = {
+    uid: user.uid,
+    email: user.email,
+    displayName: user.displayName,
+    photoURL: user.photoURL,
+    subscriptionPlan: 'Free',
+  };
+  userProfilesDB[user.uid] = newUserProfile;
+  return newUserProfile;
+};
+
 
 interface AuthContextType {
-  user: User | null;
+  user: UserProfile | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -23,14 +43,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const auth = getAuth(app);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        const userProfile = getOrCreateUserProfile(firebaseUser);
+        setUser(userProfile);
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
     return () => unsubscribe();
@@ -40,7 +65,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const userProfile = getOrCreateUserProfile(result.user);
+      setUser(userProfile);
       toast({
         title: "Signed In",
         description: "You have successfully signed in.",
@@ -60,6 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
+      setUser(null);
        toast({
         title: "Signed Out",
         description: "You have successfully signed out.",
