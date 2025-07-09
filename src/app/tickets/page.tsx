@@ -10,13 +10,13 @@ import { ViewTicketDialog } from '@/components/view-ticket-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Ticket as TicketIcon } from 'lucide-react';
+import { Ticket as TicketIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
 export default function TicketsPage() {
-  const { user, loading } = useAuth();
-  const { tickets, getEventById } = useAppContext();
+  const { user, loading: authLoading } = useAuth();
+  const { getUserTickets, getEventById, loading: appLoading } = useAppContext();
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -29,8 +29,8 @@ export default function TicketsPage() {
     }
   }, [user]);
 
-  const handleViewTicket = (ticket: Ticket) => {
-    const event = getEventById(ticket.eventId);
+  const handleViewTicket = async (ticket: Ticket) => {
+    const event = await getEventById(ticket.eventId);
     if (event) {
       setSelectedTicket(ticket);
       setSelectedEvent(event);
@@ -44,11 +44,15 @@ export default function TicketsPage() {
     }
   };
 
-  if (loading) {
-    return null; // Or a loader
+  if (authLoading || appLoading) {
+    return (
+        <div className="flex justify-center items-center h-screen">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
   }
   
-  const userTickets = attendeeEmail ? tickets.filter(t => t.attendeeEmail.toLowerCase() === attendeeEmail.toLowerCase()) : [];
+  const userTickets = attendeeEmail ? getUserTickets(attendeeEmail) : [];
 
   return (
     <>
@@ -81,8 +85,21 @@ export default function TicketsPage() {
         ) : userTickets.length > 0 ? (
           <div className="space-y-6">
             {userTickets.map(ticket => {
-              const event = getEventById(ticket.eventId);
-              if (!event) return null;
+              const [event, setEvent] = useState<Event | null>(null);
+              
+              useEffect(() => {
+                  const fetchEvent = async () => {
+                      const eventData = await getEventById(ticket.eventId);
+                      if (eventData) setEvent(eventData);
+                  }
+                  fetchEvent();
+              }, [ticket.eventId]);
+
+              if (!event) return (
+                <Card key={ticket.id} className="overflow-hidden sm:flex transition-all hover:shadow-md p-6">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                </Card>
+              );
 
               const eventDate = new Date(`${event.date}T${event.time}`);
 

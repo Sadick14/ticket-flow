@@ -33,13 +33,14 @@ import { useAuth } from '@/context/auth-context';
 import { generateEventDescription } from '@/ai/flows/generate-event-description';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import type { Event } from '@/lib/types';
 
 const eventFormSchema = z.object({
   name: z.string().min(3, { message: 'Event name must be at least 3 characters.' }),
   category: z.string({ required_error: 'Please select a category.' }),
   eventType: z.enum(['single', 'multi'], { required_error: 'Please select an event type.' }),
   date: z.date({ required_error: 'A date is required.' }),
-  dateRange: z.object({ from: z.date(), to: z.date() }).optional(),
+  dateRange: z.object({ from: z.date().optional(), to: z.date().optional() }).optional(),
   time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: 'Invalid time format (HH:MM).' }),
   location: z.string().min(3, { message: 'Location is required.' }),
   description: z.string().min(10, { message: 'Description must be at least 10 characters.' }),
@@ -73,6 +74,7 @@ export function CreateEventForm() {
   const { toast } = useToast();
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
@@ -84,9 +86,9 @@ export function CreateEventForm() {
       price: 0,
       capacity: 100,
       imageUrl: '',
-      speakers: [{ name: '', title: '', imageUrl: '' }],
+      speakers: [{ name: '', title: '', imageUrl: 'https://placehold.co/100x100.png' }],
       activities: [{ name: '', time: '09:00', description: '' }],
-      sponsors: [{ name: '', logoUrl: '' }],
+      sponsors: [{ name: '', logoUrl: 'https://placehold.co/150x75.png' }],
     },
   });
   
@@ -153,7 +155,7 @@ export function CreateEventForm() {
     }
   };
 
-  function onSubmit(data: EventFormValues) {
+  async function onSubmit(data: EventFormValues) {
     if (!user) {
         toast({
             variant: 'destructive',
@@ -172,16 +174,17 @@ export function CreateEventForm() {
         return;
     }
 
-    const startDate = data.eventType === 'multi' && data.dateRange?.from ? data.dateRange.from : data.date;
-    const endDate = data.eventType === 'multi' && data.dateRange?.to ? data.dateRange.to : startDate;
+    setIsSubmitting(true);
 
-    const newEvent = {
-      id: crypto.randomUUID(),
+    const startDate = data.eventType === 'multi' && data.dateRange?.from ? data.dateRange.from : data.date;
+    const endDate = data.eventType === 'multi' && data.dateRange?.to ? data.dateRange.to : undefined;
+
+    const newEvent: Omit<Event, 'id'> = {
       creatorId: user.uid,
       name: data.name,
       category: data.category,
       date: format(startDate, 'yyyy-MM-dd'),
-      endDate: format(endDate, 'yyyy-MM-dd'),
+      endDate: endDate ? format(endDate, 'yyyy-MM-dd') : format(startDate, 'yyyy-MM-dd'),
       time: data.time,
       location: data.location,
       description: data.description,
@@ -192,13 +195,24 @@ export function CreateEventForm() {
       activities: data.activities?.map(a => ({...a, time: format(new Date(`1970-01-01T${a.time}`), 'hh:mm a')})).filter(a => a.name && a.description),
       sponsors: data.sponsors?.filter(s => s.name && s.logoUrl),
     };
-    addEvent(newEvent);
-    toast({
-      title: 'Event Created!',
-      description: `Your event "${data.name}" has been successfully created.`,
-    });
-    form.reset();
-    router.push('/dashboard');
+
+    try {
+        await addEvent(newEvent);
+        toast({
+          title: 'Event Created!',
+          description: `Your event "${data.name}" has been successfully created.`,
+        });
+        form.reset();
+        router.push('/dashboard');
+    } catch(error) {
+        toast({
+          variant: 'destructive',
+          title: 'Event Creation Failed',
+          description: `Could not create your event. Please try again later.`,
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   }
 
   return (
@@ -222,7 +236,7 @@ export function CreateEventForm() {
         )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <fieldset disabled={hasReachedFreeLimit}>
+            <fieldset disabled={hasReachedFreeLimit || isSubmitting}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <FormField
                     control={form.control}
@@ -367,7 +381,7 @@ export function CreateEventForm() {
                                   mode="range"
                                   defaultMonth={field.value?.from}
                                   selected={field.value as DateRange}
-                                  onSelect={field.onChange}
+                                  onSelect={(range) => field.onChange(range || { from: undefined, to: undefined })}
                                   numberOfMonths={2}
                                 />
                               </PopoverContent>
@@ -522,7 +536,7 @@ export function CreateEventForm() {
                         </div>
                       ))}
                     </div>
-                    <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendSpeaker({ name: '', title: '', imageUrl: '' })}>Add Speaker</Button>
+                    <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendSpeaker({ name: '', title: '', imageUrl: 'https://placehold.co/100x100.png' })}>Add Speaker</Button>
                   </div>
 
                   <div>
@@ -605,15 +619,15 @@ export function CreateEventForm() {
                         </div>
                       ))}
                     </div>
-                    <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendSponsor({ name: '', logoUrl: '' })}>Add Sponsor</Button>
+                    <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendSponsor({ name: '', logoUrl: 'https://placehold.co/150x75.png' })}>Add Sponsor</Button>
                   </div>
                 </div>
 
 
                 <div className="flex justify-end space-x-4 mt-8">
                    <Button type="button" variant="outline" onClick={() => form.reset()}>Cancel</Button>
-                   <Button type="submit" disabled={form.formState.isSubmitting || hasReachedFreeLimit}>
-                     {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                   <Button type="submit" disabled={isSubmitting || hasReachedFreeLimit}>
+                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                      Create Event
                     </Button>
                 </div>

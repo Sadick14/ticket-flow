@@ -1,27 +1,38 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { useAppContext } from '@/context/app-context';
 import { Button } from '@/components/ui/button';
 import { PurchaseTicketDialog } from '@/components/purchase-ticket-dialog';
-import { Calendar, MapPin, Tag, Users, Mic, Clock, Building } from 'lucide-react';
+import { Calendar, MapPin, Tag, Users, Mic, Clock, Building, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
+import type { Event } from '@/lib/types';
 
 export default function EventDetailsPage() {
   const { id } = useParams();
-  const { getEventById } = useAppContext();
+  const { getEventById, loading } = useAppContext();
+  const [event, setEvent] = useState<Event | null>(null);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
 
-  const event = getEventById(id as string);
+  useEffect(() => {
+    if (id) {
+      const fetchEvent = async () => {
+        const eventData = await getEventById(id as string);
+        setEvent(eventData || null);
+      };
+      fetchEvent();
+    }
+  }, [id, getEventById]);
 
-  if (!event) {
+
+  if (loading || !event) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <p className="text-xl text-muted-foreground">Event not found.</p>
+      <div className="flex items-center justify-center h-screen">
+        {loading ? <Loader2 className="h-12 w-12 animate-spin text-primary" /> : <p className="text-xl text-muted-foreground">Event not found.</p>}
       </div>
     );
   }
