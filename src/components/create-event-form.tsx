@@ -46,6 +46,16 @@ const eventFormSchema = z.object({
   price: z.coerce.number().min(0, { message: 'Price cannot be negative.' }),
   capacity: z.coerce.number().int().min(1, { message: 'Capacity must be at least 1.' }),
   imageUrl: z.string().url({ message: 'Please enter a valid URL.' }).optional().or(z.literal('')),
+  speakers: z.array(z.object({
+    name: z.string().min(1, { message: 'Speaker name is required.' }),
+    title: z.string().min(1, { message: 'Speaker title is required.' }),
+    imageUrl: z.string().url({ message: 'Please enter a valid URL.' }),
+  })).optional(),
+  activities: z.array(z.object({
+    name: z.string().min(1, { message: 'Activity name is required.' }),
+    time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: 'Invalid time format (HH:MM).' }),
+    description: z.string().min(1, { message: 'Description is required.' }),
+  })).optional(),
   sponsors: z.array(z.object({
     name: z.string().min(1, { message: 'Sponsor name is required.' }),
     logoUrl: z.string().url({ message: 'Please enter a valid URL.' }),
@@ -74,13 +84,25 @@ export function CreateEventForm() {
       price: 0,
       capacity: 100,
       imageUrl: '',
+      speakers: [{ name: '', title: '', imageUrl: '' }],
+      activities: [{ name: '', time: '09:00', description: '' }],
       sponsors: [{ name: '', logoUrl: '' }],
     },
   });
   
-  const { fields, append, remove } = useFieldArray({
+  const { fields: sponsorFields, append: appendSponsor, remove: removeSponsor } = useFieldArray({
     control: form.control,
     name: 'sponsors',
+  });
+
+  const { fields: speakerFields, append: appendSpeaker, remove: removeSpeaker } = useFieldArray({
+    control: form.control,
+    name: 'speakers',
+  });
+
+  const { fields: activityFields, append: appendActivity, remove: removeActivity } = useFieldArray({
+    control: form.control,
+    name: 'activities',
   });
 
   const watchEventType = form.watch('eventType');
@@ -166,15 +188,8 @@ export function CreateEventForm() {
       price: data.price,
       capacity: data.capacity,
       imageUrl: data.imageUrl || `https://placehold.co/600x400.png`,
-      speakers: [
-          { name: 'John Doe', title: 'Lead Speaker', imageUrl: 'https://placehold.co/100x100.png' },
-          { name: 'Jane Smith', title: 'Keynote Speaker', imageUrl: 'https://placehold.co/100x100.png' }
-      ],
-      activities: [
-          { name: 'Registration & Welcome Coffee', time: '09:00 AM', description: 'Kick off the day with registration and networking over coffee.' },
-          { name: 'Opening Keynote', time: '10:00 AM', description: 'Insightful opening session by our keynote speaker.' },
-          { name: 'Panel Discussion', time: '11:00 AM', description: 'Engaging panel on the future of the industry.' }
-      ],
+      speakers: data.speakers?.filter(s => s.name && s.title && s.imageUrl),
+      activities: data.activities?.map(a => ({...a, time: format(new Date(`1970-01-01T${a.time}`), 'hh:mm a')})).filter(a => a.name && a.description),
       sponsors: data.sponsors?.filter(s => s.name && s.logoUrl),
     };
     addEvent(newEvent);
@@ -462,54 +477,136 @@ export function CreateEventForm() {
                     )}
                   />
                 </div>
-                
-                <div className="mt-8">
-                  <FormLabel>Sponsors</FormLabel>
-                  <FormDescription>Add sponsors for your event.</FormDescription>
-                  <div className="space-y-4 mt-4">
-                    {fields.map((field, index) => (
-                      <div key={field.id} className="flex items-end gap-4 p-4 border rounded-lg">
-                        <FormField
-                          control={form.control}
-                          name={`sponsors.${index}.name`}
-                          render={({ field }) => (
-                            <FormItem className="flex-grow">
-                              <FormLabel>Sponsor Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Sponsor Inc." {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`sponsors.${index}.logoUrl`}
-                          render={({ field }) => (
-                            <FormItem className="flex-grow">
-                              <FormLabel>Logo URL</FormLabel>
-                              <FormControl>
-                                <Input placeholder="https://example.com/logo.png" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+
+                <div className="mt-8 space-y-6">
+                  <div>
+                    <FormLabel>Speakers</FormLabel>
+                    <FormDescription>Add speakers for your event.</FormDescription>
+                    <div className="space-y-4 mt-4">
+                      {speakerFields.map((field, index) => (
+                        <div key={field.id} className="flex items-end gap-4 p-4 border rounded-lg">
+                          <FormField
+                            control={form.control}
+                            name={`speakers.${index}.name`}
+                            render={({ field }) => (
+                              <FormItem className="flex-grow">
+                                <FormLabel>Speaker Name</FormLabel>
+                                <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name={`speakers.${index}.title`}
+                            render={({ field }) => (
+                              <FormItem className="flex-grow">
+                                <FormLabel>Title / Role</FormLabel>
+                                <FormControl><Input placeholder="Lead Speaker" {...field} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name={`speakers.${index}.imageUrl`}
+                            render={({ field }) => (
+                              <FormItem className="flex-grow">
+                                <FormLabel>Photo URL</FormLabel>
+                                <FormControl><Input placeholder="https://example.com/photo.png" {...field} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <Button type="button" variant="destructive" size="icon" onClick={() => removeSpeaker(index)}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      ))}
+                    </div>
+                    <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendSpeaker({ name: '', title: '', imageUrl: '' })}>Add Speaker</Button>
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="mt-4"
-                    onClick={() => append({ name: '', logoUrl: '' })}
-                  >
-                    Add Sponsor
-                  </Button>
+
+                  <div>
+                    <FormLabel>Activities</FormLabel>
+                    <FormDescription>Add activities or schedule for your event.</FormDescription>
+                    <div className="space-y-4 mt-4">
+                      {activityFields.map((field, index) => (
+                        <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-lg">
+                          <FormField
+                            control={form.control}
+                            name={`activities.${index}.time`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Time</FormLabel>
+                                <FormControl><Input type="time" {...field} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name={`activities.${index}.name`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Activity Name</FormLabel>
+                                <FormControl><Input placeholder="Opening Keynote" {...field} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className="flex items-end gap-2 col-span-1 md:col-span-3 lg:col-span-1">
+                            <FormField
+                              control={form.control}
+                              name={`activities.${index}.description`}
+                              render={({ field }) => (
+                                <FormItem className="flex-grow">
+                                  <FormLabel>Description</FormLabel>
+                                  <FormControl><Input placeholder="A talk about..." {...field} /></FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <Button type="button" variant="destructive" size="icon" onClick={() => removeActivity(index)}><Trash2 className="h-4 w-4" /></Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendActivity({ name: '', time: '09:00', description: '' })}>Add Activity</Button>
+                  </div>
+
+                  <div>
+                    <FormLabel>Sponsors</FormLabel>
+                    <FormDescription>Add sponsors for your event.</FormDescription>
+                    <div className="space-y-4 mt-4">
+                      {sponsorFields.map((field, index) => (
+                        <div key={field.id} className="flex items-end gap-4 p-4 border rounded-lg">
+                          <FormField
+                            control={form.control}
+                            name={`sponsors.${index}.name`}
+                            render={({ field }) => (
+                              <FormItem className="flex-grow">
+                                <FormLabel>Sponsor Name</FormLabel>
+                                <FormControl><Input placeholder="Sponsor Inc." {...field} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name={`sponsors.${index}.logoUrl`}
+                            render={({ field }) => (
+                              <FormItem className="flex-grow">
+                                <FormLabel>Logo URL</FormLabel>
+                                <FormControl><Input placeholder="https://example.com/logo.png" {...field} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <Button type="button" variant="destructive" size="icon" onClick={() => removeSponsor(index)}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      ))}
+                    </div>
+                    <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendSponsor({ name: '', logoUrl: '' })}>Add Sponsor</Button>
+                  </div>
                 </div>
 
 
