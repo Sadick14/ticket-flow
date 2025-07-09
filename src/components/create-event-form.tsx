@@ -48,18 +48,18 @@ const eventFormSchema = z.object({
   capacity: z.coerce.number().int().min(1, { message: 'Capacity must be at least 1.' }),
   imageUrl: z.string().url({ message: 'Please enter a valid URL.' }).optional().or(z.literal('')),
   speakers: z.array(z.object({
-    name: z.string().min(1, { message: 'Speaker name is required.' }),
-    title: z.string().min(1, { message: 'Speaker title is required.' }),
-    imageUrl: z.string().url({ message: 'Please enter a valid URL.' }),
+    name: z.string(),
+    title: z.string(),
+    imageUrl: z.string().url().or(z.literal('')),
   })).optional(),
   activities: z.array(z.object({
-    name: z.string().min(1, { message: 'Activity name is required.' }),
-    time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: 'Invalid time format (HH:MM).' }),
-    description: z.string().min(1, { message: 'Description is required.' }),
+    name: z.string(),
+    time: z.string(),
+    description: z.string(),
   })).optional(),
   sponsors: z.array(z.object({
-    name: z.string().min(1, { message: 'Sponsor name is required.' }),
-    logoUrl: z.string().url({ message: 'Please enter a valid URL.' }),
+    name: z.string(),
+    logoUrl: z.string().url().or(z.literal('')),
   })).optional(),
 });
 
@@ -86,9 +86,9 @@ export function CreateEventForm() {
       price: 0,
       capacity: 100,
       imageUrl: '',
-      speakers: [{ name: '', title: '', imageUrl: 'https://placehold.co/100x100.png' }],
-      activities: [{ name: '', time: '09:00', description: '' }],
-      sponsors: [{ name: '', logoUrl: 'https://placehold.co/150x75.png' }],
+      speakers: [],
+      activities: [],
+      sponsors: [],
     },
   });
   
@@ -191,9 +191,9 @@ export function CreateEventForm() {
       price: data.price,
       capacity: data.capacity,
       imageUrl: data.imageUrl || `https://placehold.co/600x400.png`,
-      speakers: data.speakers?.filter(s => s.name && s.title && s.imageUrl),
-      activities: data.activities?.map(a => ({...a, time: format(new Date(`1970-01-01T${a.time}`), 'hh:mm a')})).filter(a => a.name && a.description),
-      sponsors: data.sponsors?.filter(s => s.name && s.logoUrl),
+      speakers: data.speakers?.filter(s => s.name && s.title),
+      activities: data.activities?.map(a => ({...a, time: a.time ? format(new Date(`1970-01-01T${a.time}`), 'hh:mm a') : ''})).filter(a => a.name && a.description),
+      sponsors: data.sponsors?.filter(s => s.name),
     };
 
     try {
@@ -495,7 +495,7 @@ export function CreateEventForm() {
                 <div className="mt-8 space-y-6">
                   <div>
                     <FormLabel>Speakers</FormLabel>
-                    <FormDescription>Add speakers for your event.</FormDescription>
+                    <FormDescription>Add speakers for your event. (Optional)</FormDescription>
                     <div className="space-y-4 mt-4">
                       {speakerFields.map((field, index) => (
                         <div key={field.id} className="flex items-end gap-4 p-4 border rounded-lg">
@@ -527,7 +527,7 @@ export function CreateEventForm() {
                             render={({ field }) => (
                               <FormItem className="flex-grow">
                                 <FormLabel>Photo URL</FormLabel>
-                                <FormControl><Input placeholder="https://example.com/photo.png" {...field} /></FormControl>
+                                <FormControl><Input placeholder="https://..." {...field} /></FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -536,12 +536,12 @@ export function CreateEventForm() {
                         </div>
                       ))}
                     </div>
-                    <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendSpeaker({ name: '', title: '', imageUrl: 'https://placehold.co/100x100.png' })}>Add Speaker</Button>
+                    <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendSpeaker({ name: '', title: '', imageUrl: '' })}>Add Speaker</Button>
                   </div>
 
                   <div>
                     <FormLabel>Activities</FormLabel>
-                    <FormDescription>Add activities or schedule for your event.</FormDescription>
+                    <FormDescription>Add activities or schedule for your event. (Optional)</FormDescription>
                     <div className="space-y-4 mt-4">
                       {activityFields.map((field, index) => (
                         <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-lg">
@@ -589,7 +589,7 @@ export function CreateEventForm() {
 
                   <div>
                     <FormLabel>Sponsors</FormLabel>
-                    <FormDescription>Add sponsors for your event.</FormDescription>
+                    <FormDescription>Add sponsors for your event. (Optional)</FormDescription>
                     <div className="space-y-4 mt-4">
                       {sponsorFields.map((field, index) => (
                         <div key={field.id} className="flex items-end gap-4 p-4 border rounded-lg">
@@ -610,7 +610,7 @@ export function CreateEventForm() {
                             render={({ field }) => (
                               <FormItem className="flex-grow">
                                 <FormLabel>Logo URL</FormLabel>
-                                <FormControl><Input placeholder="https://example.com/logo.png" {...field} /></FormControl>
+                                <FormControl><Input placeholder="https://..." {...field} /></FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -619,7 +619,7 @@ export function CreateEventForm() {
                         </div>
                       ))}
                     </div>
-                    <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendSponsor({ name: '', logoUrl: 'https://placehold.co/150x75.png' })}>Add Sponsor</Button>
+                    <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendSponsor({ name: '', logoUrl: '' })}>Add Sponsor</Button>
                   </div>
                 </div>
 

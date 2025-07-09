@@ -38,7 +38,7 @@ export default function EventDetailsPage() {
   }
 
   const startDate = new Date(`${event.date}T${event.time}`);
-  const endDate = event.endDate ? new Date(`${event.endDate}T23:59:59`) : startDate;
+  const endDate = event.endDate && event.date !== event.endDate ? new Date(`${event.endDate}T23:59:59`) : startDate;
   const isMultiDay = event.endDate && event.date !== event.endDate;
 
   const formattedDate = isMultiDay 
@@ -54,8 +54,8 @@ export default function EventDetailsPage() {
               <Image 
                 src={event.imageUrl} 
                 alt={event.name} 
-                layout="fill" 
-                objectFit="cover" 
+                fill
+                className="object-cover"
                 data-ai-hint={`${event.category.toLowerCase()}`}
               />
             </div>
@@ -94,7 +94,9 @@ export default function EventDetailsPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                         {event.speakers && event.speakers.length > 0 ? event.speakers.map(speaker => (
                             <Card key={speaker.name} className="text-center p-4">
-                                <Image src={speaker.imageUrl} alt={speaker.name} width={80} height={80} className="rounded-full mx-auto mb-3" data-ai-hint="person portrait"/>
+                                <div className="relative h-20 w-20 rounded-full mx-auto mb-3 overflow-hidden">
+                                    <Image src={speaker.imageUrl || 'https://placehold.co/100x100.png'} alt={speaker.name} fill className="object-cover" data-ai-hint="person portrait"/>
+                                </div>
                                 <h4 className="font-semibold">{speaker.name}</h4>
                                 <p className="text-sm text-muted-foreground">{speaker.title}</p>
                             </Card>
@@ -107,8 +109,10 @@ export default function EventDetailsPage() {
                      <div className="space-y-4">
                         {event.activities && event.activities.length > 0 ? event.activities.map(activity => (
                              <Card key={activity.name} className="p-4">
-                               <h4 className="font-semibold">{activity.name}</h4>
-                               <p className="text-sm text-muted-foreground">{activity.time}</p>
+                               <div className="flex justify-between items-center">
+                                 <h4 className="font-semibold">{activity.name}</h4>
+                                 <p className="text-sm text-muted-foreground font-mono">{activity.time}</p>
+                               </div>
                                <p className="text-sm mt-1">{activity.description}</p>
                             </Card>
                         )): <p className="text-muted-foreground">Event schedule will be updated shortly.</p>}
@@ -121,7 +125,9 @@ export default function EventDetailsPage() {
                         <div className="flex flex-wrap items-center gap-8">
                             {event.sponsors.map(sponsor => (
                                 <div key={sponsor.name} className="text-center">
-                                    <Image src={sponsor.logoUrl} alt={sponsor.name} width={120} height={60} objectFit="contain" data-ai-hint="company logo"/>
+                                    <div className="relative h-16 w-32">
+                                        <Image src={sponsor.logoUrl || 'https://placehold.co/150x75.png'} alt={sponsor.name} fill className="object-contain" data-ai-hint="company logo"/>
+                                    </div>
                                     <p className="text-sm text-muted-foreground mt-2">{sponsor.name}</p>
                                 </div>
                             ))}
