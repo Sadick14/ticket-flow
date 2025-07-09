@@ -1,21 +1,33 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useAppContext } from '@/context/app-context';
+import { useAuth } from '@/context/auth-context';
 import type { Ticket, Event } from '@/lib/types';
 import { ViewTicketDialog } from '@/components/view-ticket-dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Ticket as TicketIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
 export default function TicketsPage() {
+  const { user, loading } = useAuth();
   const { tickets, getEventById } = useAppContext();
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [attendeeEmail, setAttendeeEmail] = useState<string | null>(null);
+  const [emailInput, setEmailInput] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      setAttendeeEmail(user.email);
+    }
+  }, [user]);
 
   const handleViewTicket = (ticket: Ticket) => {
     const event = getEventById(ticket.eventId);
@@ -26,6 +38,18 @@ export default function TicketsPage() {
     }
   };
 
+  const handleShowTickets = () => {
+    if (emailInput) {
+      setAttendeeEmail(emailInput);
+    }
+  };
+
+  if (loading) {
+    return null; // Or a loader
+  }
+  
+  const userTickets = attendeeEmail ? tickets.filter(t => t.attendeeEmail.toLowerCase() === attendeeEmail.toLowerCase()) : [];
+
   return (
     <>
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -34,9 +58,29 @@ export default function TicketsPage() {
           <p className="mt-2 text-lg text-muted-foreground">Here are all the tickets you have purchased.</p>
         </div>
 
-        {tickets.length > 0 ? (
+        {!attendeeEmail ? (
+            <Card className="max-w-md mx-auto">
+                <CardContent className="p-8 text-center">
+                    <TicketIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-medium text-foreground">Find Your Tickets</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Enter the email address you used during purchase to view your tickets.
+                    </p>
+                    <div className="mt-6 flex flex-col sm:flex-row gap-2">
+                        <Input 
+                            type="email" 
+                            placeholder="Enter your email" 
+                            value={emailInput}
+                            onChange={(e) => setEmailInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleShowTickets()}
+                        />
+                        <Button onClick={handleShowTickets}>Show My Tickets</Button>
+                    </div>
+                </CardContent>
+            </Card>
+        ) : userTickets.length > 0 ? (
           <div className="space-y-6">
-            {tickets.map(ticket => {
+            {userTickets.map(ticket => {
               const event = getEventById(ticket.eventId);
               if (!event) return null;
 
@@ -62,8 +106,8 @@ export default function TicketsPage() {
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <TicketIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium text-foreground">No Tickets Found</h3>
-            <p className="mt-1 text-sm text-muted-foreground">You haven&apos;t purchased any tickets yet.</p>
+            <h3 className="mt-4 text-lg font-medium text-foreground">No Tickets Found for {attendeeEmail}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">You haven&apos;t purchased any tickets with this email yet.</p>
             <div className="mt-6">
               <Button asChild>
                 <Link href="/">Browse Events</Link>
