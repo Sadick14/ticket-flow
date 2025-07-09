@@ -17,26 +17,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!loading && !user) {
-      // Not redirecting, show sign-in prompt
+      router.push('/');
     }
   }, [user, loading, router]);
 
-  if (loading) {
+  if (loading || !user) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center h-full">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 text-center">
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground font-headline">Access Your Dashboard</h1>
-        <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
-          Please sign in to manage your events.
-        </p>
-        <Button size="lg" className="mt-8" onClick={signInWithGoogle}>Sign In with Google</Button>
       </div>
     );
   }
@@ -44,11 +32,11 @@ export default function DashboardPage() {
   const userEvents = getEventsByCreator(user.uid);
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="flex justify-between items-center mb-12">
+    <>
+       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground font-headline">My Events Dashboard</h1>
-          <p className="mt-2 text-lg text-muted-foreground">Here are all the events you have created.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground font-headline">My Events</h1>
+          <p className="mt-1 text-lg text-muted-foreground">Here are all the events you have created.</p>
         </div>
         <Button asChild>
           <Link href="/create">
@@ -59,7 +47,7 @@ export default function DashboardPage() {
       </div>
 
       {userEvents.length > 0 ? (
-        <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
             {userEvents.map((event) => (
               <EventCard key={event.id} event={event} />
             ))}
@@ -75,6 +63,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
