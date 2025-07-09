@@ -81,6 +81,7 @@ export function Header() {
             <NavLink href="/">Home</NavLink>
             <NavLink href="/create">Create Event</NavLink>
             <NavLink href="/tickets">My Tickets</NavLink>
+            <NavLink href="/pricing">Pricing</NavLink>
           </div>
           <div className="hidden md:flex items-center gap-4">
              {user ? (
@@ -112,6 +113,7 @@ export function Header() {
                     <NavLink href="/" onClick={closeMobileMenu}>Home</NavLink>
                     <NavLink href="/create" onClick={closeMobileMenu}>Create Event</NavLink>
                     <NavLink href="/tickets" onClick={closeMobileMenu}>My Tickets</NavLink>
+                    <NavLink href="/pricing" onClick={closeMobileMenu}>Pricing</NavLink>
                     {user ? (
                       <>
                         <div className="border-t pt-4">

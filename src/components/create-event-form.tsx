@@ -29,6 +29,7 @@ import { useAppContext } from '@/context/app-context';
 import { useAuth } from '@/context/auth-context';
 import { generateEventDescription } from '@/ai/flows/generate-event-description';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const eventFormSchema = z.object({
   name: z.string().min(3, { message: 'Event name must be at least 3 characters.' }),
@@ -176,7 +177,9 @@ export function CreateEventForm() {
               <AlertDescription>
                 You have created {userEventCount} of {FREE_PLAN_EVENT_LIMIT} events included in the Free plan. Please upgrade to a Starter or Pro plan to create more events.
               </AlertDescription>
-               <Button size="sm" className="mt-4">Upgrade Plan</Button>
+               <Button size="sm" className="mt-4" asChild>
+                <Link href="/pricing">Upgrade Plan</Link>
+               </Button>
             </Alert>
         )}
         <Form {...form}>
