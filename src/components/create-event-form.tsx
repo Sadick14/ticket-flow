@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -24,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useAppContext } from '@/context/app-context';
+import { useAuth } from '@/context/auth-context';
 import { generateEventDescription } from '@/ai/flows/generate-event-description';
 import { useRouter } from 'next/navigation';
 
@@ -45,6 +47,7 @@ const categories = ["Music", "Sports", "Food & Drink", "Arts & Theater", "Techno
 
 export function CreateEventForm() {
   const { addEvent } = useAppContext();
+  const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -103,8 +106,17 @@ export function CreateEventForm() {
   };
 
   function onSubmit(data: EventFormValues) {
+    if (!user) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'You must be signed in to create an event.',
+        });
+        return;
+    }
     const newEvent = {
       id: crypto.randomUUID(),
+      creatorId: user.uid,
       name: data.name,
       category: data.category,
       date: format(data.date, 'yyyy-MM-dd'),
@@ -113,7 +125,16 @@ export function CreateEventForm() {
       description: data.description,
       price: data.price,
       capacity: data.capacity,
-      imageUrl: data.imageUrl || `https://placehold.co/600x400.png?text=${encodeURIComponent(data.name)}`,
+      imageUrl: data.imageUrl || `https://placehold.co/600x400.png`,
+      speakers: [
+          { name: 'John Doe', title: 'Lead Speaker', imageUrl: 'https://placehold.co/100x100.png' },
+          { name: 'Jane Smith', title: 'Keynote Speaker', imageUrl: 'https://placehold.co/100x100.png' }
+      ],
+      activities: [
+          { name: 'Registration & Welcome Coffee', time: '09:00 AM', description: 'Kick off the day with registration and networking over coffee.' },
+          { name: 'Opening Keynote', time: '10:00 AM', description: 'Insightful opening session by our keynote speaker.' },
+          { name: 'Panel Discussion', time: '11:00 AM', description: 'Engaging panel on the future of the industry.' }
+      ]
     };
     addEvent(newEvent);
     toast({
@@ -121,7 +142,7 @@ export function CreateEventForm() {
       description: `Your event "${data.name}" has been successfully created.`,
     });
     form.reset();
-    router.push('/');
+    router.push('/dashboard');
   }
 
   return (

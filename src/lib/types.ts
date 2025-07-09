@@ -1,5 +1,19 @@
+
+export interface Speaker {
+  name: string;
+  title: string;
+  imageUrl: string;
+}
+
+export interface Activity {
+    name: string;
+    time: string;
+    description: string;
+}
+
 export interface Event {
   id: string;
+  creatorId: string;
   name: string;
   category: string;
   date: string;
@@ -9,6 +23,8 @@ export interface Event {
   price: number;
   capacity: number;
   imageUrl: string;
+  speakers?: Speaker[];
+  activities?: Activity[];
 }
 
 export interface Ticket {

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from 'react';
@@ -10,6 +11,7 @@ interface AppContextType {
   addEvent: (event: Event) => void;
   addTicket: (ticket: Omit<Ticket, 'id' | 'purchaseDate'>) => void;
   getEventById: (id: string) => Event | undefined;
+  getEventsByCreator: (creatorId: string) => Event[];
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -31,12 +33,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setTickets(prevTickets => [newTicket, ...prevTickets]);
   };
   
-  const getEventById = (id: string) => {
+  const getEventById = (id: string): Event | undefined => {
     return events.find(event => event.id === id);
   };
 
+  const getEventsByCreator = (creatorId: string): Event[] => {
+    return events.filter(event => event.creatorId === creatorId);
+  }
+
   return (
-    <AppContext.Provider value={{ events, tickets, addEvent, addTicket, getEventById }}>
+    <AppContext.Provider value={{ events, tickets, addEvent, addTicket, getEventById, getEventsByCreator }}>
       {children}
     </AppContext.Provider>
   );

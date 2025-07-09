@@ -1,23 +1,13 @@
+
 "use client";
 
-import { useState } from 'react';
-import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { EventCard } from '@/components/event-card';
-import { PurchaseTicketDialog } from '@/components/purchase-ticket-dialog';
 import { useAppContext } from '@/context/app-context';
-import type { Event } from '@/lib/types';
-import Link from 'next/link';
 
 export default function Home() {
   const { events } = useAppContext();
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
-
-  const handlePurchaseClick = (event: Event) => {
-    setSelectedEvent(event);
-    setIsPurchaseModalOpen(true);
-  };
 
   return (
     <>
@@ -65,20 +55,12 @@ export default function Home() {
 
             <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {events.map((event) => (
-                <EventCard key={event.id} event={event} onPurchaseClick={() => handlePurchaseClick(event)} />
+                <EventCard key={event.id} event={event} />
               ))}
             </div>
           </div>
         </section>
       </div>
-
-      {selectedEvent && (
-        <PurchaseTicketDialog
-          event={selectedEvent}
-          isOpen={isPurchaseModalOpen}
-          onOpenChange={setIsPurchaseModalOpen}
-        />
-      )}
     </>
   );
 }
