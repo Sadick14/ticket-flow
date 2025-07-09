@@ -9,6 +9,7 @@ import { Loader2, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { EventCard } from '@/components/event-card';
+import DashboardLayout from './layout';
 
 export default function DashboardPage() {
   const { user, loading, signInWithGoogle } = useAuth();
@@ -23,17 +24,19 @@ export default function DashboardPage() {
 
   if (loading || !user) {
     return (
-      <div className="flex justify-center items-center h-full">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-full">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
     );
   }
 
   const userEvents = getEventsByCreator(user.uid);
 
   return (
-    <>
-       <div className="flex justify-between items-center mb-8">
+    <DashboardLayout>
+      <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground font-headline">My Events</h1>
           <p className="mt-1 text-lg text-muted-foreground">Here are all the events you have created.</p>
@@ -63,6 +66,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-    </>
+    </DashboardLayout>
   );
 }

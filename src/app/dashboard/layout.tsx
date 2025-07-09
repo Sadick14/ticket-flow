@@ -11,15 +11,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarTrigger,
   SidebarInset,
-  SidebarProvider,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import {
   LineChart,
@@ -28,11 +22,15 @@ import {
   Settings,
   LogOut,
   Ticket,
+  Users,
+  Megaphone,
+  CreditCard,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 export default function DashboardLayout({
   children,
@@ -46,7 +44,7 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen bg-muted/40">
+      <div className="flex h-screen w-screen overflow-hidden bg-muted/40">
         <Sidebar>
           <SidebarHeader className="p-4">
             <div className="flex items-center gap-2">
@@ -87,6 +85,40 @@ export default function DashboardLayout({
                     <PlusCircle />
                     <span>Create Event</span>
                   </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <Separator className="my-2" />
+               <SidebarMenuItem>
+                <SidebarMenuButton
+                  disabled
+                  tooltip={{
+                    children: 'Attendees',
+                  }}
+                >
+                  <Users />
+                  <span>Attendees</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton
+                  disabled
+                  tooltip={{
+                    children: 'Ticket Sales',
+                  }}
+                >
+                  <CreditCard />
+                  <span>Ticket Sales</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton
+                  disabled
+                  tooltip={{
+                    children: 'Marketing',
+                  }}
+                >
+                  <Megaphone />
+                  <span>Marketing</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
@@ -131,19 +163,20 @@ export default function DashboardLayout({
             )}
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset>
-            <header className="flex h-14 items-center gap-4 border-b bg-background px-6">
+        <div className="flex flex-col flex-1 overflow-hidden">
+            <header className="flex h-14 items-center gap-4 border-b bg-background px-6 flex-shrink-0">
                 <div className="md:hidden">
                     <SidebarTrigger />
                 </div>
                 <div className="flex-1">
-                    <h1 className="text-lg font-semibold">Dashboard</h1>
+                    {/* We can make this dynamic later */}
+                    <h1 className="text-lg font-semibold">My Events</h1> 
                 </div>
             </header>
-            <main className="flex-1 p-4 md:p-6 lg:p-8">
+            <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
                 {children}
             </main>
-        </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   );
