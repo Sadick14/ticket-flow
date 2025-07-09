@@ -3,11 +3,13 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check } from 'lucide-react';
+import { Check, Star } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
+import type { SubscriptionPlan } from '@/lib/types';
 
-const plans = [
+const plans: {name: SubscriptionPlan, price: string, priceFrequency: string, description: string, features: string[], cta: string, isCurrent: (plan: SubscriptionPlan) => boolean, popular?: boolean}[] = [
     {
         name: 'Free',
         price: '$0',
@@ -18,8 +20,8 @@ const plans = [
             'Basic event page',
             'Standard support'
         ],
-        cta: 'Current Plan',
-        isCurrent: (plan: string) => plan === 'Free'
+        cta: 'Get Started',
+        isCurrent: (plan: SubscriptionPlan) => plan === 'Free'
     },
     {
         name: 'Starter',
@@ -32,7 +34,8 @@ const plans = [
             'Priority email support'
         ],
         cta: 'Upgrade to Starter',
-        isCurrent: (plan: string) => plan === 'Starter'
+        isCurrent: (plan: SubscriptionPlan) => plan === 'Starter',
+        popular: true,
     },
     {
         name: 'Pro',
@@ -45,13 +48,25 @@ const plans = [
             'Dedicated phone support'
         ],
         cta: 'Upgrade to Pro',
-        isCurrent: (plan: string) => plan === 'Pro'
+        isCurrent: (plan: SubscriptionPlan) => plan === 'Pro'
     }
 ]
 
 export default function PricingPage() {
-    const { user } = useAuth();
+    const { user, updateSubscriptionPlan } = useAuth();
+    const router = useRouter();
     const currentPlan = user?.subscriptionPlan || 'Free';
+
+    const handleUpgrade = (planName: SubscriptionPlan) => {
+        if (!user) {
+            router.push('/create'); // Prompt sign-in on create page
+            return;
+        }
+        // In a real app, this would trigger the Paystack payment flow.
+        // For now, we'll just simulate the upgrade.
+        updateSubscriptionPlan(planName);
+        router.push('/dashboard');
+    }
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -64,11 +79,14 @@ export default function PricingPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {plans.map((plan) => (
-          <Card key={plan.name} className={`flex flex-col ${plan.name === 'Starter' ? 'border-primary shadow-lg' : ''}`}>
+          <Card key={plan.name} className={`flex flex-col ${plan.popular ? 'border-primary shadow-lg' : ''}`}>
             <CardHeader>
-              <CardTitle className="font-headline">{plan.name}</CardTitle>
+              <div className="flex justify-between">
+                <CardTitle className="font-headline">{plan.name}</CardTitle>
+                {plan.popular && <div className="flex items-center gap-2 text-primary font-semibold"><Star className="h-5 w-5" /> Most Popular</div>}
+              </div>
               <CardDescription>{plan.description}</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
@@ -88,8 +106,9 @@ export default function PricingPage() {
             <CardFooter>
                 <Button 
                     className="w-full" 
-                    variant={plan.name === 'Starter' ? 'default' : 'outline'}
+                    variant={plan.popular ? 'default' : 'outline'}
                     disabled={plan.isCurrent(currentPlan)}
+                    onClick={() => handleUpgrade(plan.name)}
                 >
                     {plan.isCurrent(currentPlan) ? 'Current Plan' : plan.cta}
                 </Button>

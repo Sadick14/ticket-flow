@@ -38,6 +38,7 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  updateSubscriptionPlan: (plan: SubscriptionPlan) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -102,8 +103,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateSubscriptionPlan = (plan: SubscriptionPlan) => {
+    if (user) {
+      const updatedUser = { ...user, subscriptionPlan: plan };
+      userProfilesDB[user.uid] = updatedUser; // Update in our mock DB
+      setUser(updatedUser);
+      toast({
+        title: "Plan Updated!",
+        description: `You are now on the ${plan} plan.`,
+      });
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut, updateSubscriptionPlan }}>
       {children}
     </AuthContext.Provider>
   );
