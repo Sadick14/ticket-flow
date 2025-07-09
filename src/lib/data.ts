@@ -1,0 +1,76 @@
+import type { Event } from './types';
+
+export const initialEvents: Event[] = [
+  {
+    id: '1',
+    name: 'Summer Music Festival',
+    date: '2024-08-15',
+    time: '18:00',
+    location: 'Central Park, New York',
+    description: 'Join us for the biggest music festival of the summer featuring top artists from around the world.',
+    price: 49.99,
+    capacity: 5000,
+    category: 'Music',
+    imageUrl: 'https://placehold.co/600x400.png',
+  },
+  {
+    id: '2',
+    name: 'Tech Conference 2024',
+    date: '2024-09-22',
+    time: '09:00',
+    location: 'Convention Center, San Francisco',
+    description: 'Learn from industry leaders about the latest trends in technology and innovation.',
+    price: 199.99,
+    capacity: 1000,
+    category: 'Technology',
+    imageUrl: 'https://placehold.co/600x400.png',
+  },
+  {
+    id: '3',
+    name: 'Food & Wine Expo',
+    date: '2024-10-05',
+    time: '12:00',
+    location: 'Exhibition Hall, Chicago',
+    description: 'Experience the finest culinary delights and wines from around the world.',
+    price: 79.99,
+    capacity: 2000,
+    category: 'Food & Drink',
+    imageUrl: 'https://placehold.co/600x400.png',
+  },
+    {
+    id: '4',
+    name: 'Marathon Challenge',
+    date: '2024-09-10',
+    time: '07:00',
+    location: 'Downtown, Boston',
+    description: 'Join thousands of runners for the annual city marathon.',
+    price: 89.99,
+    capacity: 10000,
+    category: 'Sports',
+    imageUrl: 'https://placehold.co/600x400.png'
+  },
+  {
+    id: '5',
+    name: 'Art Exhibition Opening',
+    date: '2024-10-18',
+    time: '19:00',
+    location: 'Modern Art Museum, Los Angeles',
+    description: 'Exclusive preview of the new contemporary art exhibition.',
+    price: 29.99,
+    capacity: 500,
+    category: 'Arts & Theater',
+    imageUrl: 'https://placehold.co/600x400.png'
+  },
+  {
+    id: '6',
+    name: 'Startup Pitch Night',
+    date: '2024-11-08',
+    time: '17:30',
+    location: 'Innovation Hub, Austin',
+    description: 'Watch promising startups pitch their ideas to investors.',
+    price: 39.99,
+    capacity: 300,
+    category: 'Business',
+    imageUrl: 'https://placehold.co/600x400.png'
+  }
+];
