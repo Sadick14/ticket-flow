@@ -20,6 +20,7 @@ export interface Event {
   id: string;
   creatorId: string;
   name: string;
+  organizationName?: string;
   category: string;
   // `date` will be the start date. For single day events, endDate will be the same.
   date: string;

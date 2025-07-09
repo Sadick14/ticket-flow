@@ -63,6 +63,11 @@ export default function EventDetailsPage() {
               <h1 className="text-4xl font-bold tracking-tight text-foreground font-headline">
                 {event.name}
               </h1>
+              {event.organizationName && (
+                <p className="mt-2 text-xl text-muted-foreground">
+                  by {event.organizationName}
+                </p>
+              )}
               <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground">
                 <div className="flex items-center">
                   <Calendar className="mr-2 h-5 w-5" />

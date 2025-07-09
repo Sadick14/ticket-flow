@@ -37,6 +37,7 @@ import type { Event } from '@/lib/types';
 
 const eventFormSchema = z.object({
   name: z.string().min(3, { message: 'Event name must be at least 3 characters.' }),
+  organizationName: z.string().optional(),
   category: z.string({ required_error: 'Please select a category.' }),
   eventType: z.enum(['single', 'multi'], { required_error: 'Please select an event type.' }),
   date: z.date({ required_error: 'A date is required.' }),
@@ -80,6 +81,7 @@ export function CreateEventForm() {
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
       name: '',
+      organizationName: '',
       eventType: 'single',
       location: '',
       description: '',
@@ -182,6 +184,7 @@ export function CreateEventForm() {
     const newEvent: Omit<Event, 'id'> = {
       creatorId: user.uid,
       name: data.name,
+      organizationName: data.organizationName,
       category: data.category,
       date: format(startDate, 'yyyy-MM-dd'),
       endDate: endDate ? format(endDate, 'yyyy-MM-dd') : format(startDate, 'yyyy-MM-dd'),
@@ -253,6 +256,23 @@ export function CreateEventForm() {
                   />
                   <FormField
                     control={form.control}
+                    name="organizationName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Organization / Community Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. Acme Inc." {...field} />
+                        </FormControl>
+                        <FormDescription>Optional</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+                    <FormField
+                    control={form.control}
                     name="category"
                     render={({ field }) => (
                       <FormItem>
@@ -272,6 +292,7 @@ export function CreateEventForm() {
                     )}
                   />
                 </div>
+
 
                  <FormField
                   control={form.control}
