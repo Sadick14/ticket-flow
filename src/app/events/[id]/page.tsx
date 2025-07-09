@@ -86,7 +86,7 @@ export default function EventDetailsPage() {
                   <span>{event.category}</span>
                 </div>
               </div>
-              <p className="mt-6 text-lg text-foreground/80 leading-relaxed">
+              <p className="mt-6 text-lg text-foreground/80 leading-relaxed whitespace-pre-wrap">
                 {event.description}
               </p>
             </div>

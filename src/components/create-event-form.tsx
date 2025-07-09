@@ -49,18 +49,18 @@ const eventFormSchema = z.object({
   capacity: z.coerce.number().int().min(1, { message: 'Capacity must be at least 1.' }),
   imageUrl: z.string().url({ message: 'Please enter a valid URL.' }).optional().or(z.literal('')),
   speakers: z.array(z.object({
-    name: z.string(),
-    title: z.string(),
-    imageUrl: z.string().url().or(z.literal('')),
+    name: z.string().optional(),
+    title: z.string().optional(),
+    imageUrl: z.string().url().or(z.literal('')).optional(),
   })).optional(),
   activities: z.array(z.object({
-    name: z.string(),
-    time: z.string(),
-    description: z.string(),
+    name: z.string().optional(),
+    time: z.string().optional(),
+    description: z.string().optional(),
   })).optional(),
   sponsors: z.array(z.object({
-    name: z.string(),
-    logoUrl: z.string().url().or(z.literal('')),
+    name: z.string().optional(),
+    logoUrl: z.string().url().or(z.literal('')).optional(),
   })).optional(),
 });
 
@@ -194,9 +194,9 @@ export function CreateEventForm() {
       price: data.price,
       capacity: data.capacity,
       imageUrl: data.imageUrl || `https://placehold.co/600x400.png`,
-      speakers: data.speakers?.filter(s => s.name && s.title),
-      activities: data.activities?.map(a => ({...a, time: a.time ? format(new Date(`1970-01-01T${a.time}`), 'hh:mm a') : ''})).filter(a => a.name && a.description),
-      sponsors: data.sponsors?.filter(s => s.name),
+      speakers: data.speakers?.filter(s => s && s.name && s.title),
+      activities: data.activities?.map(a => ({...a, time: a && a.time ? format(new Date(`1970-01-01T${a.time}`), 'hh:mm a') : ''})).filter(a => a && a.name && a.description),
+      sponsors: data.sponsors?.filter(s => s && s.name),
     };
 
     try {
@@ -577,7 +577,7 @@ export function CreateEventForm() {
                               </FormItem>
                             )}
                           />
-                          <FormField
+                           <FormField
                             control={form.control}
                             name={`activities.${index}.name`}
                             render={({ field }) => (
