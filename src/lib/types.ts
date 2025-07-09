@@ -11,12 +11,19 @@ export interface Activity {
     description: string;
 }
 
+export interface Sponsor {
+  name: string;
+  logoUrl: string;
+}
+
 export interface Event {
   id: string;
   creatorId: string;
   name: string;
   category: string;
+  // `date` will be the start date. For single day events, endDate will be the same.
   date: string;
+  endDate?: string; 
   time: string;
   location: string;
   description: string;
@@ -25,6 +32,7 @@ export interface Event {
   imageUrl: string;
   speakers?: Speaker[];
   activities?: Activity[];
+  sponsors?: Sponsor[];
 }
 
 export interface Ticket {

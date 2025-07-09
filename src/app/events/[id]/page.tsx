@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { useAppContext } from '@/context/app-context';
 import { Button } from '@/components/ui/button';
 import { PurchaseTicketDialog } from '@/components/purchase-ticket-dialog';
-import { Calendar, MapPin, Tag, Users, Mic, Clock } from 'lucide-react';
+import { Calendar, MapPin, Tag, Users, Mic, Clock, Building } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -26,7 +26,13 @@ export default function EventDetailsPage() {
     );
   }
 
-  const eventDate = new Date(`${event.date}T${event.time}`);
+  const startDate = new Date(`${event.date}T${event.time}`);
+  const endDate = event.endDate ? new Date(`${event.endDate}T23:59:59`) : startDate;
+  const isMultiDay = event.endDate && event.date !== event.endDate;
+
+  const formattedDate = isMultiDay 
+    ? `${format(startDate, 'PPP')} - ${format(endDate, 'PPP')}`
+    : format(startDate, 'PPP');
 
   return (
     <>
@@ -49,11 +55,11 @@ export default function EventDetailsPage() {
               <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground">
                 <div className="flex items-center">
                   <Calendar className="mr-2 h-5 w-5" />
-                  <span>{format(eventDate, 'PPP')}</span>
+                  <span>{formattedDate}</span>
                 </div>
                 <div className="flex items-center">
                   <Clock className="mr-2 h-5 w-5" />
-                  <span>{format(eventDate, 'p')}</span>
+                  <span>{format(startDate, 'p')}</span>
                 </div>
                 <div className="flex items-center">
                   <MapPin className="mr-2 h-5 w-5" />
@@ -97,6 +103,20 @@ export default function EventDetailsPage() {
                         )): <p className="text-muted-foreground">Event schedule will be updated shortly.</p>}
                     </div>
                 </div>
+
+                {event.sponsors && event.sponsors.length > 0 && (
+                    <div>
+                        <h3 className="text-xl font-semibold flex items-center mb-4"><Building className="mr-3 h-6 w-6 text-primary"/>Sponsors</h3>
+                        <div className="flex flex-wrap items-center gap-8">
+                            {event.sponsors.map(sponsor => (
+                                <div key={sponsor.name} className="text-center">
+                                    <Image src={sponsor.logoUrl} alt={sponsor.name} width={120} height={60} objectFit="contain" data-ai-hint="company logo"/>
+                                    <p className="text-sm text-muted-foreground mt-2">{sponsor.name}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
               </div>
             </div>
           </div>

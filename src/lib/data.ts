@@ -7,6 +7,7 @@ export const initialEvents: Event[] = [
     creatorId: 'user1',
     name: 'Summer Music Festival',
     date: '2024-08-15',
+    endDate: '2024-08-17',
     time: '18:00',
     location: 'Central Park, New York',
     description: 'Join us for the biggest music festival of the summer featuring top artists from around the world. Enjoy live performances, food trucks, and an unforgettable atmosphere under the stars.',
@@ -22,6 +23,10 @@ export const initialEvents: Event[] = [
       { name: 'Gates Open', time: '04:00 PM', description: 'Doors open for all ticket holders.' },
       { name: 'Opening Act: The Upstarts', time: '06:00 PM', description: 'Kicking off the festival with some fresh talent.' },
       { name: 'Headline Performance', time: '08:00 PM', description: 'The main event you\'ve been waiting for!' }
+    ],
+    sponsors: [
+      { name: 'SoundWave Audio', logoUrl: 'https://placehold.co/150x75.png' },
+      { name: 'Buzz Cola', logoUrl: 'https://placehold.co/150x75.png' }
     ]
   },
   {
@@ -45,6 +50,10 @@ export const initialEvents: Event[] = [
       { name: 'Registration & Welcome Coffee', time: '09:00 AM', description: 'Kick off the day with registration and networking over coffee.' },
       { name: 'Opening Keynote: The Future of AI', time: '10:00 AM', description: 'Insightful opening session by Alex Chen.' },
       { name: 'Panel: Quantum Computing', time: '11:00 AM', description: 'Engaging panel on the breakthroughs in quantum computing.' }
+    ],
+    sponsors: [
+        { name: 'FutureTech Inc.', logoUrl: 'https://placehold.co/150x75.png'},
+        { name: 'DevTools Pro', logoUrl: 'https://placehold.co/150x75.png'}
     ]
   },
   {
@@ -67,7 +76,8 @@ export const initialEvents: Event[] = [
       { name: 'Grand Tasting Hall Opens', time: '12:00 PM', description: 'Sample hundreds of wines and dishes.' },
       { name: 'Cooking Demo with Chef Antoine', time: '02:00 PM', description: 'Learn secrets from a master chef.' },
       { name: 'Wine Pairing Masterclass', time: '04:00 PM', description: 'Discover the art of pairing food and wine with Isabella Rossi.' }
-    ]
+    ],
+    sponsors: []
   },
     {
     id: '4',
@@ -86,6 +96,9 @@ export const initialEvents: Event[] = [
        { name: 'Runner Check-in', time: '06:00 AM', description: 'Final check-in and bib collection.' },
        { name: 'Race Start', time: '07:00 AM', description: 'The marathon begins!' },
        { name: 'Post-Race Celebration', time: '11:00 AM', description: 'Celebrate your achievement with music and refreshments.' }
+    ],
+    sponsors: [
+        { name: 'GoFast Shoes', logoUrl: 'https://placehold.co/150x75.png' }
     ]
   },
   {
@@ -107,7 +120,8 @@ export const initialEvents: Event[] = [
        { name: 'Cocktail Reception', time: '07:00 PM', description: 'Enjoy drinks and hors d\'oeuvres.' },
        { name: 'Artist Talk with Elena Petrova', time: '08:00 PM', description: 'Hear from the artist about her work.' },
        { name: 'Gallery Viewing', time: '08:30 PM', description: 'Explore the new exhibition.' }
-    ]
+    ],
+    sponsors: []
   },
   {
     id: '6',
@@ -128,6 +142,7 @@ export const initialEvents: Event[] = [
        { name: 'Networking Mixer', time: '05:30 PM', description: 'Connect with founders and investors.' },
        { name: 'Pitch Session', time: '06:30 PM', description: 'Startups present their ideas.' },
        { name: 'Investor Q&A', time: '08:00 PM', description: 'Q&A session with the investor panel.' }
-    ]
+    ],
+    sponsors: []
   }
 ];
