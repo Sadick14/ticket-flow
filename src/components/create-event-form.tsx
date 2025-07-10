@@ -263,13 +263,9 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{isEditMode ? 'Edit Event' : 'Event Details'}</CardTitle>
-        <CardDescription>{isEditMode ? 'Update the details for your event.' : 'Fill out the form below to create your new event.'}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {hasReachedFreeLimit && (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+         {hasReachedFreeLimit && (
             <Alert className="mb-8">
               <Zap className="h-4 w-4" />
               <AlertTitle>You've Reached Your Limit!</AlertTitle>
@@ -281,104 +277,117 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                </Button>
             </Alert>
         )}
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <fieldset disabled={hasReachedFreeLimit || isSubmitting}>
-
+        <fieldset disabled={hasReachedFreeLimit || isSubmitting} className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Core Details</CardTitle>
+              <CardDescription>Start with the basics. What's your event about?</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-8">
+               <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Event Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Summer Music Festival" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
-                    control={form.control}
-                    name="imageUrl"
-                    render={({ field }) => (
-                      <FormItem className="mt-8">
-                        <FormLabel>Event Main Image</FormLabel>
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <ImageUploader 
-                            onUpload={(url) => field.onChange(url)}
-                            value={field.value}
-                          />
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
                         </FormControl>
-                         <FormDescription>This is the main banner image for your event.</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Event Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. Summer Music Festival" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Category</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a category" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-                    <FormField
-                    control={form.control}
-                    name="organizationName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Organization / Community Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. Acme Inc." {...field} />
-                        </FormControl>
-                        <FormDescription>Optional</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="organizationLogoUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Organization Logo</FormLabel>
-                        <FormControl>
-                           <ImageUploader 
-                            onUpload={(url) => field.onChange(url)}
-                            value={field.value}
-                            />
-                        </FormControl>
-                         <FormDescription>Optional. Upload a logo for the organization.</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
+                        <SelectContent>
+                          {categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                  <FormField
+                  control={form.control}
+                  name="organizationName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Organization / Community Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Acme Inc." {...field} />
+                      </FormControl>
+                      <FormDescription>Optional</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Branding &amp; Media</CardTitle>
+              <CardDescription>Upload images to represent your event and organization.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Event Main Image</FormLabel>
+                      <FormControl>
+                        <ImageUploader 
+                          onUpload={(url) => field.onChange(url)}
+                          value={field.value}
+                        />
+                      </FormControl>
+                       <FormDescription>This is the main banner image for your event.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="organizationLogoUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Organization Logo</FormLabel>
+                      <FormControl>
+                         <ImageUploader 
+                          onUpload={(url) => field.onChange(url)}
+                          value={field.value}
+                          />
+                      </FormControl>
+                       <FormDescription>Optional. Upload a logo for the organization.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+                <CardTitle>Date, Time &amp; Location</CardTitle>
+                <CardDescription>When and where is your event taking place?</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-8">
+                <FormField
                   control={form.control}
                   name="eventType"
                   render={({ field }) => (
-                    <FormItem className="mt-8">
+                    <FormItem>
                       <FormLabel>Event Type</FormLabel>
                        <FormControl>
                         <RadioGroup
@@ -405,7 +414,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                   )}
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {watchEventType === 'single' ? (
                      <FormField
                         control={form.control}
@@ -512,7 +521,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                   control={form.control}
                   name="location"
                   render={({ field }) => (
-                    <FormItem className="mt-8">
+                    <FormItem>
                       <FormLabel>Location</FormLabel>
                       <FormControl>
                         <Input placeholder="e.g. Central Park, New York" {...field} />
@@ -521,12 +530,20 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                     </FormItem>
                   )}
                 />
-
-                <FormField
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+                <CardTitle>Event Content</CardTitle>
+                <CardDescription>Provide the details that will attract attendees.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-8">
+                 <FormField
                   control={form.control}
                   name="description"
                   render={({ field }) => (
-                    <FormItem className="mt-8">
+                    <FormItem>
                       <div className="flex justify-between items-center">
                         <FormLabel>Description</FormLabel>
                         <Button type="button" variant="ghost" size="sm" onClick={handleGenerateDescription} disabled={isGenerating}>
@@ -549,48 +566,18 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                     </FormItem>
                   )}
                 />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ticket Price ($)</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="0" step="0.01" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="capacity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Capacity</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="1" step="1" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="mt-8 space-y-6">
-                  <div>
+                
+                <div>
                     <FormLabel>Speakers</FormLabel>
                     <FormDescription>Add speakers for your event. (Optional)</FormDescription>
                     <div className="space-y-4 mt-4">
                       {speakerFields.map((field, index) => (
-                        <div key={field.id} className="flex items-end gap-4 p-4 border rounded-lg">
+                        <div key={field.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 items-end gap-4 p-4 border rounded-lg">
                           <FormField
                             control={form.control}
                             name={`speakers.${index}.name`}
                             render={({ field }) => (
-                              <FormItem className="flex-grow">
+                              <FormItem className="lg:col-span-2">
                                 <FormLabel>Speaker Name</FormLabel>
                                 <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
                                 <FormMessage />
@@ -601,7 +588,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                             control={form.control}
                             name={`speakers.${index}.title`}
                             render={({ field }) => (
-                              <FormItem className="flex-grow">
+                              <FormItem className="lg:col-span-2">
                                 <FormLabel>Title / Role</FormLabel>
                                 <FormControl><Input placeholder="Lead Speaker" {...field} /></FormControl>
                                 <FormMessage />
@@ -612,21 +599,21 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                             control={form.control}
                             name={`speakers.${index}.imageUrl`}
                             render={({ field }) => (
-                              <FormItem className="flex-grow">
+                              <FormItem className="lg:col-span-2">
                                 <FormLabel>Photo URL</FormLabel>
                                 <FormControl><Input placeholder="https://..." {...field} /></FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
-                          <Button type="button" variant="destructive" size="icon" onClick={() => removeSpeaker(index)}><Trash2 className="h-4 w-4" /></Button>
+                          <Button type="button" variant="destructive" size="icon" onClick={() => removeSpeaker(index)} className="lg:col-span-1"><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       ))}
                     </div>
                     <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendSpeaker({ name: '', title: '', imageUrl: '' })}>Add Speaker</Button>
-                  </div>
+                </div>
 
-                  <div>
+                 <div>
                     <FormLabel>Activities</FormLabel>
                     <FormDescription>Add activities or schedule for your event. (Optional)</FormDescription>
                     <div className="space-y-4 mt-4">
@@ -673,18 +660,54 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                     </div>
                     <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendActivity({ name: '', time: '09:00', description: '' })}>Add Activity</Button>
                   </div>
-
-                  <div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+                <CardTitle>Tickets &amp; Sponsors</CardTitle>
+                <CardDescription>Set your ticket details and acknowledge your sponsors.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-8">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ticket Price ($)</FormLabel>
+                        <FormControl>
+                          <Input type="number" min="0" step="0.01" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="capacity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Capacity</FormLabel>
+                        <FormControl>
+                          <Input type="number" min="1" step="1" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                 <div>
                     <FormLabel>Sponsors</FormLabel>
                     <FormDescription>Add sponsors for your event. (Optional)</FormDescription>
                     <div className="space-y-4 mt-4">
                       {sponsorFields.map((field, index) => (
-                        <div key={field.id} className="flex items-end gap-4 p-4 border rounded-lg">
+                        <div key={field.id} className="grid md:grid-cols-5 items-end gap-4 p-4 border rounded-lg">
                           <FormField
                             control={form.control}
                             name={`sponsors.${index}.name`}
                             render={({ field }) => (
-                              <FormItem className="flex-grow">
+                              <FormItem className="md:col-span-2">
                                 <FormLabel>Sponsor Name</FormLabel>
                                 <FormControl><Input placeholder="Sponsor Inc." {...field} /></FormControl>
                                 <FormMessage />
@@ -695,7 +718,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                             control={form.control}
                             name={`sponsors.${index}.logoUrl`}
                             render={({ field }) => (
-                              <FormItem className="flex-grow">
+                              <FormItem className="md:col-span-2">
                                 <FormLabel>Logo URL</FormLabel>
                                 <FormControl><Input placeholder="https://..." {...field} /></FormControl>
                                 <FormMessage />
@@ -708,20 +731,21 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                     </div>
                     <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendSponsor({ name: '', logoUrl: '' })}>Add Sponsor</Button>
                   </div>
-                </div>
+            </CardContent>
+          </Card>
 
 
-                <div className="flex justify-end space-x-4 mt-8">
-                   <Button type="button" variant="outline" onClick={() => router.push('/dashboard')}>Cancel</Button>
-                   <Button type="submit" disabled={isSubmitting || hasReachedFreeLimit}>
-                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                     {isEditMode ? 'Save Changes' : 'Create Event'}
-                    </Button>
-                </div>
-            </fieldset>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+          <div className="flex justify-end space-x-4 mt-8">
+             <Button type="button" variant="outline" onClick={() => router.push('/dashboard')}>Cancel</Button>
+             <Button type="submit" disabled={isSubmitting || hasReachedFreeLimit}>
+               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+               {isEditMode ? 'Save Changes' : 'Create Event'}
+              </Button>
+          </div>
+        </fieldset>
+      </form>
+    </Form>
   );
 }
+
+    
