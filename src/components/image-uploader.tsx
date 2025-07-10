@@ -6,6 +6,9 @@ import { useDropzone } from 'react-dropzone';
 import { UploadCloud, Loader2, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { v4 as uuidv4 } from 'uuid';
 
 interface ImageUploaderProps {
   onUpload: (url: string) => void;
@@ -13,55 +16,40 @@ interface ImageUploaderProps {
 }
 
 export function ImageUploader({ onUpload, value }: ImageUploaderProps) {
-  const [preview, setPreview] = useState<string | null>(value || null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Sync preview with external value changes (e.g., when form is reset or populated for editing)
     setPreview(value || null);
   }, [value]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     setIsLoading(true);
 
-    // Set preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    // Upload file
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Upload failed');
-      }
+      const uniqueId = uuidv4();
+      const fileExtension = file.name.split('.').pop();
+      const fileName = `${uniqueId}.${fileExtension}`;
+      const storageRef = ref(storage, `uploads/${fileName}`);
       
-      onUpload(result.url);
+      const uploadResult = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(uploadResult.ref);
+
+      onUpload(downloadURL);
+      setPreview(downloadURL);
+
       toast({
         title: 'Image Uploaded',
-        description: 'Your image has been successfully uploaded.',
+        description: 'Your image has been successfully uploaded to Firebase Storage.',
       });
 
     } catch (error) {
+      console.error('Firebase Storage upload error:', error);
       const message = error instanceof Error ? error.message : 'An unknown error occurred';
-      console.error('Upload error:', message);
       toast({
         variant: 'destructive',
         title: 'Upload Failed',
