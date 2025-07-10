@@ -7,7 +7,6 @@ import { CreateEventForm } from '@/components/create-event-form';
 import { useAuth } from '@/context/auth-context';
 import { useAppContext } from '@/context/app-context';
 import { Loader2 } from 'lucide-react';
-import DashboardLayout from '../../layout';
 import type { Event } from '@/lib/types';
 
 export default function EditEventPage() {
@@ -48,37 +47,33 @@ export default function EditEventPage() {
 
   if (loading || authLoading) {
     return (
-      <DashboardLayout>
-        <div className="flex justify-center items-center h-full">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      </DashboardLayout>
+      <div className="flex justify-center items-center h-full">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-        <div className="max-w-4xl mx-auto">
-            <div className="text-left mb-12">
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground font-headline">
-                Edit Event
-            </h1>
-            <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
-                Update the details for your event below.
-            </p>
-            </div>
-            {error ? (
-                <div className="text-center py-16 border-2 border-dashed rounded-lg text-destructive">
-                    <h3 className="text-lg font-medium">{error}</h3>
-                </div>
-            ) : event ? (
-                <CreateEventForm eventToEdit={event} />
-            ) : (
-                 <div className="flex justify-center items-center h-full">
-                    <p>No event found to edit.</p>
-                </div>
-            )}
+    <div className="max-w-4xl mx-auto">
+        <div className="text-left mb-12">
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground font-headline">
+            Edit Event
+        </h1>
+        <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
+            Update the details for your event below.
+        </p>
         </div>
-    </DashboardLayout>
+        {error ? (
+            <div className="text-center py-16 border-2 border-dashed rounded-lg text-destructive">
+                <h3 className="text-lg font-medium">{error}</h3>
+            </div>
+        ) : event ? (
+            <CreateEventForm eventToEdit={event} />
+        ) : (
+             <div className="flex justify-center items-center h-full">
+                <p>No event found to edit.</p>
+            </div>
+        )}
+    </div>
   );
 }
