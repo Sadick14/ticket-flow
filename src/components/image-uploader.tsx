@@ -16,13 +16,15 @@ interface ImageUploaderProps {
 }
 
 export function ImageUploader({ onUpload, value }: ImageUploaderProps) {
-  const [preview, setPreview] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(value || null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    setPreview(value || null);
-  }, [value]);
+    if (value !== preview) {
+      setPreview(value || null);
+    }
+  }, [value, preview]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
