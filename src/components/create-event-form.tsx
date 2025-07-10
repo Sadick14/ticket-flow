@@ -747,7 +747,3 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
     </Form>
   );
 }
-
-    
-
-    

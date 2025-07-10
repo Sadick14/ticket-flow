@@ -19,12 +19,7 @@ export function ImageUploader({ onUpload, value }: ImageUploaderProps) {
 
   useEffect(() => {
     // Sync preview with external value changes (e.g., when form is reset or populated for editing)
-    if (value && value !== preview) {
-      setPreview(value);
-    }
-    if (!value && preview) {
-        setPreview(null);
-    }
+    setPreview(value || null);
   }, [value]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
