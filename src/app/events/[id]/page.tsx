@@ -11,6 +11,7 @@ import { Calendar, MapPin, Tag, Users, Mic, Clock, Building, Loader2 } from 'luc
 import { format } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Event } from '@/lib/types';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function EventDetailsPage() {
   const { id } = useParams();
@@ -67,9 +68,17 @@ export default function EventDetailsPage() {
                         {event.name}
                       </h1>
                       {event.organizationName && (
-                        <p className="mt-2 text-xl text-muted-foreground">
-                          by {event.organizationName}
-                        </p>
+                        <div className="mt-4 flex items-center gap-4">
+                            {event.organizationLogoUrl && (
+                                <Avatar>
+                                    <AvatarImage src={event.organizationLogoUrl} alt={event.organizationName} />
+                                    <AvatarFallback>{event.organizationName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                            )}
+                            <p className="text-xl text-muted-foreground">
+                            by {event.organizationName}
+                            </p>
+                        </div>
                       )}
                       <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground">
                         <div className="flex items-center">

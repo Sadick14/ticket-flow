@@ -12,7 +12,7 @@ export interface Activity {
 }
 
 export interface Sponsor {
-  name: string;
+  name:string;
   logoUrl: string;
 }
 
@@ -21,6 +21,7 @@ export interface Event {
   creatorId: string;
   name: string;
   organizationName?: string;
+  organizationLogoUrl?: string;
   category: string;
   // `date` will be the start date. For single day events, endDate will be the same.
   date: string;

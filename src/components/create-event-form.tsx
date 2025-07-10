@@ -34,6 +34,7 @@ import { generateEventDescription } from '@/ai/flows/generate-event-description'
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Event } from '@/lib/types';
+import { ImageUploader } from '@/components/image-uploader';
 
 const eventFormSchema = z.object({
   name: z.string().min(3, { message: 'Event name must be at least 3 characters.' }),
@@ -47,7 +48,8 @@ const eventFormSchema = z.object({
   description: z.string().min(10, { message: 'Description must be at least 10 characters.' }),
   price: z.coerce.number().min(0, { message: 'Price cannot be negative.' }),
   capacity: z.coerce.number().int().min(1, { message: 'Capacity must be at least 1.' }),
-  imageUrl: z.string().url({ message: 'Please enter a valid URL.' }).optional().or(z.literal('')),
+  imageUrl: z.string().url({ message: 'Please upload an image.' }).min(1, { message: 'Please upload an image.' }),
+  organizationLogoUrl: z.string().url({ message: 'Please enter a valid URL.' }).optional().or(z.literal('')),
   speakers: z.array(z.object({
     name: z.string().optional(),
     title: z.string().optional(),
@@ -94,6 +96,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
       price: 0,
       capacity: 100,
       imageUrl: '',
+      organizationLogoUrl: '',
       speakers: [],
       activities: [],
       sponsors: [],
@@ -116,8 +119,9 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
         price: eventToEdit.price,
         capacity: eventToEdit.capacity,
         imageUrl: eventToEdit.imageUrl,
+        organizationLogoUrl: eventToEdit.organizationLogoUrl || '',
         speakers: eventToEdit.speakers?.map(s => ({...s, imageUrl: s.imageUrl || ''})) || [],
-        activities: eventToEdit.activities?.map(a => ({...a, time: a.time ? format(new Date(`1970-01-01T${a.time.replace(/(am|pm)/i, '')}`), 'HH:mm') : '' })) || [],
+        activities: eventToEdit.activities?.map(a => ({...a, time: a && a.time ? format(new Date(`1970-01-01T${a.time.replace(/(am|pm)/i, '')}`), 'HH:mm') : '' })) || [],
         sponsors: eventToEdit.sponsors?.map(s => ({...s, logoUrl: s.logoUrl || ''})) || [],
       });
     }
@@ -215,6 +219,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
       creatorId: user.uid,
       name: data.name,
       organizationName: data.organizationName || '',
+      organizationLogoUrl: data.organizationLogoUrl || '',
       category: data.category,
       date: format(startDate, 'yyyy-MM-dd'),
       endDate: endDate ? format(endDate, 'yyyy-MM-dd') : format(startDate, 'yyyy-MM-dd'),
@@ -223,7 +228,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
       description: data.description,
       price: data.price,
       capacity: data.capacity,
-      imageUrl: data.imageUrl || `https://placehold.co/600x400.png`,
+      imageUrl: data.imageUrl,
       speakers: data.speakers?.filter(s => s && s.name && s.title).map(s => ({...s, imageUrl: s.imageUrl || 'https://placehold.co/100x100.png'})) || [],
       activities: data.activities?.map(a => ({...a, time: a && a.time ? format(new Date(`1970-01-01T${a.time}`), 'hh:mm a') : ''})).filter(a => a && a.name && a.description) || [],
       sponsors: data.sponsors?.filter(s => s && s.name).map(s => ({...s, logoUrl: s.logoUrl || 'https://placehold.co/150x75.png'})) || [],
@@ -279,7 +284,27 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <fieldset disabled={hasReachedFreeLimit || isSubmitting}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                <FormField
+                    control={form.control}
+                    name="imageUrl"
+                    render={({ field }) => (
+                      <FormItem className="mt-8">
+                        <FormLabel>Event Main Image</FormLabel>
+                        <FormControl>
+                          <ImageUploader 
+                            onUpload={(url) => field.onChange(url)}
+                            value={field.value}
+                          />
+                        </FormControl>
+                         <FormDescription>This is the main banner image for your event.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
                   <FormField
                     control={form.control}
                     name="name"
@@ -294,23 +319,6 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                     )}
                   />
                   <FormField
-                    control={form.control}
-                    name="organizationName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Organization / Community Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. Acme Inc." {...field} />
-                        </FormControl>
-                        <FormDescription>Optional</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-                    <FormField
                     control={form.control}
                     name="category"
                     render={({ field }) => (
@@ -331,7 +339,40 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                     )}
                   />
                 </div>
-
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+                    <FormField
+                    control={form.control}
+                    name="organizationName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Organization / Community Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. Acme Inc." {...field} />
+                        </FormControl>
+                        <FormDescription>Optional</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="organizationLogoUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Organization Logo</FormLabel>
+                        <FormControl>
+                           <ImageUploader 
+                            onUpload={(url) => field.onChange(url)}
+                            value={field.value}
+                            />
+                        </FormControl>
+                         <FormDescription>Optional. Upload a logo for the organization.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                  <FormField
                   control={form.control}
@@ -503,20 +544,6 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                           className="resize-y min-h-[120px]"
                           {...field}
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                 <FormField
-                  control={form.control}
-                  name="imageUrl"
-                  render={({ field }) => (
-                    <FormItem className="mt-8">
-                      <FormLabel>Image URL</FormLabel>
-                      <FormControl>
-                        <Input type="url" placeholder="https://example.com/image.png" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
