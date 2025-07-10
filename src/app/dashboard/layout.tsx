@@ -90,7 +90,6 @@ export default function DashboardLayout({
               <Separator className="my-2" />
                <SidebarMenuItem>
                 <SidebarMenuButton
-                  disabled
                   tooltip={{
                     children: 'Attendees',
                   }}
@@ -101,7 +100,6 @@ export default function DashboardLayout({
               </SidebarMenuItem>
                <SidebarMenuItem>
                 <SidebarMenuButton
-                  disabled
                   tooltip={{
                     children: 'Ticket Sales',
                   }}
@@ -112,7 +110,6 @@ export default function DashboardLayout({
               </SidebarMenuItem>
                <SidebarMenuItem>
                 <SidebarMenuButton
-                  disabled
                   tooltip={{
                     children: 'Marketing',
                   }}
@@ -123,7 +120,6 @@ export default function DashboardLayout({
               </SidebarMenuItem>
                <SidebarMenuItem>
                 <SidebarMenuButton
-                  disabled
                   tooltip={{
                     children: 'Analytics',
                   }}
@@ -134,7 +130,6 @@ export default function DashboardLayout({
               </SidebarMenuItem>
                <SidebarMenuItem>
                 <SidebarMenuButton
-                  disabled
                   tooltip={{
                     children: 'Settings',
                   }}
