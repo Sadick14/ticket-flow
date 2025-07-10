@@ -91,6 +91,8 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
       name: '',
       organizationName: '',
       eventType: 'single',
+      date: new Date(),
+      time: '09:00',
       location: '',
       description: '',
       price: 0,
@@ -100,6 +102,8 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
       speakers: [],
       activities: [],
       sponsors: [],
+      category: undefined,
+      dateRange: { from: undefined, to: undefined },
     },
   });
 
@@ -747,3 +751,5 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
     </Form>
   );
 }
+
+    
