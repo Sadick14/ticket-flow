@@ -5,8 +5,9 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Event } from '@/lib/types';
-import { Calendar, MapPin, Tag } from 'lucide-react';
+import { Calendar, MapPin, Tag, Edit } from 'lucide-react';
 import { format } from 'date-fns';
+import { usePathname, useRouter } from 'next/navigation';
 
 interface EventCardProps {
   event: Event;
@@ -14,6 +15,20 @@ interface EventCardProps {
 
 export function EventCard({ event }: EventCardProps) {
   const eventDate = new Date(`${event.date}T${event.time}`);
+  const pathname = usePathname();
+  const router = useRouter();
+  const isDashboard = pathname.startsWith('/dashboard');
+
+  const handleViewClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push(`/events/${event.id}`);
+  };
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push(`/dashboard/edit/${event.id}`);
+  };
+
   return (
     <Card className="flex flex-col overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
       <Link href={`/events/${event.id}`} className="flex flex-col h-full">
@@ -41,17 +56,16 @@ export function EventCard({ event }: EventCardProps) {
             {event.description}
           </p>
         </CardContent>
-        <CardFooter>
-            <Button className="w-full" asChild>
-              <span onClick={(e) => {
-                e.preventDefault();
-                // We are inside a Link, so we can just let it propagate
-                // or redirect manually if needed for some reason.
-                window.location.href = `/events/${event.id}`;
-              }}>
-                View Event
-              </span>
+        <CardFooter className="flex gap-2">
+            <Button className="w-full" onClick={handleViewClick}>
+              View Event
             </Button>
+            {isDashboard && (
+              <Button variant="outline" className="w-full" onClick={handleEditClick}>
+                <Edit className="mr-2 h-4 w-4"/>
+                Edit
+              </Button>
+            )}
         </CardFooter>
       </Link>
     </Card>

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
@@ -26,7 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import { useAppContext } from '@/context/app-context';
 import { useAuth } from '@/context/auth-context';
@@ -69,13 +69,19 @@ type EventFormValues = z.infer<typeof eventFormSchema>;
 const categories = ["Music", "Sports", "Food & Drink", "Arts & Theater", "Technology", "Business", "Other"];
 const FREE_PLAN_EVENT_LIMIT = 2;
 
-export function CreateEventForm() {
-  const { addEvent, getEventsByCreator } = useAppContext();
+interface CreateEventFormProps {
+    eventToEdit?: Event;
+}
+
+export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
+  const { addEvent, updateEvent, getEventsByCreator } = useAppContext();
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const isEditMode = !!eventToEdit;
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
@@ -93,6 +99,29 @@ export function CreateEventForm() {
       sponsors: [],
     },
   });
+
+  useEffect(() => {
+    if (isEditMode && eventToEdit) {
+      const isMultiDay = eventToEdit.date !== eventToEdit.endDate;
+      form.reset({
+        name: eventToEdit.name,
+        organizationName: eventToEdit.organizationName || '',
+        category: eventToEdit.category,
+        eventType: isMultiDay ? 'multi' : 'single',
+        date: parseISO(eventToEdit.date),
+        dateRange: isMultiDay && eventToEdit.endDate ? { from: parseISO(eventToEdit.date), to: parseISO(eventToEdit.endDate) } : {from: undefined, to: undefined },
+        time: eventToEdit.time,
+        location: eventToEdit.location,
+        description: eventToEdit.description,
+        price: eventToEdit.price,
+        capacity: eventToEdit.capacity,
+        imageUrl: eventToEdit.imageUrl,
+        speakers: eventToEdit.speakers?.map(s => ({...s, imageUrl: s.imageUrl || ''})) || [],
+        activities: eventToEdit.activities?.map(a => ({...a, time: a.time ? format(new Date(`1970-01-01T${a.time.replace(/(am|pm)/i, '')}`), 'HH:mm') : '' })) || [],
+        sponsors: eventToEdit.sponsors?.map(s => ({...s, logoUrl: s.logoUrl || ''})) || [],
+      });
+    }
+  }, [isEditMode, eventToEdit, form]);
   
   const { fields: sponsorFields, append: appendSponsor, remove: removeSponsor } = useFieldArray({
     control: form.control,
@@ -113,13 +142,14 @@ export function CreateEventForm() {
 
   const userIsOnFreePlan = user?.subscriptionPlan === 'Free';
   const userEventCount = user ? getEventsByCreator(user.uid).length : 0;
-  const hasReachedFreeLimit = userIsOnFreePlan && userEventCount >= FREE_PLAN_EVENT_LIMIT;
+  const hasReachedFreeLimit = !isEditMode && userIsOnFreePlan && userEventCount >= FREE_PLAN_EVENT_LIMIT;
 
 
   const handleGenerateDescription = async () => {
     setIsGenerating(true);
     const values = form.getValues();
-    if (!values.name || !values.category || !values.date || !values.time || !values.location) {
+    const dateToFormat = values.eventType === 'multi' && values.dateRange?.from ? values.dateRange.from : values.date;
+    if (!values.name || !values.category || !dateToFormat || !values.time || !values.location) {
       toast({
         variant: 'destructive',
         title: 'Missing Information',
@@ -133,7 +163,7 @@ export function CreateEventForm() {
       const result = await generateEventDescription({
         eventName: values.name,
         eventCategory: values.category,
-        eventDate: format(values.date, 'yyyy-MM-dd'),
+        eventDate: format(dateToFormat, 'yyyy-MM-dd'),
         eventTime: values.time,
         eventLocation: values.location,
         eventDescription: values.description,
@@ -181,10 +211,10 @@ export function CreateEventForm() {
     const startDate = data.eventType === 'multi' && data.dateRange?.from ? data.dateRange.from : data.date;
     const endDate = data.eventType === 'multi' && data.dateRange?.to ? data.dateRange.to : undefined;
 
-    const newEvent: Omit<Event, 'id'> = {
+    const eventPayload = {
       creatorId: user.uid,
       name: data.name,
-      organizationName: data.organizationName,
+      organizationName: data.organizationName || '',
       category: data.category,
       date: format(startDate, 'yyyy-MM-dd'),
       endDate: endDate ? format(endDate, 'yyyy-MM-dd') : format(startDate, 'yyyy-MM-dd'),
@@ -194,24 +224,33 @@ export function CreateEventForm() {
       price: data.price,
       capacity: data.capacity,
       imageUrl: data.imageUrl || `https://placehold.co/600x400.png`,
-      speakers: data.speakers?.filter(s => s && s.name && s.title),
-      activities: data.activities?.map(a => ({...a, time: a && a.time ? format(new Date(`1970-01-01T${a.time}`), 'hh:mm a') : ''})).filter(a => a && a.name && a.description),
-      sponsors: data.sponsors?.filter(s => s && s.name),
+      speakers: data.speakers?.filter(s => s && s.name && s.title).map(s => ({...s, imageUrl: s.imageUrl || 'https://placehold.co/100x100.png'})) || [],
+      activities: data.activities?.map(a => ({...a, time: a && a.time ? format(new Date(`1970-01-01T${a.time}`), 'hh:mm a') : ''})).filter(a => a && a.name && a.description) || [],
+      sponsors: data.sponsors?.filter(s => s && s.name).map(s => ({...s, logoUrl: s.logoUrl || 'https://placehold.co/150x75.png'})) || [],
     };
 
     try {
-        await addEvent(newEvent);
-        toast({
-          title: 'Event Created!',
-          description: `Your event "${data.name}" has been successfully created.`,
-        });
-        form.reset();
+        if (isEditMode && eventToEdit) {
+            await updateEvent(eventToEdit.id, eventPayload);
+            toast({
+              title: 'Event Updated!',
+              description: `Your event "${data.name}" has been successfully updated.`,
+            });
+        } else {
+            await addEvent(eventPayload);
+            toast({
+              title: 'Event Created!',
+              description: `Your event "${data.name}" has been successfully created.`,
+            });
+            form.reset();
+        }
         router.push('/dashboard');
+        router.refresh(); // To reflect changes immediately on the dashboard
     } catch(error) {
         toast({
           variant: 'destructive',
-          title: 'Event Creation Failed',
-          description: `Could not create your event. Please try again later.`,
+          title: isEditMode ? 'Update Failed' : 'Creation Failed',
+          description: `Could not save your event. Please try again later.`,
         });
     } finally {
         setIsSubmitting(false);
@@ -221,8 +260,8 @@ export function CreateEventForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Event Details</CardTitle>
-        <CardDescription>Fill out the form below to create your new event.</CardDescription>
+        <CardTitle>{isEditMode ? 'Edit Event' : 'Event Details'}</CardTitle>
+        <CardDescription>{isEditMode ? 'Update the details for your event.' : 'Fill out the form below to create your new event.'}</CardDescription>
       </CardHeader>
       <CardContent>
         {hasReachedFreeLimit && (
@@ -277,7 +316,7 @@ export function CreateEventForm() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Category</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a category" />
@@ -303,7 +342,7 @@ export function CreateEventForm() {
                        <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex items-center gap-6"
                         >
                           <FormItem className="flex items-center space-x-3 space-y-0">
@@ -646,10 +685,10 @@ export function CreateEventForm() {
 
 
                 <div className="flex justify-end space-x-4 mt-8">
-                   <Button type="button" variant="outline" onClick={() => form.reset()}>Cancel</Button>
+                   <Button type="button" variant="outline" onClick={() => router.push('/dashboard')}>Cancel</Button>
                    <Button type="submit" disabled={isSubmitting || hasReachedFreeLimit}>
                      {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                     Create Event
+                     {isEditMode ? 'Save Changes' : 'Create Event'}
                     </Button>
                 </div>
             </fieldset>
@@ -659,5 +698,3 @@ export function CreateEventForm() {
     </Card>
   );
 }
-
-    
