@@ -1,7 +1,9 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
+import { useAppContext } from '@/context/app-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,27 +12,162 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   User, 
   CreditCard, 
   Bell, 
   Shield, 
-  Palette,
   Download,
   Trash2,
   Upload,
   AlertTriangle,
   Crown,
   Zap,
-  Star
+  Star,
+  Users2,
+  Loader2,
+  X
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { Event, UserProfile } from '@/lib/types';
+
+
+function TeamManager() {
+  const { user } = useAuth();
+  const { events, getEventsByCreator, addCollaborator, removeCollaborator, getUsersByUids, loading: appLoading } = useAppContext();
+  const { toast } = useToast();
+  
+  const [selectedEventId, setSelectedEventId] = useState<string>('');
+  const [collaborators, setCollaborators] = useState<UserProfile[]>([]);
+  const [newCollabEmail, setNewCollabEmail] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const [loadingCollabs, setLoadingCollabs] = useState(false);
+
+  const userEvents = user ? getEventsByCreator(user.uid) : [];
+  const selectedEvent = events.find(e => e.id === selectedEventId);
+
+  useEffect(() => {
+    const fetchCollaborators = async () => {
+      if (selectedEvent && selectedEvent.collaboratorIds) {
+        setLoadingCollabs(true);
+        const users = await getUsersByUids(selectedEvent.collaboratorIds);
+        setCollaborators(users);
+        setLoadingCollabs(false);
+      } else {
+        setCollaborators([]);
+      }
+    };
+    fetchCollaborators();
+  }, [selectedEvent, getUsersByUids]);
+
+  const handleAddCollaborator = async () => {
+    if (!newCollabEmail || !selectedEventId) return;
+    setIsAdding(true);
+    const result = await addCollaborator(selectedEventId, newCollabEmail);
+    if(result.success) {
+      toast({ title: "Success", description: result.message });
+      setNewCollabEmail('');
+      // Manually trigger a refetch
+      const updatedEvent = await getEventsByCreator(user!.uid).find(e => e.id === selectedEventId);
+      if (updatedEvent?.collaboratorIds) {
+          const users = await getUsersByUids(updatedEvent.collaboratorIds);
+          setCollaborators(users);
+      }
+    } else {
+      toast({ variant: 'destructive', title: "Error", description: result.message });
+    }
+    setIsAdding(false);
+  };
+
+  const handleRemoveCollaborator = async (collaboratorId: string) => {
+    if (!selectedEventId) return;
+    await removeCollaborator(selectedEventId, collaboratorId);
+    setCollaborators(prev => prev.filter(c => c.uid !== collaboratorId));
+    toast({ title: "Collaborator Removed" });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users2 className="h-5 w-5" />
+          Team Management
+        </CardTitle>
+        <CardDescription>Add or remove collaborators for your events. Collaborators can scan tickets.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <Select value={selectedEventId} onValueChange={setSelectedEventId} disabled={userEvents.length === 0}>
+            <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select an event to manage its team" />
+            </SelectTrigger>
+            <SelectContent>
+                {userEvents.map(event => (
+                    <SelectItem key={event.id} value={event.id}>{event.name}</SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+
+        {selectedEventId && (
+          <div>
+            <div className="space-y-4">
+              <Label>Add Collaborator</Label>
+              <div className="flex gap-2">
+                <Input 
+                  type="email" 
+                  placeholder="collaborator@email.com" 
+                  value={newCollabEmail}
+                  onChange={e => setNewCollabEmail(e.target.value)}
+                  disabled={isAdding}
+                />
+                <Button onClick={handleAddCollaborator} disabled={isAdding || !newCollabEmail}>
+                  {isAdding && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                  Add
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <h4 className="font-medium mb-2">Current Collaborators</h4>
+              {loadingCollabs ? (
+                <div className="flex items-center justify-center p-4"><Loader2 className="h-6 w-6 animate-spin text-primary"/></div>
+              ) : collaborators.length > 0 ? (
+                <div className="space-y-2">
+                  {collaborators.map(c => (
+                    <div key={c.uid} className="flex items-center justify-between p-2 border rounded-md">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={c.photoURL || ''} />
+                          <AvatarFallback>{c.displayName?.charAt(0) || 'C'}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-sm">{c.displayName}</p>
+                          <p className="text-xs text-muted-foreground">{c.email}</p>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => handleRemoveCollaborator(c.uid)}>
+                        <X className="h-4 w-4 text-destructive"/>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">No collaborators added yet.</p>
+              )}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 
 export default function SettingsPage() {
-  const { user, updateProfile, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
   
   // Profile settings
@@ -118,9 +255,9 @@ export default function SettingsPage() {
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="team">Team</TabsTrigger>
           <TabsTrigger value="subscription">Subscription</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="privacy">Privacy</TabsTrigger>
           <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
 
@@ -209,6 +346,10 @@ export default function SettingsPage() {
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="team">
+          <TeamManager />
         </TabsContent>
 
         <TabsContent value="subscription" className="space-y-4">

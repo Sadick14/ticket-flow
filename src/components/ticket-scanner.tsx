@@ -1,16 +1,17 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import QrScanner from 'react-qr-scanner';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-context';
+import { useAuth } from '@/context/auth-context';
 import type { Ticket, Event } from '@/lib/types';
-import { Loader2, CheckCircle, XCircle, User, Ticket as TicketIcon, Calendar, ScanLine } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, User, Ticket as TicketIcon, Calendar, ScanLine, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
-import { Badge } from './ui/badge';
 
 interface TicketScannerProps {
   onScanSuccess: () => void;
@@ -18,12 +19,37 @@ interface TicketScannerProps {
 
 export function TicketScanner({ onScanSuccess }: TicketScannerProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const { getTicketById, getEventById, checkInTicket } = useAppContext();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [event, setEvent] = useState<Event | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const getCameraPermission = async () => {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          setHasCameraPermission(true);
+          if (videoRef.current) {
+            (videoRef.current as any).srcObject = stream;
+          }
+        } catch (error) {
+          console.error('Error accessing camera:', error);
+          setHasCameraPermission(false);
+          setError("Camera permission denied. Please enable camera access in your browser settings.");
+        }
+      } else {
+        setHasCameraPermission(false);
+        setError("Camera not supported. This device does not support camera access.");
+      }
+    };
+    getCameraPermission();
+  }, []);
 
   useEffect(() => {
     if (scanResult) {
@@ -32,6 +58,10 @@ export function TicketScanner({ onScanSuccess }: TicketScannerProps) {
   }, [scanResult]);
 
   const handleScanResult = async (result: string) => {
+    if (!user) {
+        setError("You must be logged in to scan tickets.");
+        return;
+    }
     setIsLoading(true);
     setTicket(null);
     setEvent(null);
@@ -65,26 +95,26 @@ export function TicketScanner({ onScanSuccess }: TicketScannerProps) {
   };
 
   const handleCheckIn = async () => {
-    if (!ticket) return;
+    if (!ticket || !user) return;
 
     setIsLoading(true);
     try {
-      await checkInTicket(ticket.id);
+      await checkInTicket(ticket.id, ticket.eventId, user.uid);
       setTicket({ ...ticket, checkedIn: true });
       toast({
         title: 'Check-in Successful',
         description: `${ticket.attendeeName} has been checked in.`,
       });
-      // Delay before resetting to show success message
       setTimeout(() => {
         resetScanner();
         onScanSuccess();
       }, 2000);
-    } catch (e) {
+    } catch (e: any) {
+      setError(e.message);
       toast({
         variant: 'destructive',
         title: 'Check-in Failed',
-        description: 'Could not update ticket status. Please try again.',
+        description: e.message,
       });
       setIsLoading(false);
     }
@@ -97,6 +127,22 @@ export function TicketScanner({ onScanSuccess }: TicketScannerProps) {
     setError(null);
     setIsLoading(false);
   };
+
+  if (hasCameraPermission === null) {
+    return <div className="flex flex-col items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="mt-4">Requesting camera permission...</p></div>;
+  }
+  
+  if (hasCameraPermission === false) {
+    return (
+       <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Camera Access Required</AlertTitle>
+            <AlertDescription>
+                {error || "Camera access is required to scan tickets. Please enable permissions in your browser settings."}
+            </AlertDescription>
+        </Alert>
+    )
+  }
 
   if (isLoading && !ticket && !error) {
     return <div className="flex flex-col items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="mt-4">Verifying ticket...</p></div>;
@@ -178,7 +224,7 @@ export function TicketScanner({ onScanSuccess }: TicketScannerProps) {
     <div className="space-y-4">
       <div className="relative w-full aspect-square max-w-sm mx-auto overflow-hidden rounded-lg border">
         <QrScanner
-          onResult={(result) => setScanResult(result)}
+          onScan={(result) => setScanResult(result)}
           onError={(error) => console.log(error?.message)}
           constraints={{ video: { facingMode: 'environment' } }}
           style={{ width: '100%', height: '100%' }}

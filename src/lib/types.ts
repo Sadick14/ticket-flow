@@ -35,6 +35,7 @@ export interface Event {
   speakers?: Speaker[];
   activities?: Activity[];
   sponsors?: Sponsor[];
+  collaboratorIds?: string[];
 }
 
 export interface Ticket {
@@ -44,6 +45,7 @@ export interface Ticket {
   attendeeEmail: string;
   purchaseDate: string;
   checkedIn: boolean;
+  price: number;
 }
 
 export type SubscriptionPlan = 'Free' | 'Starter' | 'Pro';

@@ -2,22 +2,23 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Event, Ticket } from '@/lib/types';
+import type { Event, Ticket, UserProfile } from '@/lib/types';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, DocumentData, orderBy, limit } from 'firebase/firestore';
+import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit } from 'firebase/firestore';
 
 interface AppContextType {
   events: Event[];
   tickets: Ticket[];
   loading: boolean;
-  addEvent: (event: Omit<Event, 'id'>) => Promise<void>;
+  addEvent: (event: Omit<Event, 'id' | 'collaboratorIds'>) => Promise<void>;
   updateEvent: (id: string, eventData: Partial<Omit<Event, 'id'>>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
   addTicket: (ticket: Omit<Ticket, 'id' | 'purchaseDate' | 'checkedIn'>) => Promise<void>;
-  checkInTicket: (id: string) => Promise<void>;
+  checkInTicket: (ticketId: string, eventId: string, currentUserId: string) => Promise<void>;
   getTicketById: (id: string) => Promise<Ticket | undefined>;
   getEventById: (id: string) => Promise<Event | undefined>;
   getEventsByCreator: (creatorId: string) => Event[];
+  getCollaboratedEvents: (userId: string) => Event[];
   getUserTickets: (email: string) => Ticket[];
   getTicketsByEvent: (eventId: string) => Ticket[];
   getEventStats: (creatorId: string) => {
@@ -26,6 +27,9 @@ interface AppContextType {
     totalRevenue: number;
     upcomingEvents: number;
   };
+  addCollaborator: (eventId: string, email: string) => Promise<{success: boolean, message: string}>;
+  removeCollaborator: (eventId: string, userId: string) => Promise<void>;
+  getUsersByUids: (uids: string[]) => Promise<UserProfile[]>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -38,7 +42,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const fetchEvents = useCallback(async () => {
     try {
       const eventsCollection = collection(db, 'events');
-      const eventSnapshot = await getDocs(query(eventsCollection, orderBy('date', 'desc')));
+      const eventSnapshot = await getDocs(query(eventsCollection));
       const eventsList = eventSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
       setEvents(eventsList);
     } catch (error) {
@@ -49,8 +53,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const fetchTickets = useCallback(async () => {
      try {
       const ticketsCollection = collection(db, 'tickets');
-      const ticketSnapshot = await getDocs(query(ticketsCollection, orderBy('purchaseDate', 'desc')));
-      const ticketsList = ticketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), checkedIn: doc.data().checkedIn || false } as Ticket));
+      const ticketSnapshot = await getDocs(query(ticketsCollection));
+      const ticketsList = ticketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
       setTickets(ticketsList);
     } catch (error) {
       console.error("Error fetching tickets:", error);
@@ -66,9 +70,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     loadData();
   }, [fetchEvents, fetchTickets]);
 
-  const addEvent = async (eventData: Omit<Event, 'id'>) => {
+  const addEvent = async (eventData: Omit<Event, 'id' | 'collaboratorIds'>) => {
     try {
-      await addDoc(collection(db, 'events'), eventData);
+      await addDoc(collection(db, 'events'), { ...eventData, collaboratorIds: [] });
       await fetchEvents();
     } catch (error) {
        console.error("Error adding event:", error);
@@ -112,15 +116,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const checkInTicket = async (id: string) => {
-    try {
-      const ticketRef = doc(db, 'tickets', id);
-      await updateDoc(ticketRef, { checkedIn: true });
-      await fetchTickets();
-    } catch (error) {
-      console.error("Error checking in ticket:", error);
-      throw error;
+  const checkInTicket = async (ticketId: string, eventId: string, currentUserId: string) => {
+    const event = await getEventById(eventId);
+    if (!event) throw new Error("Event not found.");
+
+    const isCreator = event.creatorId === currentUserId;
+    const isCollaborator = event.collaboratorIds?.includes(currentUserId);
+
+    if (!isCreator && !isCollaborator) {
+      throw new Error("You do not have permission to check in tickets for this event.");
     }
+
+    const ticketRef = doc(db, 'tickets', ticketId);
+    await updateDoc(ticketRef, { checkedIn: true });
+    await fetchTickets();
   };
   
   const getTicketById = async (id: string): Promise<Ticket | undefined> => {
@@ -163,6 +172,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return events.filter(event => event.creatorId === creatorId);
   }
 
+  const getCollaboratedEvents = (userId: string): Event[] => {
+    return events.filter(event => event.collaboratorIds?.includes(userId));
+  }
+
   const getUserTickets = (email: string): Ticket[] => {
     return tickets.filter(t => t.attendeeEmail.toLowerCase() === email.toLowerCase());
   }
@@ -178,6 +191,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     );
     
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const upcomingEvents = userEvents.filter(event => 
       new Date(event.date) >= today
     ).length;
@@ -189,6 +204,49 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       upcomingEvents,
     };
   };
+
+  const addCollaborator = async (eventId: string, email: string): Promise<{success: boolean, message: string}> => {
+    const q = query(collection(db, "users"), where("email", "==", email), limit(1));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      return { success: false, message: "No user found with that email." };
+    }
+
+    const userDoc = querySnapshot.docs[0];
+    const userId = userDoc.id;
+
+    const eventRef = doc(db, 'events', eventId);
+    await updateDoc(eventRef, {
+      collaboratorIds: arrayUnion(userId)
+    });
+
+    await fetchEvents();
+    return { success: true, message: "Collaborator added successfully." };
+  };
+
+  const removeCollaborator = async (eventId: string, userId: string) => {
+    const eventRef = doc(db, 'events', eventId);
+    await updateDoc(eventRef, {
+      collaboratorIds: arrayRemove(userId)
+    });
+    await fetchEvents();
+  };
+
+  const getUsersByUids = async (uids: string[]): Promise<UserProfile[]> => {
+    if (!uids || uids.length === 0) return [];
+    const users: UserProfile[] = [];
+    // Firestore 'in' query is limited to 30 items. Batch if necessary.
+    for (let i = 0; i < uids.length; i += 30) {
+      const batchUids = uids.slice(i, i + 30);
+      const q = query(collection(db, 'users'), where('uid', 'in', batchUids));
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((doc) => {
+        users.push(doc.data() as UserProfile);
+      });
+    }
+    return users;
+  }
 
   return (
     <AppContext.Provider value={{ 
@@ -202,10 +260,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       checkInTicket,
       getTicketById,
       getEventById, 
-      getEventsByCreator, 
+      getEventsByCreator,
+      getCollaboratedEvents,
       getUserTickets,
       getTicketsByEvent,
-      getEventStats
+      getEventStats,
+      addCollaborator,
+      removeCollaborator,
+      getUsersByUids
     }}>
       {children}
     </AppContext.Provider>

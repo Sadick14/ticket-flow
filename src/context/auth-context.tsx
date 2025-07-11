@@ -10,28 +10,10 @@ import {
   signOut as firebaseSignOut,
   User as FirebaseUser
 } from 'firebase/auth';
-import { app } from '@/lib/firebase';
+import { app, db } from '@/lib/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile, SubscriptionPlan } from '@/lib/types';
-
-// In a real app, this would be fetched from a database like Firestore.
-const userProfilesDB: Record<string, UserProfile> = {};
-
-const getOrCreateUserProfile = (user: FirebaseUser): UserProfile => {
-  if (userProfilesDB[user.uid]) {
-    return userProfilesDB[user.uid];
-  }
-  const newUserProfile: UserProfile = {
-    uid: user.uid,
-    email: user.email,
-    displayName: user.displayName,
-    photoURL: user.photoURL,
-    subscriptionPlan: 'Free',
-  };
-  userProfilesDB[user.uid] = newUserProfile;
-  return newUserProfile;
-};
-
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -43,6 +25,25 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const getOrCreateUserProfile = async (user: FirebaseUser): Promise<UserProfile> => {
+  const userRef = doc(db, 'users', user.uid);
+  const docSnap = await getDoc(userRef);
+
+  if (docSnap.exists()) {
+    return docSnap.data() as UserProfile;
+  }
+  
+  const newUserProfile: UserProfile = {
+    uid: user.uid,
+    email: user.email,
+    displayName: user.displayName,
+    photoURL: user.photoURL,
+    subscriptionPlan: 'Free',
+  };
+  await setDoc(userRef, newUserProfile);
+  return newUserProfile;
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,9 +51,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const auth = getAuth(app);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const userProfile = getOrCreateUserProfile(firebaseUser);
+        const userProfile = await getOrCreateUserProfile(firebaseUser);
         setUser(userProfile);
       } else {
         setUser(null);
@@ -67,7 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      const userProfile = getOrCreateUserProfile(result.user);
+      const userProfile = await getOrCreateUserProfile(result.user);
       setUser(userProfile);
       toast({
         title: "Signed In",
@@ -103,10 +104,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateSubscriptionPlan = (plan: SubscriptionPlan) => {
+  const updateSubscriptionPlan = async (plan: SubscriptionPlan) => {
     if (user) {
       const updatedUser = { ...user, subscriptionPlan: plan };
-      userProfilesDB[user.uid] = updatedUser; // Update in our mock DB
+      const userRef = doc(db, 'users', user.uid);
+      await setDoc(userRef, updatedUser, { merge: true });
       setUser(updatedUser);
       toast({
         title: "Plan Updated!",

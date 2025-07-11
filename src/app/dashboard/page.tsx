@@ -12,8 +12,8 @@ import { EventCard } from '@/components/event-card';
 import type { Event } from '@/lib/types';
 
 export default function DashboardPage() {
-  const { user, loading, signInWithGoogle } = useAuth();
-  const { events, getEventsByCreator } = useAppContext();
+  const { user, loading } = useAuth();
+  const { getEventsByCreator, getCollaboratedEvents } = useAppContext();
   const router = useRouter();
 
   useEffect(() => {
@@ -31,13 +31,15 @@ export default function DashboardPage() {
   }
 
   const userEvents = getEventsByCreator(user.uid);
+  const collaboratedEvents = getCollaboratedEvents(user.uid);
+  const allVisibleEvents = [...userEvents, ...collaboratedEvents.filter(ce => !userEvents.find(ue => ue.id === ce.id))];
 
   return (
     <>
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground font-headline">My Events</h1>
-          <p className="mt-1 text-lg text-muted-foreground">Here are all the events you have created.</p>
+          <p className="mt-1 text-lg text-muted-foreground">Events you have created or are collaborating on.</p>
         </div>
         <Button asChild>
           <Link href="/create">
@@ -47,16 +49,16 @@ export default function DashboardPage() {
         </Button>
       </div>
 
-      {userEvents.length > 0 ? (
+      {allVisibleEvents.length > 0 ? (
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-            {userEvents.map((event: Event) => (
+            {allVisibleEvents.map((event: Event) => (
               <EventCard key={event.id} event={event} />
             ))}
         </div>
       ) : (
         <div className="text-center py-16 border-2 border-dashed rounded-lg">
           <h3 className="mt-4 text-lg font-medium text-foreground">No Events Found</h3>
-          <p className="mt-1 text-sm text-muted-foreground">You haven't created any events yet.</p>
+          <p className="mt-1 text-sm text-muted-foreground">You haven't created or been added to any events yet.</p>
           <div className="mt-6">
             <Button asChild>
               <Link href="/create">Create Your First Event</Link>
