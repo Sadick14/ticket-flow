@@ -48,12 +48,18 @@ const eventFormSchema = z.object({
   description: z.string().min(10, { message: 'Description must be at least 10 characters.' }),
   price: z.coerce.number().min(0, { message: 'Price cannot be negative.' }),
   capacity: z.coerce.number().int().min(1, { message: 'Capacity must be at least 1.' }),
-  imageUrl: z.string().url({ message: 'Please upload an image.' }).min(1, { message: 'Please upload an image.' }),
+  imageUrl: z.string().min(1, { message: 'Please upload an image.' }).refine(
+    (val) => val.startsWith('http') || val.startsWith('/uploads/'),
+    { message: 'Please upload an image.' }
+  ),
   organizationLogoUrl: z.string().url({ message: 'Please enter a valid URL.' }).optional().or(z.literal('')),
   speakers: z.array(z.object({
     name: z.string().optional(),
     title: z.string().optional(),
-    imageUrl: z.string().url().or(z.literal('')).optional(),
+    imageUrl: z.string().refine(
+      (val: string) => !val || val.startsWith('http') || val.startsWith('/uploads/'),
+      { message: 'Please enter a valid URL or upload an image.' }
+    ).optional(),
   })).optional(),
   activities: z.array(z.object({
     name: z.string().optional(),
@@ -62,7 +68,10 @@ const eventFormSchema = z.object({
   })).optional(),
   sponsors: z.array(z.object({
     name: z.string().optional(),
-    logoUrl: z.string().url().or(z.literal('')).optional(),
+    logoUrl: z.string().refine(
+      (val: string) => !val || val.startsWith('http') || val.startsWith('/uploads/'),
+      { message: 'Please enter a valid URL or upload an image.' }
+    ).optional(),
   })).optional(),
 });
 

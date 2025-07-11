@@ -4,7 +4,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Event, Ticket } from '@/lib/types';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, DocumentData } from 'firebase/firestore';
+import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, DocumentData, orderBy, limit } from 'firebase/firestore';
 
 interface AppContextType {
   events: Event[];
@@ -12,10 +12,18 @@ interface AppContextType {
   loading: boolean;
   addEvent: (event: Omit<Event, 'id'>) => Promise<void>;
   updateEvent: (id: string, eventData: Omit<Event, 'id'>) => Promise<void>;
+  deleteEvent: (id: string) => Promise<void>;
   addTicket: (ticket: Omit<Ticket, 'id' | 'purchaseDate'>) => Promise<void>;
   getEventById: (id: string) => Promise<Event | undefined>;
   getEventsByCreator: (creatorId: string) => Event[];
   getUserTickets: (email: string) => Ticket[];
+  getTicketsByEvent: (eventId: string) => Ticket[];
+  getEventStats: (creatorId: string) => {
+    totalEvents: number;
+    totalTicketsSold: number;
+    totalRevenue: number;
+    upcomingEvents: number;
+  };
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -119,9 +127,43 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error fetching event by ID:", error);
       return undefined;
     } finally {
-        setLoading(false);
+  const getUserTickets = (email: string): Ticket[] => {
+    return tickets.filter(t => t.attendeeEmail.toLowerCase() === email.toLowerCase());
+  }
+
+  const deleteEvent = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'events', id));
+      setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
+      await fetchEvents(); // Refresh to be sure
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      throw error;
     }
   };
+
+  const getTicketsByEvent = (eventId: string): Ticket[] => {
+    return tickets.filter(ticket => ticket.eventId === eventId);
+  };
+
+  const getEventStats = (creatorId: string) => {
+    const userEvents = getEventsByCreator(creatorId);
+    const userTickets = tickets.filter(ticket => 
+      userEvents.some(event => event.id === ticket.eventId)
+    );
+    
+    const today = new Date();
+    const upcomingEvents = userEvents.filter(event => 
+      new Date(event.date) >= today
+    ).length;
+
+    return {
+      totalEvents: userEvents.length,
+      totalTicketsSold: userTickets.length,
+      totalRevenue: userTickets.reduce((sum, ticket) => sum + ticket.price, 0),
+      upcomingEvents,
+    };
+  };;
 
   const getEventsByCreator = (creatorId: string): Event[] => {
     return events.filter(event => event.creatorId === creatorId);
@@ -132,13 +174,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <AppContext.Provider value={{ events, tickets, loading, addEvent, updateEvent, addTicket, getEventById, getEventsByCreator, getUserTickets }}>
+    <AppContext.Provider value={{ 
+      events, 
+      tickets, 
+      loading, 
+      addEvent, 
+      updateEvent, 
+      deleteEvent,
+      addTicket, 
+      getEventById, 
+      getEventsByCreator, 
+      getUserTickets,
+      getTicketsByEvent,
+      getEventStats
+    }}>
       {children}
     </AppContext.Provider>
   );
 };
 
-export const useAppContext = () => {
+export const useAppContext = (): AppContextType => {
   const context = useContext(AppContext);
   if (context === undefined) {
     throw new Error('useAppContext must be used within an AppProvider');

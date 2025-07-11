@@ -1,14 +1,11 @@
 
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { UploadCloud, Loader2, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
-import { storage } from '@/lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { v4 as uuidv4 } from 'uuid';
 
 interface ImageUploaderProps {
   onUpload: (url: string) => void;
@@ -33,24 +30,32 @@ export function ImageUploader({ onUpload, value }: ImageUploaderProps) {
     setIsLoading(true);
 
     try {
-      const uniqueId = uuidv4();
-      const fileExtension = file.name.split('.').pop();
-      const fileName = `${uniqueId}.${fileExtension}`;
-      const storageRef = ref(storage, `uploads/${fileName}`);
-      
-      const uploadResult = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(uploadResult.ref);
+      const formData = new FormData();
+      formData.append('file', file);
 
-      onUpload(downloadURL);
-      setPreview(downloadURL);
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const result = await response.json();
+      const publicUrl = result.url;
+
+      onUpload(publicUrl);
+      setPreview(publicUrl);
 
       toast({
         title: 'Image Uploaded',
-        description: 'Your image has been successfully uploaded to Firebase Storage.',
+        description: 'Your image has been successfully uploaded.',
       });
 
     } catch (error) {
-      console.error('Firebase Storage upload error:', error);
+      console.error('Upload error:', error);
       const message = error instanceof Error ? error.message : 'An unknown error occurred';
       toast({
         variant: 'destructive',

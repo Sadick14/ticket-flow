@@ -9,6 +9,7 @@ import { Loader2, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { EventCard } from '@/components/event-card';
+import type { Event } from '@/lib/types';
 
 export default function DashboardPage() {
   const { user, loading, signInWithGoogle } = useAuth();
@@ -48,7 +49,7 @@ export default function DashboardPage() {
 
       {userEvents.length > 0 ? (
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-            {userEvents.map((event) => (
+            {userEvents.map((event: Event) => (
               <EventCard key={event.id} event={event} />
             ))}
         </div>

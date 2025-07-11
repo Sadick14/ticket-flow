@@ -90,52 +90,72 @@ export default function DashboardLayout({
               <Separator className="my-2" />
                <SidebarMenuItem>
                 <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/dashboard/attendees')}
                   tooltip={{
                     children: 'Attendees',
                   }}
                 >
-                  <Users />
-                  <span>Attendees</span>
+                  <Link href="/dashboard/attendees">
+                    <Users />
+                    <span>Attendees</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
                 <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/dashboard/sales')}
                   tooltip={{
                     children: 'Ticket Sales',
                   }}
                 >
-                  <CreditCard />
-                  <span>Ticket Sales</span>
+                  <Link href="/dashboard/sales">
+                    <CreditCard />
+                    <span>Ticket Sales</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
                 <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/dashboard/marketing')}
                   tooltip={{
                     children: 'Marketing',
                   }}
                 >
-                  <Megaphone />
-                  <span>Marketing</span>
+                  <Link href="/dashboard/marketing">
+                    <Megaphone />
+                    <span>Marketing</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
                 <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/dashboard/analytics')}
                   tooltip={{
                     children: 'Analytics',
                   }}
                 >
-                  <LineChart />
-                  <span>Analytics</span>
+                  <Link href="/dashboard/analytics">
+                    <LineChart />
+                    <span>Analytics</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
                 <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/dashboard/settings')}
                   tooltip={{
                     children: 'Settings',
                   }}
                 >
-                  <Settings />
-                  <span>Settings</span>
+                  <Link href="/dashboard/settings">
+                    <Settings />
+                    <span>Settings</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -164,8 +184,16 @@ export default function DashboardLayout({
                     <SidebarTrigger />
                 </div>
                 <div className="flex-1">
-                    {/* We can make this dynamic later */}
-                    <h1 className="text-lg font-semibold">My Events</h1> 
+                    <h1 className="text-lg font-semibold">
+                      {pathname === '/dashboard' && 'My Events'}
+                      {pathname === '/dashboard/attendees' && 'Attendees'}
+                      {pathname === '/dashboard/sales' && 'Sales & Revenue'}
+                      {pathname === '/dashboard/analytics' && 'Analytics Dashboard'}
+                      {pathname === '/dashboard/marketing' && 'Marketing Tools'}
+                      {pathname === '/dashboard/settings' && 'Settings'}
+                      {pathname === '/create' && 'Create Event'}
+                      {pathname.startsWith('/dashboard/edit/') && 'Edit Event'}
+                    </h1> 
                 </div>
             </header>
             <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload Test</h1>
+    <div class="upload-area">
+        <input type="file" id="fileInput" accept="image/*">
+        <button onclick="uploadFile()">Upload</button>
+    </div>
+    <div id="result" class="result" style="display: none;"></div>
+    <div id="imagePreview" style="display: none;">
+        <h3>Preview:</h3>
+        <img id="previewImg" style="max-width: 300px; max-height: 300px;">
+    </div>
+
+    <script>
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const result = document.getElementById('result');
+            const imagePreview = document.getElementById('imagePreview');
+            const previewImg = document.getElementById('previewImg');
+            
+            if (!fileInput.files[0]) {
+                result.innerHTML = 'Please select a file first';
+                result.className = 'result error';
+                result.style.display = 'block';
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            try {
+                result.innerHTML = 'Uploading...';
+                result.className = 'result';
+                result.style.display = 'block';
+                
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.innerHTML = `Success! File uploaded: ${data.url}`;
+                    result.className = 'result success';
+                    
+                    // Show preview
+                    previewImg.src = data.url;
+                    imagePreview.style.display = 'block';
+                } else {
+                    result.innerHTML = `Error: ${data.error}`;
+                    result.className = 'result error';
+                    imagePreview.style.display = 'none';
+                }
+            } catch (error) {
+                result.innerHTML = `Error: ${error.message}`;
+                result.className = 'result error';
+                imagePreview.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
