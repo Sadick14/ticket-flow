@@ -15,6 +15,7 @@ interface AppContextType {
   deleteEvent: (id: string) => Promise<void>;
   addTicket: (ticket: Omit<Ticket, 'id' | 'purchaseDate' | 'checkedIn'>) => Promise<void>;
   checkInTicket: (ticketId: string, eventId: string, currentUserId: string) => Promise<void>;
+  manualCheckInTicket: (ticketId: string, eventId: string, currentUserId: string, checkInStatus: boolean) => Promise<void>;
   getTicketById: (id: string) => Promise<Ticket | undefined>;
   getEventById: (id: string) => Promise<Event | undefined>;
   getEventsByCreator: (creatorId: string) => Event[];
@@ -117,6 +118,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const checkInTicket = async (ticketId: string, eventId: string, currentUserId: string) => {
+    await manualCheckInTicket(ticketId, eventId, currentUserId, true);
+  };
+
+  const manualCheckInTicket = async (ticketId: string, eventId: string, currentUserId: string, checkInStatus: boolean) => {
     const event = await getEventById(eventId);
     if (!event) throw new Error("Event not found.");
 
@@ -124,11 +129,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const isCollaborator = event.collaboratorIds?.includes(currentUserId);
 
     if (!isCreator && !isCollaborator) {
-      throw new Error("You do not have permission to check in tickets for this event.");
+      throw new Error("You do not have permission to modify check-ins for this event.");
     }
 
     const ticketRef = doc(db, 'tickets', ticketId);
-    await updateDoc(ticketRef, { checkedIn: true });
+    await updateDoc(ticketRef, { checkedIn: checkInStatus });
     await fetchTickets();
   };
   
@@ -258,6 +263,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       deleteEvent,
       addTicket, 
       checkInTicket,
+      manualCheckInTicket,
       getTicketById,
       getEventById, 
       getEventsByCreator,

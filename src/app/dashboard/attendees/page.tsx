@@ -11,25 +11,32 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Mail, MapPin, Search, Users, Download, CheckCircle } from 'lucide-react';
+import { Calendar, Mail, MapPin, Search, Users, Download, CheckCircle, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import type { Ticket, Event } from '@/lib/types';
+import type { Ticket, Event, UserProfile } from '@/lib/types';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AttendeesPage() {
   const { user } = useAuth();
-  const { events, tickets, getEventsByCreator } = useAppContext();
+  const { events, tickets, getEventsByCreator, getCollaboratedEvents, manualCheckInTicket } = useAppContext();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedEvent, setSelectedEvent] = useState<string>('all');
+  const [selectedEventId, setSelectedEventId] = useState<string>('all');
+  const [checkingIn, setCheckingIn] = useState<string | null>(null);
 
   const userEvents = user ? getEventsByCreator(user.uid) : [];
+  const collaboratedEvents = user ? getCollaboratedEvents(user.uid) : [];
+  const allManagedEvents = [...userEvents, ...collaboratedEvents.filter(ce => !userEvents.find(ue => ue.id === ce.id))];
+
   
   const allAttendees = useMemo(() => {
     const attendeeTickets = tickets.filter((ticket: Ticket) => 
-      userEvents.some((event: Event) => event.id === ticket.eventId)
+      allManagedEvents.some((event: Event) => event.id === ticket.eventId)
     );
 
     return attendeeTickets.map((ticket: Ticket) => {
-      const event = userEvents.find((e: Event) => e.id === ticket.eventId);
+      const event = allManagedEvents.find((e: Event) => e.id === ticket.eventId);
       return {
         ...ticket,
         eventName: event?.name || 'Unknown Event',
@@ -38,7 +45,7 @@ export default function AttendeesPage() {
         price: event?.price || 0,
       };
     });
-  }, [tickets, userEvents]);
+  }, [tickets, allManagedEvents]);
 
   const filteredAttendees = useMemo(() => {
     return allAttendees.filter((attendee: any) => {
@@ -46,11 +53,11 @@ export default function AttendeesPage() {
                            attendee.attendeeEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            attendee.eventName.toLowerCase().includes(searchTerm.toLowerCase());
       
-      const matchesEvent = selectedEvent === 'all' || attendee.eventId === selectedEvent;
+      const matchesEvent = selectedEventId === 'all' || attendee.eventId === selectedEventId;
       
       return matchesSearch && matchesEvent;
     });
-  }, [allAttendees, searchTerm, selectedEvent]);
+  }, [allAttendees, searchTerm, selectedEventId]);
 
   const stats = useMemo(() => {
     const totalAttendees = allAttendees.length;
@@ -65,6 +72,26 @@ export default function AttendeesPage() {
       unique: uniqueAttendees,
     };
   }, [allAttendees]);
+
+  const handleCheckInToggle = async (ticket: any) => {
+    if (!user) return;
+    setCheckingIn(ticket.id);
+    try {
+      await manualCheckInTicket(ticket.id, ticket.eventId, user.uid, !ticket.checkedIn);
+      toast({
+        title: `Check-in ${ticket.checkedIn ? 'Reverted' : 'Successful'}`,
+        description: `${ticket.attendeeName}'s status has been updated.`,
+      });
+    } catch (e: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: e.message,
+      });
+    } finally {
+      setCheckingIn(null);
+    }
+  };
 
   const exportAttendees = () => {
     const csvContent = [
@@ -161,13 +188,13 @@ export default function AttendeesPage() {
                 />
               </div>
             </div>
-            <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+            <Select value={selectedEventId} onValueChange={setSelectedEventId}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by event" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Events</SelectItem>
-                {userEvents.map((event: Event) => (
+                {allManagedEvents.map((event: Event) => (
                   <SelectItem key={event.id} value={event.id}>
                     {event.name}
                   </SelectItem>
@@ -204,9 +231,9 @@ export default function AttendeesPage() {
                   <TableRow>
                     <TableHead>Attendee</TableHead>
                     <TableHead>Event</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead>Purchase Date</TableHead>
                     <TableHead className="text-right">Price</TableHead>
+                    <TableHead className="text-center">Checked In</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -232,20 +259,21 @@ export default function AttendeesPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {attendee.checkedIn ? (
-                            <Badge variant="secondary" className="text-green-600 border-green-600/50">
-                                <CheckCircle className="mr-1 h-3 w-3" />
-                                Checked In
-                            </Badge>
-                        ) : (
-                            <Badge variant="outline">Pending</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
                         {format(parseISO(attendee.purchaseDate), 'MMM dd, yyyy')}
                       </TableCell>
                       <TableCell className="text-right">
                         <Badge variant="outline">${attendee.price.toFixed(2)}</Badge>
+                      </TableCell>
+                       <TableCell className="text-center">
+                        {checkingIn === attendee.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                        ) : (
+                          <Switch
+                            checked={attendee.checkedIn}
+                            onCheckedChange={() => handleCheckInToggle(attendee)}
+                            aria-label={`Check in ${attendee.attendeeName}`}
+                          />
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
