@@ -188,13 +188,6 @@ export default function SettingsPage() {
     ticketSales: true,
   });
 
-  // Privacy settings
-  const [privacy, setPrivacy] = useState({
-    publicProfile: false,
-    showEventStats: true,
-    allowEventDiscovery: true,
-  });
-
   const handleProfileUpdate = async () => {
     try {
       // In a real app, you would update the user profile in Firebase
@@ -524,72 +517,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
-
-        <TabsContent value="privacy" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Privacy Settings
-              </CardTitle>
-              <CardDescription>Control your privacy and data sharing preferences</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="publicProfile">Public Profile</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Make your profile visible to other users
-                    </p>
-                  </div>
-                  <Switch
-                    id="publicProfile"
-                    checked={privacy.publicProfile}
-                    onCheckedChange={(checked) => 
-                      setPrivacy({ ...privacy, publicProfile: checked })
-                    }
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="showEventStats">Show Event Stats</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Display attendance numbers on public event pages
-                    </p>
-                  </div>
-                  <Switch
-                    id="showEventStats"
-                    checked={privacy.showEventStats}
-                    onCheckedChange={(checked) => 
-                      setPrivacy({ ...privacy, showEventStats: checked })
-                    }
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="allowEventDiscovery">Event Discovery</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Allow your events to appear in search results
-                    </p>
-                  </div>
-                  <Switch
-                    id="allowEventDiscovery"
-                    checked={privacy.allowEventDiscovery}
-                    onCheckedChange={(checked) => 
-                      setPrivacy({ ...privacy, allowEventDiscovery: checked })
-                    }
-                  />
-                </div>
-              </div>
-
-              <Button>Save Privacy Settings</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
+        
         <TabsContent value="account" className="space-y-4">
           <Card>
             <CardHeader>
