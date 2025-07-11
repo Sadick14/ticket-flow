@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -26,7 +27,7 @@ import {
   Users,
   TrendingUp,
   Eye,
-  Click,
+  MousePointerClick,
   Calendar
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -217,7 +218,7 @@ Get your tickets now: ${generateShareUrl(event.id)}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Link Clicks</CardTitle>
-                  <Click className="h-4 w-4 text-muted-foreground" />
+                  <MousePointerClick className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{marketingStats.clicks}</div>
