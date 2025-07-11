@@ -4,35 +4,43 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useAppContext } from '@/context/app-context';
 import { Button } from '@/components/ui/button';
 import { PurchaseTicketDialog } from '@/components/purchase-ticket-dialog';
-import { Calendar, MapPin, Tag, Users, Mic, Clock, Building, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, Tag, Users, Mic, Clock, Building, Loader2, Share2, Twitter, Facebook, Linkedin } from 'lucide-react';
 import { format } from 'date-fns';
-import { Card, CardContent } from '@/components/ui/card';
-import type { Event } from '@/lib/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Event, Ticket } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
 
 export default function EventDetailsPage() {
   const { id } = useParams();
-  const { getEventById, loading } = useAppContext();
+  const { getEventById, getTicketsByEvent, loading } = useAppContext();
+  const { toast } = useToast();
   const [event, setEvent] = useState<Event | null>(null);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
-      const fetchEvent = async () => {
+      const fetchEventData = async () => {
         const eventData = await getEventById(id as string);
         setEvent(eventData || null);
+        if (eventData) {
+          const ticketData = getTicketsByEvent(eventData.id);
+          setTickets(ticketData);
+        }
       };
-      fetchEvent();
+      fetchEventData();
     }
-  }, [id, getEventById]);
-
+  }, [id, getEventById, getTicketsByEvent]);
 
   if (loading || !event) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
         {loading ? <Loader2 className="h-12 w-12 animate-spin text-primary" /> : <p className="text-xl text-muted-foreground">Event not found.</p>}
       </div>
     );
@@ -43,139 +51,201 @@ export default function EventDetailsPage() {
   const isMultiDay = event.endDate && event.date !== event.endDate;
 
   const formattedDate = isMultiDay 
-    ? `${format(startDate, 'PPP')} - ${format(endDate, 'PPP')}`
+    ? `${format(startDate, 'MMM dd, yyyy')} - ${format(endDate, 'MMM dd, yyyy')}`
     : format(startDate, 'PPP');
+    
+  const ticketsSold = tickets.length;
+  const salesRate = event.capacity > 0 ? (ticketsSold / event.capacity) * 100 : 0;
+  const ticketsLeft = event.capacity - ticketsSold;
+
+  const getShareUrl = (platform: 'twitter' | 'facebook' | 'linkedin') => {
+    if (typeof window === 'undefined') return '#';
+    const url = window.location.href;
+    const text = `Check out this event: ${event.name}!`;
+    switch (platform) {
+      case 'twitter':
+        return `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+      case 'facebook':
+        return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+      case 'linkedin':
+        return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+    }
+  };
+
+  const copyLink = () => {
+    if (typeof window !== 'undefined') {
+        navigator.clipboard.writeText(window.location.href);
+        toast({ title: 'Link Copied!', description: 'Event link copied to clipboard.' });
+    }
+  }
 
   return (
     <>
-      <div className="relative w-full h-64 sm:h-80 md:h-96">
-        <Image 
-          src={event.imageUrl} 
-          alt={event.name} 
-          fill
-          className="object-cover"
-          data-ai-hint={`${event.category.toLowerCase()}`}
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative -mt-16 sm:-mt-24">
-        <div className="lg:grid lg:grid-cols-3 lg:gap-12">
-            <main className="lg:col-span-2">
-                 <div className="bg-card p-6 rounded-lg shadow-lg">
-                     <h1 className="text-4xl font-bold tracking-tight text-foreground font-headline">
-                        {event.name}
-                      </h1>
-                      {event.organizationName && (
-                        <div className="mt-4 flex items-center gap-4">
-                            {event.organizationLogoUrl && (
-                                <Avatar>
-                                    <AvatarImage src={event.organizationLogoUrl} alt={event.organizationName} />
-                                    <AvatarFallback>{event.organizationName.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                            )}
-                            <p className="text-xl text-muted-foreground">
-                            by {event.organizationName}
-                            </p>
+      <div className="bg-muted/40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+            <div className="lg:grid lg:grid-cols-3 lg:gap-12">
+                <main className="lg:col-span-2 space-y-8">
+                    <Card className="overflow-hidden">
+                        <div className="relative w-full h-64 sm:h-80 md:h-96">
+                            <Image 
+                            src={event.imageUrl} 
+                            alt={event.name} 
+                            fill
+                            className="object-cover"
+                            data-ai-hint={`${event.category.toLowerCase()}`}
+                            priority
+                            />
                         </div>
-                      )}
-                      <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground">
-                        <div className="flex items-center">
-                          <Calendar className="mr-2 h-5 w-5" />
-                          <span>{formattedDate}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Clock className="mr-2 h-5 w-5" />
-                          <span>{format(startDate, 'p')}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <MapPin className="mr-2 h-5 w-5" />
-                          <span>{event.location}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Tag className="mr-2 h-5 w-5" />
-                          <span>{event.category}</span>
-                        </div>
-                      </div>
-                 </div>
-
-                <article className="prose prose-lg max-w-none mt-12 text-foreground/80 leading-relaxed whitespace-pre-wrap">
-                    <p>{event.description}</p>
-                </article>
-
-                <div className="mt-16 space-y-16">
-                    <div>
-                        <h3 className="text-2xl font-bold font-headline flex items-center mb-6"><Mic className="mr-3 h-6 w-6 text-primary"/>Speakers</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                            {event.speakers && event.speakers.length > 0 ? event.speakers.map(speaker => (
-                                <Card key={speaker.name} className="text-center p-4">
-                                    <div className="relative h-20 w-20 rounded-full mx-auto mb-3 overflow-hidden">
-                                        <Image src={speaker.imageUrl || 'https://placehold.co/100x100.png'} alt={speaker.name} fill className="object-cover" data-ai-hint="person portrait"/>
+                        <CardContent className="p-6">
+                            <p className="text-primary font-semibold">{event.category.toUpperCase()}</p>
+                            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground font-headline mt-2">
+                                {event.name}
+                            </h1>
+                            {event.organizationName && (
+                                <Link href="#" className="mt-4 flex items-center gap-3 group">
+                                    {event.organizationLogoUrl && (
+                                        <Avatar className="h-10 w-10">
+                                            <AvatarImage src={event.organizationLogoUrl} alt={event.organizationName} />
+                                            <AvatarFallback>{event.organizationName.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                    )}
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Organized by</p>
+                                        <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                                            {event.organizationName}
+                                        </p>
                                     </div>
-                                    <h4 className="font-semibold">{speaker.name}</h4>
-                                    <p className="text-sm text-muted-foreground">{speaker.title}</p>
-                                </Card>
-                            )) : <p className="text-muted-foreground">Speakers to be announced soon!</p>}
-                        </div>
-                    </div>
+                                </Link>
+                            )}
+                        </CardContent>
+                    </Card>
 
-                    <div>
-                        <h3 className="text-2xl font-bold font-headline flex items-center mb-6"><Calendar className="mr-3 h-6 w-6 text-primary"/>Activities</h3>
-                        <div className="space-y-4">
-                            {event.activities && event.activities.length > 0 ? event.activities.map(activity => (
-                                <Card key={activity.name} className="p-4">
-                                <div className="flex justify-between items-center">
-                                    <h4 className="font-semibold">{activity.name}</h4>
-                                    <p className="text-sm text-muted-foreground font-mono">{activity.time}</p>
-                                </div>
-                                <p className="text-sm mt-1">{activity.description}</p>
-                                </Card>
-                            )): <p className="text-muted-foreground">Event schedule will be updated shortly.</p>}
-                        </div>
-                    </div>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>About this event</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <article className="prose prose-lg max-w-none text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                                <p>{event.description}</p>
+                            </article>
+                        </CardContent>
+                    </Card>
 
-                    {event.sponsors && event.sponsors.length > 0 && (
-                        <div>
-                            <h3 className="text-2xl font-bold font-headline flex items-center mb-6"><Building className="mr-3 h-6 w-6 text-primary"/>Sponsors</h3>
-                            <div className="flex flex-wrap items-center gap-8">
-                                {event.sponsors.map(sponsor => (
-                                    <div key={sponsor.name} className="text-center">
-                                        <div className="relative h-16 w-32">
-                                            <Image src={sponsor.logoUrl || 'https://placehold.co/150x75.png'} alt={sponsor.name} fill className="object-contain" data-ai-hint="company logo"/>
+                    {event.speakers && event.speakers.length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2"><Mic className="h-6 w-6 text-primary"/>Speakers</CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                                {event.speakers.map(speaker => (
+                                    <div key={speaker.name} className="flex flex-col items-center text-center">
+                                        <div className="relative h-24 w-24 rounded-full mb-3 overflow-hidden">
+                                            <Image src={speaker.imageUrl || 'https://placehold.co/100x100.png'} alt={speaker.name} fill className="object-cover" data-ai-hint="person portrait"/>
                                         </div>
-                                        <p className="text-sm text-muted-foreground mt-2">{sponsor.name}</p>
+                                        <h4 className="font-semibold">{speaker.name}</h4>
+                                        <p className="text-sm text-muted-foreground">{speaker.title}</p>
                                     </div>
                                 ))}
-                            </div>
-                        </div>
+                            </CardContent>
+                        </Card>
                     )}
-                </div>
-            </main>
-            <aside className="hidden lg:block">
-                <Card className="sticky top-24 shadow-lg">
-                    <CardContent className="p-6">
-                        <h3 className="text-2xl font-bold mb-4">${event.price.toFixed(2)}</h3>
-                        <div className="space-y-3 text-sm text-muted-foreground mb-6">
-                            <div className="flex items-center">
-                                <Users className="mr-3 h-5 w-5"/>
-                                <span>{event.capacity} capacity</span>
-                            </div>
-                        </div>
-                        <Button className="w-full" size="lg" onClick={() => setIsPurchaseModalOpen(true)}>
-                            Get Tickets
-                        </Button>
-                    </CardContent>
-                </Card>
-            </aside>
-        </div>
 
-        {/* Floating Action Button for mobile */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t">
-            <Button className="w-full" size="lg" onClick={() => setIsPurchaseModalOpen(true)}>
-                Get Tickets - ${event.price.toFixed(2)}
-            </Button>
+                    {event.activities && event.activities.length > 0 && (
+                         <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2"><Calendar className="h-6 w-6 text-primary"/>Schedule</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {event.activities.map(activity => (
+                                    <div key={activity.name} className="flex items-start gap-4">
+                                        <p className="text-sm text-primary font-semibold font-mono w-24 shrink-0">{activity.time}</p>
+                                        <div className="border-l-2 border-primary pl-4">
+                                            <h4 className="font-semibold">{activity.name}</h4>
+                                            <p className="text-sm mt-1 text-muted-foreground">{activity.description}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {event.sponsors && event.sponsors.length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2"><Building className="h-6 w-6 text-primary"/>Sponsors</CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex flex-wrap items-center gap-x-8 gap-y-4">
+                                {event.sponsors.map(sponsor => (
+                                     <div key={sponsor.name} className="relative h-12 w-28 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all">
+                                        <Image src={sponsor.logoUrl || 'https://placehold.co/150x75.png'} alt={sponsor.name} fill className="object-contain" data-ai-hint="company logo"/>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
+                </main>
+                <aside className="hidden lg:block space-y-6">
+                    <Card className="sticky top-24 shadow-lg">
+                        <CardHeader>
+                           <p className="text-3xl font-bold">${event.price > 0 ? event.price.toFixed(2) : 'Free'}</p>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                             <div className="space-y-3 text-sm text-muted-foreground">
+                                <div className="flex items-center">
+                                    <Calendar className="mr-3 h-4 w-4"/>
+                                    <span>{formattedDate}</span>
+                                </div>
+                                <div className="flex items-center">
+                                    <Clock className="mr-3 h-4 w-4"/>
+                                    <span>{format(startDate, 'p')}</span>
+                                </div>
+                                <div className="flex items-center">
+                                    <MapPin className="mr-3 h-4 w-4"/>
+                                    <span>{event.location}</span>
+                                </div>
+                            </div>
+                            
+                            <div className="pt-4 border-t">
+                                <p className="font-medium text-foreground">{ticketsSold} / {event.capacity} sold</p>
+                                <Progress value={salesRate} className="h-2 mt-2" />
+                                <p className="text-xs text-muted-foreground mt-1">{ticketsLeft} tickets remaining</p>
+                            </div>
+
+                            <Button className="w-full" size="lg" onClick={() => setIsPurchaseModalOpen(true)}>
+                                Get Tickets
+                            </Button>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg flex items-center gap-2"><Share2 className="h-5 w-5"/>Share this event</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex gap-2">
+                             <Button variant="outline" size="icon" asChild>
+                                <a href={getShareUrl('twitter')} target="_blank" rel="noopener noreferrer"><Twitter /></a>
+                             </Button>
+                              <Button variant="outline" size="icon" asChild>
+                                <a href={getShareUrl('facebook')} target="_blank" rel="noopener noreferrer"><Facebook /></a>
+                             </Button>
+                              <Button variant="outline" size="icon" asChild>
+                                <a href={getShareUrl('linkedin')} target="_blank" rel="noopener noreferrer"><Linkedin /></a>
+                             </Button>
+                             <Button variant="outline" className="flex-1" onClick={copyLink}>Copy Link</Button>
+                        </CardContent>
+                    </Card>
+                </aside>
+            </div>
         </div>
+      </div>
+      
+      {/* Floating Action Bar for mobile */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t z-10">
+          <div className="flex justify-between items-center">
+                <p className="text-xl font-bold">${event.price > 0 ? event.price.toFixed(2) : 'Free'}</p>
+                <Button className="w-1/2" size="lg" onClick={() => setIsPurchaseModalOpen(true)}>
+                  Get Tickets
+              </Button>
+          </div>
       </div>
       
       <PurchaseTicketDialog
