@@ -5,6 +5,9 @@ import {
   Dialog,
   DialogContent,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import type { Ticket, Event } from '@/lib/types';
@@ -43,6 +46,10 @@ export function ViewTicketDialog({ ticket, event, isOpen, onOpenChange }: ViewTi
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl p-0 gap-0 print:shadow-none print:border-none">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Event Ticket</DialogTitle>
+          <DialogDescription>Your ticket for {event.name}.</DialogDescription>
+        </DialogHeader>
         <div id="ticket-to-print" className="bg-background rounded-lg flex flex-col sm:flex-row">
             {/* Main ticket body */}
             <div className="flex-grow p-6 sm:p-8 flex flex-col justify-between">
