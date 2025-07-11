@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useAppContext } from '@/context/app-context';
 import { Button } from '@/components/ui/button';
 import { PurchaseTicketDialog } from '@/components/purchase-ticket-dialog';
-import { Calendar, MapPin, Tag, Users, Mic, Clock, Building, Loader2, Share2, Twitter, Facebook, Linkedin } from 'lucide-react';
+import { Calendar, MapPin, Clock, Loader2, Share2, Twitter, Facebook, Linkedin, Building, Mic, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Event, Ticket } from '@/lib/types';
@@ -157,9 +157,9 @@ export default function EventDetailsPage() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 {event.activities.map(activity => (
-                                    <div key={activity.name} className="flex items-start gap-4">
-                                        <p className="text-sm text-primary font-semibold font-mono w-24 shrink-0">{activity.time}</p>
-                                        <div className="border-l-2 border-primary pl-4">
+                                    <div key={activity.name} className="flex items-start gap-4 p-4 border rounded-lg bg-muted/50">
+                                        <p className="text-sm text-primary font-semibold font-mono w-24 shrink-0 pt-1">{activity.time}</p>
+                                        <div className="flex-1">
                                             <h4 className="font-semibold">{activity.name}</h4>
                                             <p className="text-sm mt-1 text-muted-foreground">{activity.description}</p>
                                         </div>
@@ -174,10 +174,12 @@ export default function EventDetailsPage() {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2"><Building className="h-6 w-6 text-primary"/>Sponsors</CardTitle>
                             </CardHeader>
-                            <CardContent className="flex flex-wrap items-center gap-x-8 gap-y-4">
+                            <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                                 {event.sponsors.map(sponsor => (
-                                     <div key={sponsor.name} className="relative h-12 w-28 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all">
-                                        <Image src={sponsor.logoUrl || 'https://placehold.co/150x75.png'} alt={sponsor.name} fill className="object-contain" data-ai-hint="company logo"/>
+                                    <div key={sponsor.name} className="p-4 bg-muted/50 rounded-lg flex items-center justify-center">
+                                        <div className="relative h-16 w-full grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all">
+                                            <Image src={sponsor.logoUrl || 'https://placehold.co/150x75.png'} alt={sponsor.name} fill className="object-contain" data-ai-hint="company logo"/>
+                                        </div>
                                     </div>
                                 ))}
                             </CardContent>
