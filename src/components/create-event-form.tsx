@@ -613,8 +613,13 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                             name={`speakers.${index}.imageUrl`}
                             render={({ field }) => (
                               <FormItem className="lg:col-span-2">
-                                <FormLabel>Photo URL</FormLabel>
-                                <FormControl><Input placeholder="https://..." {...field} /></FormControl>
+                                <FormLabel>Photo</FormLabel>
+                                <FormControl>
+                                  <ImageUploader 
+                                    onUpload={field.onChange}
+                                    value={field.value}
+                                  />
+                                </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -732,8 +737,13 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                             name={`sponsors.${index}.logoUrl`}
                             render={({ field }) => (
                               <FormItem className="md:col-span-2">
-                                <FormLabel>Logo URL</FormLabel>
-                                <FormControl><Input placeholder="https://..." {...field} /></FormControl>
+                                <FormLabel>Logo</FormLabel>
+                                <FormControl>
+                                  <ImageUploader 
+                                    onUpload={field.onChange}
+                                    value={field.value}
+                                  />
+                                </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -760,5 +770,3 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
     </Form>
   );
 }
-
-    
