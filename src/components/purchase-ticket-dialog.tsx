@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-context';
 import type { Event } from '@/lib/types';
 import { format } from 'date-fns';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Minus, Plus } from 'lucide-react';
 
 interface PurchaseTicketDialogProps {
   event: Event;
@@ -40,6 +40,8 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
   const { addTicket } = useAppContext();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+
   const { register, handleSubmit, formState: { errors }, reset } = useForm<PurchaseFormValues>({
     resolver: zodResolver(purchaseSchema),
   });
@@ -47,15 +49,18 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
   const onSubmit = async (data: PurchaseFormValues) => {
     setIsSubmitting(true);
     try {
-        await addTicket({
-          eventId: event.id,
-          ...data,
-        });
+        for (let i = 0; i < quantity; i++) {
+            await addTicket({
+                eventId: event.id,
+                ...data,
+            });
+        }
         toast({
           title: 'Purchase Successful!',
-          description: `You've got a ticket for ${event.name}.`,
+          description: `You've got ${quantity} ticket(s) for ${event.name}.`,
         });
         reset();
+        setQuantity(1);
         onOpenChange(false);
     } catch(e) {
          toast({
@@ -69,14 +74,21 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
   };
   
   const eventDate = new Date(`${event.date}T${event.time}`);
+  const totalPrice = event.price * quantity;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+        if (!open) {
+            reset();
+            setQuantity(1);
+        }
+        onOpenChange(open);
+    }}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="font-headline">Purchase Ticket</DialogTitle>
           <DialogDescription>
-            You are about to purchase a ticket for {event.name}.
+            You are about to purchase tickets for {event.name}.
           </DialogDescription>
         </DialogHeader>
         <div className="my-4">
@@ -90,10 +102,6 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
                         </div>
                         <Badge variant="secondary">{event.category}</Badge>
                     </div>
-                </div>
-                <div className="bg-muted/50 px-4 py-3 flex justify-between items-center">
-                    <p className="text-sm text-muted-foreground">Price</p>
-                    <p className="text-lg font-bold">${event.price.toFixed(2)}</p>
                 </div>
             </div>
         </div>
@@ -109,7 +117,27 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
               <Input id="attendeeEmail" type="email" {...register('attendeeEmail')} />
               {errors.attendeeEmail && <p className="text-sm text-destructive">{errors.attendeeEmail.message}</p>}
             </div>
-            <DialogFooter>
+
+            <div className="flex items-center justify-between mt-4">
+                 <Label>Quantity</Label>
+                <div className="flex items-center gap-2">
+                    <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => Math.max(1, q-1))} disabled={quantity <= 1}>
+                        <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="font-bold text-lg w-10 text-center">{quantity}</span>
+                    <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => q+1)}>
+                        <Plus className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+
+             <div className="bg-muted/50 px-4 py-3 flex justify-between items-center rounded-md mt-4">
+                    <p className="text-sm font-medium text-muted-foreground">Total Price</p>
+                    <p className="text-xl font-bold">${totalPrice.toFixed(2)}</p>
+            </div>
+
+
+            <DialogFooter className="mt-6">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
