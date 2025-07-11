@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { QrScanner } from 'react-qr-scanner';
+import QrScanner from 'react-qr-scanner';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-context';
 import type { Ticket, Event } from '@/lib/types';
@@ -23,11 +23,11 @@ export function TicketScanner({ onScanSuccess }: TicketScannerProps) {
   const [event, setEvent] = useState<Event | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [scanResult, setScanResult] = useState<string | null>(null);
+  const [scanResult, setScanResult] = useState<any>(null);
 
   useEffect(() => {
     if (scanResult) {
-      handleScanResult(scanResult);
+      handleScanResult(scanResult.text);
     }
   }, [scanResult]);
 
@@ -178,11 +178,10 @@ export function TicketScanner({ onScanSuccess }: TicketScannerProps) {
     <div className="space-y-4">
       <div className="relative w-full aspect-square max-w-sm mx-auto overflow-hidden rounded-lg border">
         <QrScanner
-          onDecode={(result) => setScanResult(result)}
+          onResult={(result) => setScanResult(result)}
           onError={(error) => console.log(error?.message)}
-          constraints={{ facingMode: 'environment' }}
-          containerStyle={{ paddingTop: '100%' }}
-          videoStyle={{ objectFit: 'cover', top: '50%', transform: 'translateY(-50%)' }}
+          constraints={{ video: { facingMode: 'environment' } }}
+          style={{ width: '100%', height: '100%' }}
         />
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <ScanLine className="h-2/3 w-2/3 text-white/50 animate-pulse" />
