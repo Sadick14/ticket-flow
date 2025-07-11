@@ -36,7 +36,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const fetchEvents = useCallback(async () => {
     try {
       const eventsCollection = collection(db, 'events');
-      const eventSnapshot = await getDocs(eventsCollection);
+      const eventSnapshot = await getDocs(query(eventsCollection, orderBy('date', 'desc')));
       const eventsList = eventSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
       setEvents(eventsList);
     } catch (error) {
@@ -47,7 +47,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const fetchTickets = useCallback(async () => {
      try {
       const ticketsCollection = collection(db, 'tickets');
-      const ticketSnapshot = await getDocs(ticketsCollection);
+      const ticketSnapshot = await getDocs(query(ticketsCollection, orderBy('purchaseDate', 'desc')));
       const ticketsList = ticketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
       setTickets(ticketsList);
     } catch (error) {
@@ -66,10 +66,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addEvent = async (eventData: Omit<Event, 'id'>) => {
     try {
-      const docRef = await addDoc(collection(db, 'events'), eventData);
-      // Optimistic update
-      setEvents(prevEvents => [{ id: docRef.id, ...eventData } as Event, ...prevEvents]);
-      // Or fetch again to be sure
+      await addDoc(collection(db, 'events'), eventData);
       await fetchEvents();
     } catch (error) {
        console.error("Error adding event:", error);
@@ -81,9 +78,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       const eventRef = doc(db, 'events', id);
       await updateDoc(eventRef, eventData);
-      // Optimistic update
-      setEvents(prevEvents => prevEvents.map(event => event.id === id ? { ...event, ...eventData } : event));
-       // Or fetch again to be sure
       await fetchEvents();
     } catch (error) {
         console.error("Error updating event:", error);
@@ -91,16 +85,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  const deleteEvent = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'events', id));
+      await fetchEvents();
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      throw error;
+    }
+  };
+
   const addTicket = async (ticketData: Omit<Ticket, 'id' | 'purchaseDate'>) => {
     const newTicket = {
       ...ticketData,
       purchaseDate: new Date().toISOString(),
     };
     try {
-      const docRef = await addDoc(collection(db, 'tickets'), newTicket);
-      // Optimistic update
-      setTickets(prevTickets => [{ ...newTicket, id: docRef.id }, ...prevTickets]);
-       // Or fetch again to be sure
+      await addDoc(collection(db, 'tickets'), newTicket);
       await fetchTickets();
     } catch (error) {
        console.error("Error adding ticket:", error);
@@ -109,11 +110,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const getEventById = async (id: string): Promise<Event | undefined> => {
-    // First, check local state
     const localEvent = events.find(event => event.id === id);
     if (localEvent) return localEvent;
     
-    // If not found, fetch from Firestore
     setLoading(true);
     try {
       const docRef = doc(db, 'events', id);
@@ -127,20 +126,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error fetching event by ID:", error);
       return undefined;
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const getEventsByCreator = (creatorId: string): Event[] => {
+    return events.filter(event => event.creatorId === creatorId);
+  }
+
   const getUserTickets = (email: string): Ticket[] => {
     return tickets.filter(t => t.attendeeEmail.toLowerCase() === email.toLowerCase());
   }
-
-  const deleteEvent = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, 'events', id));
-      setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
-      await fetchEvents(); // Refresh to be sure
-    } catch (error) {
-      console.error("Error deleting event:", error);
-      throw error;
-    }
-  };
 
   const getTicketsByEvent = (eventId: string): Ticket[] => {
     return tickets.filter(ticket => ticket.eventId === eventId);
@@ -163,15 +159,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       totalRevenue: userTickets.reduce((sum, ticket) => sum + ticket.price, 0),
       upcomingEvents,
     };
-  };;
-
-  const getEventsByCreator = (creatorId: string): Event[] => {
-    return events.filter(event => event.creatorId === creatorId);
-  }
-
-  const getUserTickets = (email: string): Ticket[] => {
-    return tickets.filter(t => t.attendeeEmail.toLowerCase() === email.toLowerCase());
-  }
+  };
 
   return (
     <AppContext.Provider value={{ 
