@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
@@ -33,31 +32,50 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
+import type { Ticket } from '@/lib/types';
 
 export default function MarketingPage() {
   const { user } = useAuth();
-  const { events, getEventsByCreator } = useAppContext();
+  const { events, getEventsByCreator, tickets } = useAppContext();
   const { toast } = useToast();
-  const [selectedEvent, setSelectedEvent] = useState<string>('');
+  const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [emailTemplate, setEmailTemplate] = useState('');
   const [socialPost, setSocialPost] = useState('');
 
   const userEvents = user ? getEventsByCreator(user.uid) : [];
-  const selectedEventData = userEvents.find(e => e.id === selectedEvent);
+  const selectedEventData = userEvents.find(e => e.id === selectedEventId);
 
-  // Marketing stats (mock data - in real app, you'd track these)
+  const allUserTickets = useMemo(() => {
+    const userEventIds = new Set(userEvents.map(e => e.id));
+    return tickets.filter((ticket: Ticket) => userEventIds.has(ticket.eventId));
+  }, [tickets, userEvents]);
+  
   const marketingStats = useMemo(() => {
-    if (!selectedEventData) return null;
+    if (!selectedEventData) return {
+        views: 0,
+        clicks: 0,
+        shares: 0,
+        conversions: 0,
+      };
     
+    const eventTickets = allUserTickets.filter(t => t.eventId === selectedEventData.id);
+    const conversions = eventTickets.length;
+
+    // These are simplified calculations. Real-world stats would need a more complex tracking system.
+    const views = conversions * 20 + Math.floor(Math.random() * 50); // Guess views based on conversions
+    const clicks = conversions * 5 + Math.floor(Math.random() * 20); // Guess clicks based on conversions
+    const shares = conversions + Math.floor(Math.random() * 10); // Guess shares
+
     return {
-      views: Math.floor(Math.random() * 1000) + 100,
-      clicks: Math.floor(Math.random() * 100) + 20,
-      shares: Math.floor(Math.random() * 50) + 5,
-      conversions: Math.floor(Math.random() * 20) + 3,
+      views,
+      clicks,
+      shares,
+      conversions,
     };
-  }, [selectedEventData]);
+  }, [selectedEventData, allUserTickets]);
 
   const generateShareUrl = (eventId: string) => {
+    if (typeof window === 'undefined') return '';
     return `${window.location.origin}/events/${eventId}`;
   };
 
@@ -136,11 +154,9 @@ Get your tickets now: ${generateShareUrl(event.id)}
   const downloadQRCode = async () => {
     if (!selectedEventData) return;
     
-    // In a real app, you would generate an actual QR code
-    // For now, we'll just show a success message
     toast({
       title: 'QR Code Generated',
-      description: 'QR code for your event has been created!',
+      description: 'In a real app, a QR code for your event would be downloaded.',
     });
   };
 
@@ -170,7 +186,7 @@ Get your tickets now: ${generateShareUrl(event.id)}
           <CardDescription>Choose which event you want to create marketing materials for</CardDescription>
         </CardHeader>
         <CardContent>
-          <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+          <Select value={selectedEventId} onValueChange={setSelectedEventId}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select an event to promote" />
             </SelectTrigger>
@@ -211,7 +227,7 @@ Get your tickets now: ${generateShareUrl(event.id)}
                 <CardContent>
                   <div className="text-2xl font-bold">{marketingStats.views}</div>
                   <p className="text-xs text-muted-foreground">
-                    Event page visits
+                    Estimated event page visits
                   </p>
                 </CardContent>
               </Card>
@@ -223,7 +239,7 @@ Get your tickets now: ${generateShareUrl(event.id)}
                 <CardContent>
                   <div className="text-2xl font-bold">{marketingStats.clicks}</div>
                   <p className="text-xs text-muted-foreground">
-                    From marketing campaigns
+                    Estimated from campaigns
                   </p>
                 </CardContent>
               </Card>
@@ -235,7 +251,7 @@ Get your tickets now: ${generateShareUrl(event.id)}
                 <CardContent>
                   <div className="text-2xl font-bold">{marketingStats.shares}</div>
                   <p className="text-xs text-muted-foreground">
-                    Across all platforms
+                    Estimated across platforms
                   </p>
                 </CardContent>
               </Card>
@@ -247,7 +263,7 @@ Get your tickets now: ${generateShareUrl(event.id)}
                 <CardContent>
                   <div className="text-2xl font-bold">{marketingStats.conversions}</div>
                   <p className="text-xs text-muted-foreground">
-                    Tickets sold from marketing
+                    Tickets sold for this event
                   </p>
                 </CardContent>
               </Card>

@@ -14,7 +14,6 @@ import {
   TrendingUp, 
   CreditCard, 
   Calendar,
-  Users,
   BarChart3,
   Download,
   Eye
@@ -25,13 +24,15 @@ import type { Ticket, Event } from '@/lib/types';
 
 export default function SalesPage() {
   const { user } = useAuth();
-  const { events, tickets, getEventsByCreator, getTicketsByEvent } = useAppContext();
+  const { events, tickets, getEventsByCreator } = useAppContext();
   const [timeRange, setTimeRange] = useState('30d');
 
   const userEvents = user ? getEventsByCreator(user.uid) : [];
-  const allTickets = tickets.filter((ticket: Ticket) => 
-    userEvents.some((event: Event) => event.id === ticket.eventId)
-  );
+  
+  const allUserTickets = useMemo(() => {
+    const userEventIds = new Set(userEvents.map(e => e.id));
+    return tickets.filter((ticket: Ticket) => userEventIds.has(ticket.eventId));
+  }, [tickets, userEvents]);
 
   // Calculate time range
   const getDateRange = () => {
@@ -52,10 +53,10 @@ export default function SalesPage() {
 
   const dateRange = getDateRange();
   
-  const filteredTickets = allTickets.filter(ticket => {
+  const filteredTickets = useMemo(() => allUserTickets.filter(ticket => {
     const purchaseDate = parseISO(ticket.purchaseDate);
     return purchaseDate >= dateRange.start && purchaseDate <= dateRange.end;
-  });
+  }), [allUserTickets, dateRange]);
 
   // Sales stats
   const salesStats = useMemo(() => {
@@ -66,52 +67,45 @@ export default function SalesPage() {
     // Compare with previous period
     const periodLength = Math.abs(dateRange.end.getTime() - dateRange.start.getTime());
     const previousStart = new Date(dateRange.start.getTime() - periodLength);
-    const previousTickets = allTickets.filter(ticket => {
+    const previousTickets = allUserTickets.filter(ticket => {
       const purchaseDate = parseISO(ticket.purchaseDate);
       return purchaseDate >= previousStart && purchaseDate < dateRange.start;
     });
     
     const previousRevenue = previousTickets.reduce((sum, ticket) => sum + ticket.price, 0);
-    const revenueGrowth = previousRevenue === 0 ? 0 : ((totalRevenue - previousRevenue) / previousRevenue) * 100;
+    const revenueGrowth = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : totalRevenue > 0 ? 100 : 0;
 
     return {
       totalRevenue,
       totalTickets,
       averageTicketPrice,
       revenueGrowth,
-      previousRevenue,
     };
-  }, [filteredTickets, allTickets, dateRange]);
+  }, [filteredTickets, allUserTickets, dateRange]);
 
   // Event performance
   const eventPerformance = useMemo(() => {
     return userEvents.map(event => {
-      const eventTickets = getTicketsByEvent(event.id);
-      const filteredEventTickets = eventTickets.filter(ticket => {
-        const purchaseDate = parseISO(ticket.purchaseDate);
-        return purchaseDate >= dateRange.start && purchaseDate <= dateRange.end;
-      });
-      
-      const revenue = filteredEventTickets.reduce((sum, ticket) => sum + ticket.price, 0);
-      const ticketsSold = filteredEventTickets.length;
-      const capacity = event.capacity;
-      const salesRate = (ticketsSold / capacity) * 100;
+      const eventTickets = allUserTickets.filter(t => t.eventId === event.id);
+      const totalRevenue = eventTickets.reduce((sum, ticket) => sum + ticket.price, 0);
+      const totalTicketsSold = eventTickets.length;
+      const salesRate = event.capacity > 0 ? (totalTicketsSold / event.capacity) * 100 : 0;
 
       return {
         ...event,
-        revenue,
-        ticketsSold,
+        totalRevenue,
+        totalTicketsSold,
         salesRate,
-        totalTicketsSold: eventTickets.length,
-        totalRevenue: eventTickets.reduce((sum, ticket) => sum + ticket.price, 0),
       };
-    }).sort((a, b) => b.revenue - a.revenue);
-  }, [userEvents, getTicketsByEvent, dateRange]);
+    }).sort((a, b) => b.totalRevenue - a.totalRevenue);
+  }, [userEvents, allUserTickets]);
 
   // Daily sales chart data
   const dailySales = useMemo(() => {
+    if (filteredTickets.length === 0) return [];
+    
     const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
-    return days.map(day => {
+    const data = days.map(day => {
       const dayTickets = filteredTickets.filter(ticket => {
         const purchaseDate = parseISO(ticket.purchaseDate);
         return format(purchaseDate, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd');
@@ -123,6 +117,8 @@ export default function SalesPage() {
         tickets: dayTickets.length,
       };
     });
+
+    return data.filter(d => d.revenue > 0 || d.tickets > 0);
   }, [filteredTickets, dateRange]);
 
   const exportSalesData = () => {
@@ -252,7 +248,7 @@ export default function SalesPage() {
                         <span>${day.revenue.toFixed(2)}</span>
                       </div>
                       <Progress 
-                        value={Math.max((day.revenue / Math.max(...dailySales.map(d => d.revenue))) * 100, 5)} 
+                        value={Math.max((day.revenue / Math.max(...dailySales.map(d => d.revenue), 1)) * 100, 5)} 
                         className="h-2"
                       />
                     </div>

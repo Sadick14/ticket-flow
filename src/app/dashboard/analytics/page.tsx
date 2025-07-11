@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react';
 import { useAppContext } from '@/context/app-context';
 import { useAuth } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -23,6 +22,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO, subDays, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 import Link from 'next/link';
+import type { Ticket } from '@/lib/types';
 
 export default function AnalyticsPage() {
   const { user } = useAuth();
@@ -31,6 +31,11 @@ export default function AnalyticsPage() {
 
   const userEvents = user ? getEventsByCreator(user.uid) : [];
   const stats = user ? getEventStats(user.uid) : { totalEvents: 0, totalTicketsSold: 0, totalRevenue: 0, upcomingEvents: 0 };
+
+  const allUserTickets = useMemo(() => {
+    const userEventIds = new Set(userEvents.map(e => e.id));
+    return tickets.filter((ticket: Ticket) => userEventIds.has(ticket.eventId));
+  }, [tickets, userEvents]);
 
   // Calculate time range
   const getDateRange = () => {
@@ -53,19 +58,17 @@ export default function AnalyticsPage() {
 
   // Analytics data
   const analyticsData = useMemo(() => {
-    const allTickets = tickets.filter(ticket => 
-      userEvents.some(event => event.id === ticket.eventId)
-    );
-
-    const filteredTickets = allTickets.filter(ticket => {
+    const filteredTickets = allUserTickets.filter(ticket => {
       const purchaseDate = parseISO(ticket.purchaseDate);
       return purchaseDate >= dateRange.start && purchaseDate <= dateRange.end;
     });
 
     // Category breakdown
     const categoryBreakdown = userEvents.reduce((acc, event) => {
-      const eventTickets = allTickets.filter(t => t.eventId === event.id);
-      acc[event.category] = (acc[event.category] || 0) + eventTickets.length;
+      const eventTickets = allUserTickets.filter(t => t.eventId === event.id);
+      if (eventTickets.length > 0) {
+        acc[event.category] = (acc[event.category] || 0) + eventTickets.length;
+      }
       return acc;
     }, {} as Record<string, number>);
 
@@ -81,13 +84,14 @@ export default function AnalyticsPage() {
         tickets: dayTickets.length,
         revenue: dayTickets.reduce((sum, ticket) => sum + ticket.price, 0),
       };
-    });
+    }).filter(d => d.revenue > 0 || d.tickets > 0);
+
 
     // Top performing events
     const topEvents = userEvents.map(event => {
-      const eventTickets = allTickets.filter(t => t.eventId === event.id);
+      const eventTickets = allUserTickets.filter(t => t.eventId === event.id);
       const revenue = eventTickets.reduce((sum, ticket) => sum + ticket.price, 0);
-      const salesRate = (eventTickets.length / event.capacity) * 100;
+      const salesRate = event.capacity > 0 ? (eventTickets.length / event.capacity) * 100 : 0;
       
       return {
         ...event,
@@ -100,16 +104,16 @@ export default function AnalyticsPage() {
     // Calculate growth metrics
     const periodLength = Math.abs(dateRange.end.getTime() - dateRange.start.getTime());
     const previousStart = new Date(dateRange.start.getTime() - periodLength);
-    const previousTickets = allTickets.filter(ticket => {
+    const previousTickets = allUserTickets.filter(ticket => {
       const purchaseDate = parseISO(ticket.purchaseDate);
       return purchaseDate >= previousStart && purchaseDate < dateRange.start;
     });
 
     const currentRevenue = filteredTickets.reduce((sum, ticket) => sum + ticket.price, 0);
     const previousRevenue = previousTickets.reduce((sum, ticket) => sum + ticket.price, 0);
-    const revenueGrowth = previousRevenue === 0 ? 0 : ((currentRevenue - previousRevenue) / previousRevenue) * 100;
     
-    const attendeeGrowth = previousTickets.length === 0 ? 0 : ((filteredTickets.length - previousTickets.length) / previousTickets.length) * 100;
+    const revenueGrowth = previousRevenue > 0 ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : (currentRevenue > 0 ? 100 : 0);
+    const attendeeGrowth = previousTickets.length > 0 ? ((filteredTickets.length - previousTickets.length) / previousTickets.length) * 100 : (filteredTickets.length > 0 ? 100 : 0);
 
     return {
       categoryBreakdown,
@@ -121,7 +125,7 @@ export default function AnalyticsPage() {
       attendeeGrowth,
       averageTicketPrice: filteredTickets.length > 0 ? currentRevenue / filteredTickets.length : 0,
     };
-  }, [userEvents, tickets, dateRange]);
+  }, [userEvents, allUserTickets, dateRange]);
 
   const exportAnalytics = () => {
     const csvContent = [
@@ -130,9 +134,9 @@ export default function AnalyticsPage() {
       ['Total Revenue', `$${stats.totalRevenue.toFixed(2)}`],
       ['Total Tickets Sold', stats.totalTicketsSold],
       ['Upcoming Events', stats.upcomingEvents],
-      ['Revenue Growth', `${analyticsData.revenueGrowth.toFixed(1)}%`],
-      ['Attendee Growth', `${analyticsData.attendeeGrowth.toFixed(1)}%`],
-      ['Average Ticket Price', `$${analyticsData.averageTicketPrice.toFixed(2)}`],
+      ['Revenue Growth (current period)', `${analyticsData.revenueGrowth.toFixed(1)}%`],
+      ['Attendee Growth (current period)', `${analyticsData.attendeeGrowth.toFixed(1)}%`],
+      ['Average Ticket Price (current period)', `$${analyticsData.averageTicketPrice.toFixed(2)}`],
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -267,7 +271,7 @@ export default function AnalyticsPage() {
                       <span>${day.revenue.toFixed(2)}</span>
                     </div>
                     <Progress 
-                      value={Math.max((day.revenue / Math.max(...analyticsData.weeklyData.map(d => d.revenue))) * 100, 2)} 
+                      value={Math.max((day.revenue / Math.max(...analyticsData.weeklyData.map(d => d.revenue), 1)) * 100, 2)} 
                       className="h-2"
                     />
                   </div>
@@ -286,7 +290,7 @@ export default function AnalyticsPage() {
               <PieChart className="h-5 w-5" />
               Event Categories
             </CardTitle>
-            <CardDescription>Ticket sales by event category</CardDescription>
+            <CardDescription>Ticket sales by event category (all time)</CardDescription>
           </CardHeader>
           <CardContent>
             {Object.keys(analyticsData.categoryBreakdown).length === 0 ? (
@@ -299,7 +303,7 @@ export default function AnalyticsPage() {
                 {Object.entries(analyticsData.categoryBreakdown)
                   .sort(([,a], [,b]) => b - a)
                   .map(([category, tickets]) => {
-                    const percentage = (tickets / stats.totalTicketsSold) * 100;
+                    const percentage = stats.totalTicketsSold > 0 ? (tickets / stats.totalTicketsSold) * 100 : 0;
                     return (
                       <div key={category} className="space-y-2">
                         <div className="flex justify-between text-sm">
@@ -322,7 +326,7 @@ export default function AnalyticsPage() {
               <Award className="h-5 w-5" />
               Top Performing Events
             </CardTitle>
-            <CardDescription>Your most successful events by revenue</CardDescription>
+            <CardDescription>Your most successful events by revenue (all time)</CardDescription>
           </CardHeader>
           <CardContent>
             {analyticsData.topEvents.length === 0 ? (
