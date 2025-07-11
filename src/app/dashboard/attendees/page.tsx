@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -16,7 +17,7 @@ import type { Ticket, Event } from '@/lib/types';
 
 export default function AttendeesPage() {
   const { user } = useAuth();
-  const { events, tickets, getEventsByCreator, getTicketsByEvent } = useAppContext();
+  const { events, tickets, getEventsByCreator } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<string>('all');
 
@@ -34,6 +35,7 @@ export default function AttendeesPage() {
         eventName: event?.name || 'Unknown Event',
         eventDate: event?.date || '',
         eventLocation: event?.location || '',
+        price: event?.price || 0,
       };
     });
   }, [tickets, userEvents]);
