@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import type { Ticket, Event } from '@/lib/types';
 import { format } from 'date-fns';
 import { Printer, Ticket as TicketIcon, Calendar, Clock, MapPin, Building } from 'lucide-react';
-import Image from 'next/image';
+import { Badge } from '@/components/ui/badge';
 
 interface ViewTicketDialogProps {
   ticket: Ticket;
