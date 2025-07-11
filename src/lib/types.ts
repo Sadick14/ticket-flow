@@ -43,6 +43,7 @@ export interface Ticket {
   attendeeName: string;
   attendeeEmail: string;
   purchaseDate: string;
+  checkedIn: boolean;
 }
 
 export type SubscriptionPlan = 'Free' | 'Starter' | 'Pro';

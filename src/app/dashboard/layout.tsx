@@ -25,6 +25,7 @@ import {
   Users,
   Megaphone,
   CreditCard,
+  QrCode,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/context/auth-context';
@@ -99,6 +100,20 @@ export default function DashboardLayout({
                   <Link href="/dashboard/attendees">
                     <Users />
                     <span>Attendees</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/dashboard/scanner')}
+                  tooltip={{
+                    children: 'Ticket Scanner',
+                  }}
+                >
+                  <Link href="/dashboard/scanner">
+                    <QrCode />
+                    <span>Ticket Scanner</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -187,6 +202,7 @@ export default function DashboardLayout({
                     <h1 className="text-lg font-semibold">
                       {pathname === '/dashboard' && 'My Events'}
                       {pathname === '/dashboard/attendees' && 'Attendees'}
+                      {pathname === '/dashboard/scanner' && 'Ticket Scanner'}
                       {pathname === '/dashboard/sales' && 'Sales & Revenue'}
                       {pathname === '/dashboard/analytics' && 'Analytics Dashboard'}
                       {pathname === '/dashboard/marketing' && 'Marketing Tools'}

@@ -11,9 +11,11 @@ interface AppContextType {
   tickets: Ticket[];
   loading: boolean;
   addEvent: (event: Omit<Event, 'id'>) => Promise<void>;
-  updateEvent: (id: string, eventData: Omit<Event, 'id'>) => Promise<void>;
+  updateEvent: (id: string, eventData: Partial<Omit<Event, 'id'>>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
-  addTicket: (ticket: Omit<Ticket, 'id' | 'purchaseDate'>) => Promise<void>;
+  addTicket: (ticket: Omit<Ticket, 'id' | 'purchaseDate' | 'checkedIn'>) => Promise<void>;
+  checkInTicket: (id: string) => Promise<void>;
+  getTicketById: (id: string) => Promise<Ticket | undefined>;
   getEventById: (id: string) => Promise<Event | undefined>;
   getEventsByCreator: (creatorId: string) => Event[];
   getUserTickets: (email: string) => Ticket[];
@@ -48,7 +50,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
      try {
       const ticketsCollection = collection(db, 'tickets');
       const ticketSnapshot = await getDocs(query(ticketsCollection, orderBy('purchaseDate', 'desc')));
-      const ticketsList = ticketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
+      const ticketsList = ticketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), checkedIn: doc.data().checkedIn || false } as Ticket));
       setTickets(ticketsList);
     } catch (error) {
       console.error("Error fetching tickets:", error);
@@ -74,7 +76,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateEvent = async (id: string, eventData: Omit<Event, 'id'>) => {
+  const updateEvent = async (id: string, eventData: Partial<Omit<Event, 'id'>>) => {
     try {
       const eventRef = doc(db, 'events', id);
       await updateDoc(eventRef, eventData);
@@ -95,10 +97,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addTicket = async (ticketData: Omit<Ticket, 'id' | 'purchaseDate'>) => {
+  const addTicket = async (ticketData: Omit<Ticket, 'id' | 'purchaseDate' | 'checkedIn'>) => {
     const newTicket = {
       ...ticketData,
       purchaseDate: new Date().toISOString(),
+      checkedIn: false,
     };
     try {
       await addDoc(collection(db, 'tickets'), newTicket);
@@ -108,12 +111,40 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
        throw error;
     }
   };
+
+  const checkInTicket = async (id: string) => {
+    try {
+      const ticketRef = doc(db, 'tickets', id);
+      await updateDoc(ticketRef, { checkedIn: true });
+      await fetchTickets();
+    } catch (error) {
+      console.error("Error checking in ticket:", error);
+      throw error;
+    }
+  };
   
+  const getTicketById = async (id: string): Promise<Ticket | undefined> => {
+    const localTicket = tickets.find(ticket => ticket.id === id);
+    if (localTicket) return localTicket;
+
+    try {
+        const docRef = doc(db, 'tickets', id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return { id: docSnap.id, ...docSnap.data() } as Ticket;
+        } else {
+            return undefined;
+        }
+    } catch (error) {
+        console.error("Error fetching ticket by ID:", error);
+        return undefined;
+    }
+  };
+
   const getEventById = async (id: string): Promise<Event | undefined> => {
     const localEvent = events.find(event => event.id === id);
     if (localEvent) return localEvent;
     
-    setLoading(true);
     try {
       const docRef = doc(db, 'events', id);
       const docSnap = await getDoc(docRef);
@@ -125,8 +156,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Error fetching event by ID:", error);
       return undefined;
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -170,6 +199,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       updateEvent, 
       deleteEvent,
       addTicket, 
+      checkInTicket,
+      getTicketById,
       getEventById, 
       getEventsByCreator, 
       getUserTickets,

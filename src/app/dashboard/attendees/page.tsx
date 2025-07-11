@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Mail, MapPin, Search, Users, Download, Filter } from 'lucide-react';
+import { Calendar, Mail, MapPin, Search, Users, Download, CheckCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import type { Ticket, Event } from '@/lib/types';
 
@@ -68,7 +68,7 @@ export default function AttendeesPage() {
 
   const exportAttendees = () => {
     const csvContent = [
-      ['Name', 'Email', 'Event', 'Date', 'Location', 'Purchase Date', 'Price'].join(','),
+      ['Name', 'Email', 'Event', 'Date', 'Location', 'Purchase Date', 'Price', 'Checked In'].join(','),
       ...filteredAttendees.map((attendee: any) => [
         attendee.attendeeName,
         attendee.attendeeEmail,
@@ -76,7 +76,8 @@ export default function AttendeesPage() {
         attendee.eventDate,
         attendee.eventLocation,
         format(parseISO(attendee.purchaseDate), 'yyyy-MM-dd'),
-        `$${attendee.price.toFixed(2)}`
+        `$${attendee.price.toFixed(2)}`,
+        attendee.checkedIn ? 'Yes' : 'No'
       ].join(','))
     ].join('\n');
 
@@ -203,8 +204,7 @@ export default function AttendeesPage() {
                   <TableRow>
                     <TableHead>Attendee</TableHead>
                     <TableHead>Event</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Location</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Purchase Date</TableHead>
                     <TableHead className="text-right">Price</TableHead>
                   </TableRow>
@@ -227,18 +227,19 @@ export default function AttendeesPage() {
                       </TableCell>
                       <TableCell>
                         <div className="font-medium">{attendee.eventName}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3 text-muted-foreground" />
-                          {format(parseISO(attendee.eventDate), 'MMM dd, yyyy')}
+                        <div className="text-xs text-muted-foreground">
+                            {format(parseISO(attendee.eventDate), 'MMM dd, yyyy')}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-sm">{attendee.eventLocation}</span>
-                        </div>
+                        {attendee.checkedIn ? (
+                            <Badge variant="secondary" className="text-green-600 border-green-600/50">
+                                <CheckCircle className="mr-1 h-3 w-3" />
+                                Checked In
+                            </Badge>
+                        ) : (
+                            <Badge variant="outline">Pending</Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         {format(parseISO(attendee.purchaseDate), 'MMM dd, yyyy')}
