@@ -10,16 +10,88 @@ import { ViewTicketDialog } from '@/components/view-ticket-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Ticket as TicketIcon, Loader2 } from 'lucide-react';
+import { Ticket as TicketIcon, Loader2, Calendar, MapPin, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
+function TicketCard({ ticket }: { ticket: Ticket }) {
+  const { getEventById } = useAppContext();
+  const [event, setEvent] = useState<Event | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchEvent = async () => {
+      const eventData = await getEventById(ticket.eventId);
+      if (eventData) setEvent(eventData);
+    };
+    fetchEvent();
+  }, [ticket.eventId, getEventById]);
+
+  if (!event) {
+    return (
+      <Card className="overflow-hidden sm:flex transition-all hover:shadow-md p-6 h-[124px] items-center">
+        <Loader2 className="h-5 w-5 animate-spin" />
+      </Card>
+    );
+  }
+
+  const eventDate = new Date(`${event.date}T${event.time}`);
+
+  return (
+    <>
+      <Card
+        className="overflow-hidden transition-all hover:shadow-lg cursor-pointer"
+        onClick={() => setIsViewModalOpen(true)}
+      >
+        <div className="flex">
+          <div className="relative h-auto w-32 flex-shrink-0 hidden sm:block">
+            <Image
+              src={event.imageUrl}
+              alt={event.name}
+              layout="fill"
+              objectFit="cover"
+              data-ai-hint={`${event.category.toLowerCase()}`}
+            />
+          </div>
+          <CardContent className="p-4 sm:p-6 flex-grow flex justify-between items-center gap-4">
+            <div className="flex-grow">
+              <p className="text-sm text-primary font-semibold">{event.category.toUpperCase()}</p>
+              <h2 className="text-xl font-bold font-headline">{event.name}</h2>
+              <div className="text-muted-foreground text-sm mt-2 space-y-1">
+                 <div className="flex items-center">
+                   <Calendar className="mr-2 h-4 w-4" />
+                   <span>{format(eventDate, 'eee, MMM dd, yyyy')} at {format(eventDate, 'p')}</span>
+                 </div>
+                 <div className="flex items-center">
+                    <MapPin className="mr-2 h-4 w-4" />
+                    <span>{event.location}</span>
+                 </div>
+              </div>
+            </div>
+            <div className="flex items-center">
+                <Button variant="ghost" size="icon">
+                    <ChevronRight className="h-6 w-6" />
+                </Button>
+            </div>
+          </CardContent>
+        </div>
+      </Card>
+      {event && (
+        <ViewTicketDialog
+          ticket={ticket}
+          event={event}
+          isOpen={isViewModalOpen}
+          onOpenChange={setIsViewModalOpen}
+        />
+      )}
+    </>
+  );
+}
+
+
 export default function TicketsPage() {
   const { user, loading: authLoading } = useAuth();
-  const { getUserTickets, getEventById, loading: appLoading } = useAppContext();
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const { getUserTickets, loading: appLoading } = useAppContext();
   const [attendeeEmail, setAttendeeEmail] = useState<string | null>(null);
   const [emailInput, setEmailInput] = useState('');
 
@@ -28,15 +100,6 @@ export default function TicketsPage() {
       setAttendeeEmail(user.email);
     }
   }, [user]);
-
-  const handleViewTicket = async (ticket: Ticket) => {
-    const event = await getEventById(ticket.eventId);
-    if (event) {
-      setSelectedTicket(ticket);
-      setSelectedEvent(event);
-      setIsViewModalOpen(true);
-    }
-  };
 
   const handleShowTickets = () => {
     if (emailInput) {
@@ -56,7 +119,7 @@ export default function TicketsPage() {
 
   return (
     <>
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="mb-12">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground font-headline">My Tickets</h1>
           <p className="mt-2 text-lg text-muted-foreground">Here are all the tickets you have purchased.</p>
@@ -84,41 +147,7 @@ export default function TicketsPage() {
             </Card>
         ) : userTickets.length > 0 ? (
           <div className="space-y-6">
-            {userTickets.map(ticket => {
-              const [event, setEvent] = useState<Event | null>(null);
-              
-              useEffect(() => {
-                  const fetchEvent = async () => {
-                      const eventData = await getEventById(ticket.eventId);
-                      if (eventData) setEvent(eventData);
-                  }
-                  fetchEvent();
-              }, [ticket.eventId]);
-
-              if (!event) return (
-                <Card key={ticket.id} className="overflow-hidden sm:flex transition-all hover:shadow-md p-6">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                </Card>
-              );
-
-              const eventDate = new Date(`${event.date}T${event.time}`);
-
-              return (
-                <Card key={ticket.id} className="overflow-hidden sm:flex transition-all hover:shadow-md">
-                   <div className="relative h-48 sm:h-auto sm:w-48 flex-shrink-0">
-                     <Image src={event.imageUrl} alt={event.name} layout="fill" objectFit="cover" data-ai-hint={`${event.category.toLowerCase()}`} />
-                   </div>
-                   <CardContent className="p-6 flex-grow flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                     <div className="flex-grow">
-                        <h2 className="text-xl font-bold font-headline">{event.name}</h2>
-                        <p className="text-muted-foreground mt-1">{format(eventDate, 'PPPp')}</p>
-                        <p className="text-muted-foreground">{event.location}</p>
-                     </div>
-                     <Button onClick={() => handleViewTicket(ticket)}>View Ticket</Button>
-                   </CardContent>
-                </Card>
-              );
-            })}
+            {userTickets.map(ticket => <TicketCard key={ticket.id} ticket={ticket} />)}
           </div>
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
@@ -133,15 +162,6 @@ export default function TicketsPage() {
           </div>
         )}
       </div>
-
-      {selectedTicket && selectedEvent && (
-        <ViewTicketDialog
-          ticket={selectedTicket}
-          event={selectedEvent}
-          isOpen={isViewModalOpen}
-          onOpenChange={setIsViewModalOpen}
-        />
-      )}
     </>
   );
 }
