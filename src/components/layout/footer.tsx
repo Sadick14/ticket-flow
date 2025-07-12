@@ -28,9 +28,9 @@ export function Footer() {
           <div>
             <h3 className="text-sm font-semibold text-primary-foreground/80 tracking-wider uppercase font-headline">Support</h3>
             <ul className="mt-4 space-y-2">
-              <li><a href="#" className="text-base text-primary-foreground/70 hover:text-primary-foreground">Help Center</a></li>
-              <li><a href="#" className="text-base text-primary-foreground/70 hover:text-primary-foreground">Contact Us</a></li>
-              <li><a href="#" className="text-base text-primary-foreground/70 hover:text-primary-foreground">Privacy Policy</a></li>
+              <li><Link href="/help-center" className="text-base text-primary-foreground/70 hover:text-primary-foreground">Help Center</Link></li>
+              <li><Link href="/contact" className="text-base text-primary-foreground/70 hover:text-primary-foreground">Contact Us</Link></li>
+              <li><Link href="/privacy" className="text-base text-primary-foreground/70 hover:text-primary-foreground">Privacy Policy</Link></li>
             </ul>
           </div>
         </div>
