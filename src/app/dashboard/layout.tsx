@@ -193,7 +193,7 @@ export default function DashboardLayout({
                 </Avatar>
                 <div className="flex-1 overflow-hidden">
                     <p className="text-sm font-medium truncate">{user.displayName}</p>
-                    <Badge variant="outline" className="mt-1">{user.subscriptionPlan} Plan</Badge>
+                    <Badge variant="secondary" className="mt-1">{user.subscriptionPlan} Plan</Badge>
                 </div>
                  <Button variant="ghost" size="icon" onClick={signOut} className="ml-auto flex-shrink-0">
                     <LogOut className="h-5 w-5" />
