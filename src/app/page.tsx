@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { EventCard } from '@/components/event-card';
 import { useAppContext } from '@/context/app-context';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowRight, Newspaper, CalendarX } from 'lucide-react';
+import { ArrowRight, Newspaper, CalendarX, Share2 } from 'lucide-react';
 import { useMemo } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
@@ -147,20 +147,17 @@ export default function Home() {
                   <CalendarX className="mx-auto h-12 w-12 text-muted-foreground" />
                   <h3 className="mt-4 text-lg font-medium text-foreground">No Events Yet</h3>
                   <p className="mt-1 text-sm text-muted-foreground">Check back soon for new and exciting events!</p>
-                   <div className="mt-6">
-                    <Button asChild>
-                      <Link href="/create">Create Your First Event</Link>
-                    </Button>
-                  </div>
                 </div>
               )}
             </div>
             
-            <div className="mt-16 text-center">
-                <Button asChild size="lg">
-                    <Link href="/events">View All Events</Link>
-                </Button>
-            </div>
+            {recentEvents.length > 0 && (
+              <div className="mt-16 text-center">
+                  <Button asChild size="lg">
+                      <Link href="/events">View All Events</Link>
+                  </Button>
+              </div>
+            )}
           </div>
         </section>
 
