@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Event } from '@/lib/types';
-import { Calendar, MapPin, Tag, Edit } from 'lucide-react';
+import { Calendar, MapPin, Tag, Edit, Video } from 'lucide-react';
 import { format } from 'date-fns';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -45,8 +45,17 @@ export function EventCard({ event }: EventCardProps) {
             <span>{format(eventDate, 'PPPp')}</span>
           </div>
           <div className="flex items-center text-sm text-muted-foreground">
-            <MapPin className="mr-2 h-4 w-4" />
-            <span>{event.location}</span>
+            {event.venueType === 'online' ? (
+                <>
+                    <Video className="mr-2 h-4 w-4" />
+                    <span>Online Event</span>
+                </>
+            ) : (
+                <>
+                    <MapPin className="mr-2 h-4 w-4" />
+                    <span>{event.location}</span>
+                </>
+            )}
           </div>
           <div className="flex items-center text-sm text-muted-foreground">
               <Tag className="mr-2 h-4 w-4" />

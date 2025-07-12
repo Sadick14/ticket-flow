@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useAppContext } from '@/context/app-context';
 import { Button } from '@/components/ui/button';
 import { PurchaseTicketDialog } from '@/components/purchase-ticket-dialog';
-import { Calendar, MapPin, Clock, Loader2, Share2, Twitter, Facebook, Linkedin, Building, Mic, Users } from 'lucide-react';
+import { Calendar, MapPin, Clock, Loader2, Share2, Twitter, Facebook, Linkedin, Building, Mic, Users, Video, LinkIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Event, Ticket } from '@/lib/types';
@@ -201,10 +201,17 @@ export default function EventDetailsPage() {
                                     <Clock className="mr-3 h-4 w-4"/>
                                     <span>{format(startDate, 'p')}</span>
                                 </div>
-                                <div className="flex items-center">
-                                    <MapPin className="mr-3 h-4 w-4"/>
-                                    <span>{event.location}</span>
-                                </div>
+                                {event.venueType === 'online' ? (
+                                     <div className="flex items-center">
+                                        <Video className="mr-3 h-4 w-4"/>
+                                        <span>Online Event</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center">
+                                        <MapPin className="mr-3 h-4 w-4"/>
+                                        <span>{event.location}</span>
+                                    </div>
+                                )}
                             </div>
                             
                             <div className="pt-4 border-t">
@@ -213,9 +220,17 @@ export default function EventDetailsPage() {
                                 <p className="text-xs text-muted-foreground mt-1">{ticketsLeft} tickets remaining</p>
                             </div>
 
-                            <Button className="w-full" size="lg" onClick={() => setIsPurchaseModalOpen(true)}>
-                                Get Tickets
-                            </Button>
+                             {event.venueType === 'online' && event.onlineUrl ? (
+                                <Button className="w-full" size="lg" asChild>
+                                    <a href={event.onlineUrl} target="_blank" rel="noopener noreferrer">
+                                        Join Event <LinkIcon className="ml-2 h-4 w-4"/>
+                                    </a>
+                                </Button>
+                            ) : (
+                                <Button className="w-full" size="lg" onClick={() => setIsPurchaseModalOpen(true)}>
+                                    Get Tickets
+                                </Button>
+                            )}
                         </CardContent>
                     </Card>
                     <Card>

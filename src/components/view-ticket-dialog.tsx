@@ -4,16 +4,17 @@
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
+  DialogFooter,
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import type { Ticket, Event } from '@/lib/types';
 import { format } from 'date-fns';
-import { Printer, Ticket as TicketIcon, Calendar, Clock, MapPin, Building } from 'lucide-react';
+import { Printer, Ticket as TicketIcon, Calendar, Clock, MapPin, Building, Video, Link as LinkIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 interface ViewTicketDialogProps {
   ticket: Ticket;
@@ -47,7 +48,7 @@ export function ViewTicketDialog({ ticket, event, isOpen, onOpenChange }: ViewTi
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl p-0 gap-0 print:shadow-none print:border-none">
         <DialogHeader className="sr-only">
-          <DialogTitle>Event Ticket</DialogTitle>
+          <DialogTitle>Event Ticket for {event.name}</DialogTitle>
           <DialogDescription>Your ticket for {event.name}.</DialogDescription>
         </DialogHeader>
         <div id="ticket-to-print" className="bg-background rounded-lg flex flex-col sm:flex-row">
@@ -74,10 +75,21 @@ export function ViewTicketDialog({ ticket, event, isOpen, onOpenChange }: ViewTi
                             <Clock className="h-4 w-4 mr-3 text-muted-foreground flex-shrink-0" />
                             <span>{format(eventDate, 'p')}</span>
                         </div>
-                        <div className="flex items-center">
-                            <MapPin className="h-4 w-4 mr-3 text-muted-foreground flex-shrink-0" />
-                            <span>{event.location}</span>
-                        </div>
+                         {event.venueType === 'online' ? (
+                            <div className="flex items-center">
+                                <Video className="h-4 w-4 mr-3 text-muted-foreground flex-shrink-0" />
+                                <Button variant="link" asChild className="p-0 h-auto">
+                                    <a href={event.onlineUrl} target="_blank" rel="noopener noreferrer">
+                                        Join Online Event <LinkIcon className="ml-2 h-3 w-3" />
+                                    </a>
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center">
+                                <MapPin className="h-4 w-4 mr-3 text-muted-foreground flex-shrink-0" />
+                                <span>{event.location}</span>
+                            </div>
+                        )}
                         {event.organizationName && (
                              <div className="flex items-center">
                                 <Building className="h-4 w-4 mr-3 text-muted-foreground flex-shrink-0" />

@@ -41,10 +41,12 @@ const eventFormSchema = z.object({
   organizationName: z.string().optional(),
   category: z.string({ required_error: 'Please select a category.' }),
   eventType: z.enum(['single', 'multi'], { required_error: 'Please select an event type.' }),
+  venueType: z.enum(['in-person', 'online'], { required_error: 'Please select a venue type.' }),
+  location: z.string().min(3, { message: 'Location is required.' }),
+  onlineUrl: z.string().url({ message: 'Please enter a valid URL.' }).optional().or(z.literal('')),
   date: z.date({ required_error: 'A date is required.' }),
   dateRange: z.object({ from: z.date().optional(), to: z.date().optional() }).optional(),
   time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: 'Invalid time format (HH:MM).' }),
-  location: z.string().min(3, { message: 'Location is required.' }),
   description: z.string().min(10, { message: 'Description must be at least 10 characters.' }),
   price: z.coerce.number().min(0, { message: 'Price cannot be negative.' }),
   capacity: z.coerce.number().int().min(1, { message: 'Capacity must be at least 1.' }),
@@ -73,6 +75,22 @@ const eventFormSchema = z.object({
       { message: 'Please enter a valid URL or upload an image.' }
     ).optional(),
   })).optional(),
+}).refine(data => {
+    if (data.venueType === 'online') {
+        return !!data.onlineUrl;
+    }
+    return true;
+}, {
+    message: 'Online URL is required for online events.',
+    path: ['onlineUrl'],
+}).refine(data => {
+    if (data.venueType === 'in-person') {
+        return !!data.location;
+    }
+    return true;
+}, {
+    message: 'Location is required for in-person events.',
+    path: ['location'],
 });
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
@@ -100,9 +118,11 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
       name: '',
       organizationName: '',
       eventType: 'single',
+      venueType: 'in-person',
       date: new Date(),
       time: '09:00',
       location: '',
+      onlineUrl: '',
       description: '',
       price: 0,
       capacity: 100,
@@ -124,10 +144,12 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
         organizationName: eventToEdit.organizationName || '',
         category: eventToEdit.category,
         eventType: isMultiDay ? 'multi' : 'single',
+        venueType: eventToEdit.venueType || 'in-person',
         date: parseISO(eventToEdit.date),
         dateRange: isMultiDay && eventToEdit.endDate ? { from: parseISO(eventToEdit.date), to: parseISO(eventToEdit.endDate) } : {from: undefined, to: undefined },
         time: eventToEdit.time,
         location: eventToEdit.location,
+        onlineUrl: eventToEdit.onlineUrl || '',
         description: eventToEdit.description,
         price: eventToEdit.price,
         capacity: eventToEdit.capacity,
@@ -156,6 +178,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
   });
 
   const watchEventType = form.watch('eventType');
+  const watchVenueType = form.watch('venueType');
 
   const userIsOnFreePlan = user?.subscriptionPlan === 'Free';
   const userEventCount = user ? getEventsByCreator(user.uid).length : 0;
@@ -234,10 +257,12 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
       organizationName: data.organizationName || '',
       organizationLogoUrl: data.organizationLogoUrl || '',
       category: data.category,
+      venueType: data.venueType,
+      location: data.venueType === 'in-person' ? data.location : 'Online',
+      onlineUrl: data.venueType === 'online' ? data.onlineUrl : '',
       date: format(startDate, 'yyyy-MM-dd'),
       endDate: endDate ? format(endDate, 'yyyy-MM-dd') : format(startDate, 'yyyy-MM-dd'),
       time: data.time,
-      location: data.location,
       description: data.description,
       price: data.price,
       capacity: data.capacity,
@@ -392,7 +417,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
 
           <Card>
             <CardHeader>
-                <CardTitle>Date, Time &amp; Location</CardTitle>
+                <CardTitle>Date, Time &amp; Venue</CardTitle>
                 <CardDescription>When and where is your event taking place?</CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
@@ -529,20 +554,73 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                     )}
                   />
                 </div>
-
-                <FormField
+                
+                 <FormField
                   control={form.control}
-                  name="location"
+                  name="venueType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Central Park, New York" {...field} />
+                      <FormLabel>Venue Type</FormLabel>
+                       <FormControl>
+                        <RadioGroup
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            if (value === 'online') form.setValue('location', 'Online');
+                            if (value === 'in-person') form.setValue('location', '');
+                          }}
+                          value={field.value}
+                          className="flex items-center gap-6"
+                        >
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="in-person" />
+                            </FormControl>
+                            <FormLabel className="font-normal">In-person</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="online" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Online</FormLabel>
+                          </FormItem>
+                        </RadioGroup>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {watchVenueType === 'in-person' && (
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. Central Park, New York" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+                {watchVenueType === 'online' && (
+                  <FormField
+                    control={form.control}
+                    name="onlineUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Online URL</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. https://meet.google.com/xyz" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
             </CardContent>
           </Card>
           

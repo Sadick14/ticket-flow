@@ -23,11 +23,13 @@ export interface Event {
   organizationName?: string;
   organizationLogoUrl?: string;
   category: string;
+  venueType: 'in-person' | 'online';
+  location: string; // Physical address or "Online"
+  onlineUrl?: string; // URL for online events
   // `date` will be the start date. For single day events, endDate will be the same.
   date: string;
   endDate?: string; 
   time: string;
-  location: string;
   description: string;
   price: number;
   capacity: number;
