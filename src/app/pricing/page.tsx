@@ -16,7 +16,7 @@ const plans: {name: SubscriptionPlan, price: string, priceFrequency: string, des
         priceFrequency: '/ month',
         description: 'For hobbyists and new organizers getting started.',
         features: [
-            'Create up to 2 events',
+            'Create up to 5 events',
             'Basic event page',
             'Standard support'
         ],
@@ -33,7 +33,7 @@ const plans: {name: SubscriptionPlan, price: string, priceFrequency: string, des
             'Customizable event pages',
             'Priority email support'
         ],
-        cta: 'Upgrade to Starter',
+        cta: 'Coming Soon',
         isCurrent: (plan: SubscriptionPlan) => plan === 'Starter',
         popular: true,
     },
@@ -47,7 +47,7 @@ const plans: {name: SubscriptionPlan, price: string, priceFrequency: string, des
             'Advanced analytics & reporting',
             'Dedicated phone support'
         ],
-        cta: 'Upgrade to Pro',
+        cta: 'Coming Soon',
         isCurrent: (plan: SubscriptionPlan) => plan === 'Pro'
     }
 ]
@@ -106,7 +106,7 @@ export default function PricingPage() {
                 <Button 
                     className="w-full" 
                     variant={plan.popular ? 'default' : 'outline'}
-                    disabled={plan.isCurrent(currentPlan)}
+                    disabled={plan.isCurrent(currentPlan) || plan.name !== 'Free'}
                     onClick={() => handleUpgrade(plan.name)}
                 >
                     {plan.isCurrent(currentPlan) ? 'Current Plan' : plan.cta}

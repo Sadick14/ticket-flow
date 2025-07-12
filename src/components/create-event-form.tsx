@@ -96,7 +96,7 @@ const eventFormSchema = z.object({
 type EventFormValues = z.infer<typeof eventFormSchema>;
 
 const categories = ["Music", "Sports", "Food & Drink", "Arts & Theater", "Technology", "Business", "Other"];
-const FREE_PLAN_EVENT_LIMIT = 2;
+const FREE_PLAN_EVENT_LIMIT = 5;
 
 interface CreateEventFormProps {
     eventToEdit?: Event;
