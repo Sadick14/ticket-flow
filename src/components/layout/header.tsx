@@ -79,6 +79,7 @@ export function Header() {
           </div>
           <div className="hidden md:flex items-center space-x-2">
             <NavLink href="/">Home</NavLink>
+            <NavLink href="/events">Browse Events</NavLink>
             <NavLink href="/create">Create Event</NavLink>
             <NavLink href="/tickets">My Tickets</NavLink>
             <NavLink href="/pricing">Pricing</NavLink>
@@ -111,6 +112,7 @@ export function Header() {
                   </div>
                   <nav className="flex flex-col space-y-4">
                     <NavLink href="/" onClick={closeMobileMenu}>Home</NavLink>
+                    <NavLink href="/events" onClick={closeMobileMenu}>Browse Events</NavLink>
                     <NavLink href="/create" onClick={closeMobileMenu}>Create Event</NavLink>
                     <NavLink href="/tickets" onClick={closeMobileMenu}>My Tickets</NavLink>
                     <NavLink href="/pricing" onClick={closeMobileMenu}>Pricing</NavLink>

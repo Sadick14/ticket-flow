@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { Ticket, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 
@@ -15,7 +16,7 @@ export function Footer() {
           <div>
             <h3 className="text-sm font-semibold text-primary-foreground/80 tracking-wider uppercase font-headline">Events</h3>
             <ul className="mt-4 space-y-2">
-              <li><Link href="/#events" className="text-base text-primary-foreground/70 hover:text-primary-foreground">Browse Events</Link></li>
+              <li><Link href="/events" className="text-base text-primary-foreground/70 hover:text-primary-foreground">Browse Events</Link></li>
             </ul>
           </div>
           <div>

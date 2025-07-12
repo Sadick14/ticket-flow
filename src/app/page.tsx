@@ -8,9 +8,16 @@ import { EventCard } from '@/components/event-card';
 import { useAppContext } from '@/context/app-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowRight } from 'lucide-react';
+import { useMemo } from 'react';
 
 export default function Home() {
   const { events, loading } = useAppContext();
+
+  const recentEvents = useMemo(() => {
+    return [...events]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 3);
+  }, [events]);
 
   return (
     <>
@@ -18,7 +25,7 @@ export default function Home() {
         {/* Hero Section */}
         <section className="relative h-[60vh] min-h-[400px] flex items-center justify-center text-center text-white">
           <Image
-            src="https://placehold.co/1920x1080.png"
+            src="/women-s-panel-discussion.jpg"
             alt="An exciting event background"
             fill
             className="object-cover -z-20"
@@ -35,7 +42,7 @@ export default function Home() {
               </p>
               <div className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4">
                 <Button asChild size="lg">
-                  <Link href="#events">
+                  <Link href="/events">
                     Browse Events
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
@@ -54,18 +61,18 @@ export default function Home() {
         <section id="events" className="py-16 sm:py-24 bg-muted/40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h2 className="text-base text-primary font-semibold tracking-wide uppercase font-headline">Upcoming Events</h2>
+              <h2 className="text-base text-primary font-semibold tracking-wide uppercase font-headline">Newest Events</h2>
               <p className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl font-headline">
-                Don&apos;t miss these exciting events
+                Don&apos;t miss these exciting new events
               </p>
               <p className="mt-4 max-w-2xl mx-auto text-xl text-muted-foreground">
-                Browse through our curated selection of upcoming events.
+                Check out the latest events added to our platform.
               </p>
             </div>
 
             <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {loading ? (
-                Array.from({ length: 6 }).map((_, i) => (
+                Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="flex flex-col space-y-3">
                     <Skeleton className="h-[200px] w-full rounded-xl" />
                     <div className="space-y-2">
@@ -75,18 +82,17 @@ export default function Home() {
                   </div>
                 ))
               ) : (
-                events.slice(0, 6).map((event) => (
+                recentEvents.map((event) => (
                   <EventCard key={event.id} event={event} />
                 ))
               )}
             </div>
-            {events.length > 6 && (
-                <div className="mt-16 text-center">
-                    <Button asChild size="lg">
-                        <Link href="/events">View All Events</Link>
-                    </Button>
-                </div>
-            )}
+            
+            <div className="mt-16 text-center">
+                <Button asChild size="lg">
+                    <Link href="/events">View All Events</Link>
+                </Button>
+            </div>
           </div>
         </section>
       </div>
