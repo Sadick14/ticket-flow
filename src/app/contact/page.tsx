@@ -310,9 +310,3 @@ export default function ContactPage() {
     </div>
   );
 }
-            Our support team is available Monday to Friday, 9am to 5pm.
-        </p>
-      </div>
-    </div>
-  );
-}

@@ -295,9 +295,3 @@ export default function HelpCenterPage() {
     </div>
   );
 }
-            In the meantime, if you need assistance, please visit our <a href="/contact">Contact Us</a> page.
-        </p>
-      </div>
-    </div>
-  );
-}

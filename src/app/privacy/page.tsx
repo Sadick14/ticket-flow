@@ -109,19 +109,3 @@ export default function PrivacyPolicyPage() {
     </div>
   );
 }
-            <li>Information Collection and Use</li>
-            <li>Log Data</li>
-            <li>Cookies</li>
-            <li>Service Providers</li>
-            <li>Security</li>
-            <li>Links to Other Sites</li>
-            <li>Children&apos;s Privacy</li>
-            <li>Changes to This Privacy Policy</li>
-        </ul>
-        <p>
-            We are committed to being transparent about our data practices. For any immediate questions, please <a href="/contact">contact us</a>.
-        </p>
-      </div>
-    </div>
-  );
-}
