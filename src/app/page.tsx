@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { EventCard } from '@/components/event-card';
 import { useAppContext } from '@/context/app-context';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowRight, Newspaper, Share2 } from 'lucide-react';
+import { ArrowRight, Newspaper, CalendarX } from 'lucide-react';
 import { useMemo } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
@@ -123,21 +123,36 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-12">
               {loading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex flex-col space-y-3">
-                    <Skeleton className="h-[200px] w-full rounded-xl" />
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-4 w-1/2" />
+                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex flex-col space-y-3">
+                      <Skeleton className="h-[200px] w-full rounded-xl" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </div>
                     </div>
+                  ))}
+                </div>
+              ) : recentEvents.length > 0 ? (
+                 <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                    {recentEvents.map((event) => (
+                      <EventCard key={event.id} event={event} />
+                    ))}
                   </div>
-                ))
               ) : (
-                recentEvents.map((event) => (
-                  <EventCard key={event.id} event={event} />
-                ))
+                <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                  <CalendarX className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <h3 className="mt-4 text-lg font-medium text-foreground">No Events Yet</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">Check back soon for new and exciting events!</p>
+                   <div className="mt-6">
+                    <Button asChild>
+                      <Link href="/create">Create Your First Event</Link>
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
             

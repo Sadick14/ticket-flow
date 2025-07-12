@@ -103,16 +103,22 @@ export default function BrowseEventsPage() {
           />
         </div>
         <Tabs defaultValue="upcoming">
-          <div className="flex justify-between items-center flex-wrap gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center flex-wrap gap-4">
               <TabsList>
                   <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
                   <TabsTrigger value="past">Past</TabsTrigger>
               </TabsList>
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:grid-cols-8">
-                  {categories.map(category => (
-                      <TabsTrigger key={category} value={category} onClick={() => setSelectedCategory(category)} className={selectedCategory === category ? 'bg-background text-foreground shadow-sm' : ''}>{category}</TabsTrigger>
-                  ))}
-              </TabsList>
+              <div className="flex flex-wrap justify-center gap-2">
+                {categories.map(category => (
+                    <Button 
+                        key={category} 
+                        variant={selectedCategory === category ? 'default' : 'outline'}
+                        onClick={() => setSelectedCategory(category)}
+                    >
+                        {category}
+                    </Button>
+                ))}
+              </div>
           </div>
           <TabsContent value="upcoming" className="mt-8">
             {renderEventList(filteredEvents.upcoming)}
