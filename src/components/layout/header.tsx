@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Ticket as TicketIcon, Menu, X, LogOut, LayoutDashboard } from 'lucide-react';
+import { Ticket as TicketIcon, Menu, X, LogOut, LayoutDashboard, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import {
@@ -52,6 +52,14 @@ export function Header() {
             </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            {user.isAdmin && (
+               <DropdownMenuItem asChild>
+                <Link href="/admin">
+                    <Shield className="mr-2 h-4 w-4" />
+                    <span>Admin</span>
+                </Link>
+                </DropdownMenuItem>
+            )}
             <DropdownMenuItem asChild>
             <Link href="/dashboard">
                 <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -87,7 +95,7 @@ export function Header() {
           <div className="hidden md:flex items-center gap-4">
              {user ? (
                 <>
-                    <Badge variant="outline">{user.subscriptionPlan} Plan</Badge>
+                    <Badge variant={user.isAdmin ? "destructive" : "outline"}>{user.isAdmin ? "Admin" : `${user.subscriptionPlan} Plan`}</Badge>
                     <UserMenu />
                 </>
              ) : <Button onClick={signInWithGoogle}>Sign In</Button>}
@@ -129,6 +137,7 @@ export function Header() {
                                     <Badge variant="outline" className="mt-1">{user.subscriptionPlan} Plan</Badge>
                                 </div>
                             </div>
+                            {user.isAdmin && <NavLink href="/admin" onClick={closeMobileMenu}>Admin</NavLink>}
                             <NavLink href="/dashboard" onClick={closeMobileMenu}>Dashboard</NavLink>
                             <Button onClick={() => { signOut(); closeMobileMenu(); }}>Sign Out</Button>
                         </div>
