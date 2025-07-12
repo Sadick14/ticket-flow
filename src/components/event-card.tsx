@@ -36,9 +36,7 @@ export function EventCard({ event }: EventCardProps) {
     router.push(`/dashboard/edit/${event.id}`);
   };
 
-  const handleDelete = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleDelete = async () => {
     try {
       await deleteEvent(event.id);
       toast({ title: 'Event Deleted', description: `The event "${event.name}" has been successfully deleted.` });
@@ -109,8 +107,16 @@ export function EventCard({ event }: EventCardProps) {
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDelete}>Delete Event</AlertDialogAction>
+                      <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleDelete();
+                        }}
+                      >
+                        Delete Event
+                      </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
