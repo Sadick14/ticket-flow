@@ -17,16 +17,18 @@ export default function NewsDetailsPage() {
   const { id } = useParams();
   const { news, loading } = useAppContext();
   const { toast } = useToast();
-  const [article, setArticle] = useState<NewsArticle | null>(null);
+  const [article, setArticle] = useState<NewsArticle | null | undefined>(undefined); // Start with undefined
 
   useEffect(() => {
-    if (!loading && id) {
+    if (loading) return; // Wait until app context is fully loaded
+
+    if (news.length > 0 && id) {
       const foundArticle = news.find(a => a.id === id);
-      setArticle(foundArticle || null);
+      setArticle(foundArticle || null); // Set to null if not found
     }
   }, [id, news, loading]);
 
-  if (loading) {
+  if (loading || article === undefined) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -34,7 +36,7 @@ export default function NewsDetailsPage() {
     );
   }
 
-  if (!article) {
+  if (article === null) {
     notFound();
     return null;
   }
