@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Search, CalendarX } from 'lucide-react';
 import type { Event } from '@/lib/types';
 import { isPast, parseISO } from 'date-fns';
+import { Button } from '@/components/ui/button';
 
 const categories = ["All", "Music", "Sports", "Food & Drink", "Arts & Theater", "Technology", "Business", "Other"];
 
