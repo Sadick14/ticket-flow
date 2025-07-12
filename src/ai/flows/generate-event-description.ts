@@ -29,7 +29,42 @@ const GenerateEventDescriptionOutputSchema = z.object({
 export type GenerateEventDescriptionOutput = z.infer<typeof GenerateEventDescriptionOutputSchema>;
 
 export async function generateEventDescription(input: GenerateEventDescriptionInput): Promise<GenerateEventDescriptionOutput> {
-  return generateEventDescriptionFlow(input);
+  // Check if AI is available (environment variables set)
+  const hasGoogleAIKey = process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+  
+  if (!hasGoogleAIKey) {
+    // Fallback: Generate a simple description without AI
+    const fallbackDescription = generateFallbackDescription(input);
+    return { generatedDescription: fallbackDescription };
+  }
+
+  try {
+    return await generateEventDescriptionFlow(input);
+  } catch (error) {
+    console.warn('AI generation failed, using fallback:', error);
+    // Fallback to simple description if AI fails
+    const fallbackDescription = generateFallbackDescription(input);
+    return { generatedDescription: fallbackDescription };
+  }
+}
+
+function generateFallbackDescription(input: GenerateEventDescriptionInput): string {
+  const { eventName, eventCategory, eventDate, eventTime, eventLocation, eventDescription, ticketPrice, eventCapacity } = input;
+  
+  return `Join us for ${eventName}, an exciting ${eventCategory.toLowerCase()} event taking place on ${eventDate} at ${eventTime}. 
+  
+Located at ${eventLocation}, this event promises to be an unforgettable experience. ${eventDescription}
+
+Event Details:
+📅 Date: ${eventDate}
+🕐 Time: ${eventTime}  
+📍 Location: ${eventLocation}
+🎟️ Tickets: $${ticketPrice}
+👥 Capacity: ${eventCapacity} attendees
+
+Don't miss out on this amazing opportunity! Secure your spot today.
+
+*Generated description - AI enhancement unavailable in current environment*`;
 }
 
 const prompt = ai.definePrompt({

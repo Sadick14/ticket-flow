@@ -1,0 +1,18 @@
+# Railway Build Configuration
+# This file configures Railway deployment settings
+
+# Build settings
+[build]
+  builder = "nixpacks"
+
+# Environment
+[env]
+  NODE_ENV = "production"
+  
+# Health check
+[healthcheck]
+  path = "/api/health"
+  
+# Settings  
+[settings]
+  domains = ["ticket-flow.up.railway.app"]
