@@ -10,6 +10,7 @@ interface AppContextType {
   events: Event[];
   tickets: Ticket[];
   news: NewsArticle[];
+  users: UserProfile[];
   loading: boolean;
   // Events
   addEvent: (event: Omit<Event, 'id' | 'collaboratorIds'>) => Promise<void>;
@@ -47,6 +48,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [news, setNews] = useState<NewsArticle[]>([]);
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchEvents = useCallback(async () => {
@@ -82,14 +84,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const fetchUsers = useCallback(async () => {
+    try {
+      const usersCollection = collection(db, 'users');
+      const userSnapshot = await getDocs(query(usersCollection));
+      const usersList = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile));
+      setUsers(usersList);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  }, []);
+
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([fetchEvents(), fetchTickets(), fetchNews()]);
+      await Promise.all([fetchEvents(), fetchTickets(), fetchNews(), fetchUsers()]);
       setLoading(false);
     }
     loadData();
-  }, [fetchEvents, fetchTickets, fetchNews]);
+  }, [fetchEvents, fetchTickets, fetchNews, fetchUsers]);
 
   const addEvent = async (eventData: Omit<Event, 'id' | 'collaboratorIds'>) => {
     try {
@@ -311,6 +325,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       events, 
       tickets, 
       news,
+      users,
       loading, 
       addEvent, 
       updateEvent, 
