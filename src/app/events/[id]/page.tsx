@@ -15,6 +15,48 @@ import type { Event, Ticket } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const eventId = params.id;
+  const eventRef = doc(db, 'events', eventId);
+  const eventSnap = await getDoc(eventRef);
+
+  if (!eventSnap.exists()) {
+    return {
+      title: 'Event Not Found',
+    }
+  }
+
+  const event = eventSnap.data() as Event;
+
+  return {
+    title: `${event.name} | TicketFlow`,
+    description: event.description,
+    openGraph: {
+      title: event.name,
+      description: event.description,
+      images: [
+        {
+          url: event.imageUrl,
+          width: 1200,
+          height: 630,
+          alt: event.name,
+        },
+      ],
+      url: `/events/${eventId}`,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: event.name,
+      description: event.description,
+      images: [event.imageUrl],
+    },
+  }
+}
 
 export default function EventDetailsPage() {
   const { id } = useParams();

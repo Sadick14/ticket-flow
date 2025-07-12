@@ -12,6 +12,48 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { NewsArticle } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const articleId = params.id;
+  const articleRef = doc(db, 'news', articleId);
+  const articleSnap = await getDoc(articleRef);
+
+  if (!articleSnap.exists()) {
+    return {
+      title: 'Article Not Found',
+    }
+  }
+
+  const article = articleSnap.data() as NewsArticle;
+
+  return {
+    title: `${article.title} | TicketFlow`,
+    description: article.description,
+    openGraph: {
+      title: article.title,
+      description: article.description,
+      images: [
+        {
+          url: article.imageUrl,
+          width: 1200,
+          height: 630,
+          alt: article.title,
+        },
+      ],
+      url: `/news/${articleId}`,
+      type: 'article',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: article.title,
+      description: article.description,
+      images: [article.imageUrl],
+    },
+  }
+}
 
 export default function NewsDetailsPage() {
   const { id } = useParams();
@@ -25,6 +67,18 @@ export default function NewsDetailsPage() {
     if (news.length > 0 && id) {
       const foundArticle = news.find(a => a.id === id);
       setArticle(foundArticle || null); // Set to null if not found
+    } else if (!loading && news.length === 0 && id) {
+      // If news is empty but we have an ID, try fetching directly (edge case)
+       const fetchArticle = async () => {
+         const articleRef = doc(db, 'news', id as string);
+         const docSnap = await getDoc(articleRef);
+         if (docSnap.exists()) {
+           setArticle({ id: docSnap.id, ...docSnap.data() } as NewsArticle);
+         } else {
+           setArticle(null);
+         }
+       };
+       fetchArticle();
     }
   }, [id, news, loading]);
 

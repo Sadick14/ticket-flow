@@ -78,7 +78,7 @@ export default function Home() {
         {/* Hero Section */}
         <section className="relative h-[60vh] min-h-[400px] flex items-center justify-center text-center text-white">
           <Image
-            src="https://placehold.co/1600x900.png"
+            src="/women-s-panel-discussion.jpg"
             alt="An exciting event background"
             fill
             className="object-cover -z-20"
