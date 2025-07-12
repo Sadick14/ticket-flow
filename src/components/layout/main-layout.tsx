@@ -3,13 +3,11 @@
 
 import { usePathname } from 'next/navigation';
 import { AdminLayout } from '@/components/admin/admin-layout';
-import { useAuth } from '@/context/auth-context';
 import { Header } from './header';
 import { Footer } from './footer';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user } = useAuth();
   
   const isDashboardRoute = pathname.startsWith('/dashboard') || pathname === '/create';
   const isAdminRoute = pathname.startsWith('/admin');

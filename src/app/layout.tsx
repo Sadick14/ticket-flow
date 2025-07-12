@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
-import { AppProvider } from '@/context/app-context';
 import { AuthProvider } from '@/context/auth-context';
+import { AppProvider } from '@/context/app-context';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import { MainLayout } from '@/components/layout/main-layout';
-
 
 export const metadata: Metadata = {
   title: 'TicketFlow - Modern Event Ticketing',
@@ -16,7 +15,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   return (
     <html lang="en" className="h-full">
       <head>

@@ -82,7 +82,7 @@ export default function NewsDetailsPage() {
     }
   }, [id, news, loading]);
 
-  if (loading || article === undefined) {
+  if (article === undefined) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
