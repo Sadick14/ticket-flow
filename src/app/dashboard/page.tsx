@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { useAppContext } from '@/context/app-context';
-import { Loader2, PlusCircle, Calendar, Edit, Trash2, Eye } from 'lucide-react';
+import { Loader2, PlusCircle, Calendar, Edit, Trash2, Eye, CalendarX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import type { Event } from '@/lib/types';
@@ -150,6 +150,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="text-center py-16 border-2 border-dashed rounded-lg">
+              <CalendarX className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-4 text-lg font-medium text-foreground">No Events Found</h3>
               <p className="mt-1 text-sm text-muted-foreground">You haven't created or been added to any events yet.</p>
               <div className="mt-6">
