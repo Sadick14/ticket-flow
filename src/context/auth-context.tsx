@@ -23,7 +23,7 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
-  updateSubscriptionPlan: (plan: SubscriptionPlan) => void;
+  updateSubscriptionPlan: (plan: SubscriptionPlan) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

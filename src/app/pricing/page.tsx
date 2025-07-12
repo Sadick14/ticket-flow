@@ -62,8 +62,7 @@ export default function PricingPage() {
             router.push('/create'); // Prompt sign-in on create page
             return;
         }
-        // In a real app, this would trigger the Paystack payment flow.
-        // For now, we'll just simulate the upgrade.
+        // This simulates the upgrade.
         updateSubscriptionPlan(planName);
         router.push('/dashboard');
     }
