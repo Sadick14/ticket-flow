@@ -68,4 +68,6 @@ export interface NewsArticle {
   imageUrl: string;
   articleUrl: string;
   publishedDate: string; // ISO String
+  description: string;
+  gallery: { url: string }[];
 }

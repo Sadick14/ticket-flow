@@ -37,7 +37,7 @@ interface AppContextType {
   getUsersByUids: (uids: string[]) => Promise<UserProfile[]>;
   // News
   addNewsArticle: (article: Omit<NewsArticle, 'id'>) => Promise<void>;
-  updateNewsArticle: (id: string, articleData: Partial<Omit<NewsArticle, 'id'>>) => Promise<void>;
+  updateNewsArticle: (id: string, articleData: Partial<Omit<NewsArticle, 'id' | 'publishedDate'>>) => Promise<void>;
   deleteNewsArticle: (id: string) => Promise<void>;
 }
 
@@ -284,7 +284,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateNewsArticle = async (id: string, articleData: Partial<Omit<NewsArticle, 'id'>>) => {
+  const updateNewsArticle = async (id: string, articleData: Partial<Omit<NewsArticle, 'id' | 'publishedDate'>>) => {
     try {
       const articleRef = doc(db, 'news', id);
       await updateDoc(articleRef, articleData);

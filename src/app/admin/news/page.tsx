@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAppContext } from '@/context/app-context';
@@ -25,6 +25,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +42,10 @@ const articleSchema = z.object({
   source: z.string().min(2, 'Source is required.'),
   articleUrl: z.string().url('Must be a valid URL.'),
   imageUrl: z.string().min(1, 'Image is required.'),
+  description: z.string().min(10, 'Description is required.'),
+  gallery: z.array(z.object({
+    url: z.string().min(1, 'Image is required.')
+  })).optional(),
 });
 
 type ArticleFormValues = z.infer<typeof articleSchema>;
@@ -58,14 +63,22 @@ function NewsArticleForm({ article, onFinished }: { article?: NewsArticle, onFin
       source: article?.source || '',
       articleUrl: article?.articleUrl || '',
       imageUrl: article?.imageUrl || '',
+      description: article?.description || '',
+      gallery: article?.gallery || [],
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'gallery'
   });
 
   const onSubmit = async (data: ArticleFormValues) => {
     setIsSubmitting(true);
     const payload = {
       ...data,
-      publishedDate: new Date().toISOString()
+      publishedDate: new Date().toISOString(),
+      gallery: data.gallery || [],
     };
     try {
       if (isEditMode) {
@@ -132,6 +145,44 @@ function NewsArticleForm({ article, onFinished }: { article?: NewsArticle, onFin
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl><Textarea {...field} rows={5} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div>
+          <FormLabel>Image Gallery</FormLabel>
+          <div className="space-y-4 mt-2">
+            {fields.map((field, index) => (
+              <div key={field.id} className="flex items-end gap-2">
+                <FormField
+                  control={form.control}
+                  name={`gallery.${index}.url`}
+                  render={({ field }) => (
+                    <FormItem className="flex-grow">
+                      <FormControl>
+                        <ImageUploader onUpload={field.onChange} value={field.value} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+          <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ url: '' })}>
+            Add Gallery Image
+          </Button>
+        </div>
         <DialogFooter>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -182,7 +233,7 @@ export default function AdminNewsPage() {
               Add Article
             </Button>
           </DialogTrigger>
-          <DialogContent onInteractOutside={(e) => e.preventDefault()} className="sm:max-w-[425px]">
+          <DialogContent onInteractOutside={(e) => e.preventDefault()} className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingArticle ? 'Edit Article' : 'Add New Article'}</DialogTitle>
             </DialogHeader>
