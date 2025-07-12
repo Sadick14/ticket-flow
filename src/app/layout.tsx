@@ -1,14 +1,46 @@
+
+'use client';
+
 import type { Metadata } from 'next';
 import { AuthProvider } from '@/context/auth-context';
 import { AppProvider } from '@/context/app-context';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
-import { MainLayout } from '@/components/layout/main-layout';
+import { usePathname } from 'next/navigation';
+import { AdminLayout } from '@/components/admin/admin-layout';
+import { Header } from '@/components/layout/header';
+import { Footer } from '@/components/layout/footer';
 
-export const metadata: Metadata = {
-  title: 'TicketFlow - Modern Event Ticketing',
-  description: 'The all-in-one platform for event organizers and attendees.',
-};
+
+// This is now a client component, so metadata should be defined statically here.
+// export const metadata: Metadata = {
+//   title: 'TicketFlow - Modern Event Ticketing',
+//   description: 'The all-in-one platform for event organizers and attendees.',
+// };
+
+function MainLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  
+  const isDashboardRoute = pathname.startsWith('/dashboard') || pathname === '/create';
+  const isAdminRoute = pathname.startsWith('/admin');
+
+  if (isAdminRoute) {
+    return <AdminLayout>{children}</AdminLayout>
+  }
+
+  if (isDashboardRoute) {
+    return <>{children}</>;
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-grow">{children}</main>
+      <Footer />
+    </div>
+  );
+}
+
 
 export default function RootLayout({
   children,
@@ -18,6 +50,8 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <head>
+        <title>TicketFlow - Modern Event Ticketing</title>
+        <meta name="description" content="The all-in-one platform for event organizers and attendees." />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
