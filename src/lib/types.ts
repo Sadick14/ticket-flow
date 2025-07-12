@@ -58,4 +58,14 @@ export interface UserProfile {
   displayName: string | null;
   photoURL: string | null;
   subscriptionPlan: SubscriptionPlan;
+  isAdmin?: boolean;
+}
+
+export interface NewsArticle {
+  id: string;
+  title: string;
+  source: string;
+  imageUrl: string;
+  articleUrl: string;
+  publishedDate: string; // ISO String
 }

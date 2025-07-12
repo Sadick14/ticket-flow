@@ -2,35 +2,43 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Event, Ticket, UserProfile } from '@/lib/types';
+import type { Event, Ticket, UserProfile, NewsArticle } from '@/lib/types';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit } from 'firebase/firestore';
+import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy } from 'firebase/firestore';
 
 interface AppContextType {
   events: Event[];
   tickets: Ticket[];
+  news: NewsArticle[];
   loading: boolean;
+  // Events
   addEvent: (event: Omit<Event, 'id' | 'collaboratorIds'>) => Promise<void>;
   updateEvent: (id: string, eventData: Partial<Omit<Event, 'id'>>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
-  addTicket: (ticket: Omit<Ticket, 'id' | 'purchaseDate' | 'checkedIn'>) => Promise<void>;
-  checkInTicket: (ticketId: string, eventId: string, currentUserId: string) => Promise<void>;
-  manualCheckInTicket: (ticketId: string, eventId: string, currentUserId: string, checkInStatus: boolean) => Promise<void>;
-  getTicketById: (id: string) => Promise<Ticket | undefined>;
   getEventById: (id: string) => Promise<Event | undefined>;
   getEventsByCreator: (creatorId: string) => Event[];
   getCollaboratedEvents: (userId: string) => Event[];
-  getUserTickets: (email: string) => Ticket[];
-  getTicketsByEvent: (eventId: string) => Ticket[];
   getEventStats: (creatorId: string) => {
     totalEvents: number;
     totalTicketsSold: number;
     totalRevenue: number;
     upcomingEvents: number;
   };
+  // Tickets
+  addTicket: (ticket: Omit<Ticket, 'id' | 'purchaseDate' | 'checkedIn'>) => Promise<void>;
+  checkInTicket: (ticketId: string, eventId: string, currentUserId: string) => Promise<void>;
+  manualCheckInTicket: (ticketId: string, eventId: string, currentUserId: string, checkInStatus: boolean) => Promise<void>;
+  getTicketById: (id: string) => Promise<Ticket | undefined>;
+  getUserTickets: (email: string) => Ticket[];
+  getTicketsByEvent: (eventId: string) => Ticket[];
+  // Users
   addCollaborator: (eventId: string, email: string) => Promise<{success: boolean, message: string}>;
   removeCollaborator: (eventId: string, userId: string) => Promise<void>;
   getUsersByUids: (uids: string[]) => Promise<UserProfile[]>;
+  // News
+  addNewsArticle: (article: Omit<NewsArticle, 'id'>) => Promise<void>;
+  updateNewsArticle: (id: string, articleData: Partial<Omit<NewsArticle, 'id'>>) => Promise<void>;
+  deleteNewsArticle: (id: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -38,6 +46,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [news, setNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchEvents = useCallback(async () => {
@@ -62,14 +71,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const fetchNews = useCallback(async () => {
+    try {
+      const newsCollection = collection(db, 'news');
+      const newsSnapshot = await getDocs(query(newsCollection, orderBy('publishedDate', 'desc')));
+      const newsList = newsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NewsArticle));
+      setNews(newsList);
+    } catch (error) {
+      console.error("Error fetching news:", error);
+    }
+  }, []);
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([fetchEvents(), fetchTickets()]);
+      await Promise.all([fetchEvents(), fetchTickets(), fetchNews()]);
       setLoading(false);
     }
     loadData();
-  }, [fetchEvents, fetchTickets]);
+  }, [fetchEvents, fetchTickets, fetchNews]);
 
   const addEvent = async (eventData: Omit<Event, 'id' | 'collaboratorIds'>) => {
     try {
@@ -253,10 +273,44 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return users;
   }
 
+  // News Functions
+  const addNewsArticle = async (articleData: Omit<NewsArticle, 'id'>) => {
+    try {
+      await addDoc(collection(db, 'news'), articleData);
+      await fetchNews();
+    } catch (error) {
+      console.error("Error adding news article:", error);
+      throw error;
+    }
+  };
+
+  const updateNewsArticle = async (id: string, articleData: Partial<Omit<NewsArticle, 'id'>>) => {
+    try {
+      const articleRef = doc(db, 'news', id);
+      await updateDoc(articleRef, articleData);
+      await fetchNews();
+    } catch (error) {
+      console.error("Error updating news article:", error);
+      throw error;
+    }
+  };
+
+  const deleteNewsArticle = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'news', id));
+      await fetchNews();
+    } catch (error) {
+      console.error("Error deleting news article:", error);
+      throw error;
+    }
+  };
+
+
   return (
     <AppContext.Provider value={{ 
       events, 
       tickets, 
+      news,
       loading, 
       addEvent, 
       updateEvent, 
@@ -273,7 +327,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       getEventStats,
       addCollaborator,
       removeCollaborator,
-      getUsersByUids
+      getUsersByUids,
+      addNewsArticle,
+      updateNewsArticle,
+      deleteNewsArticle,
     }}>
       {children}
     </AppContext.Provider>

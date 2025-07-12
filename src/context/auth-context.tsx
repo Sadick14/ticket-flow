@@ -15,6 +15,9 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile, SubscriptionPlan } from '@/lib/types';
 
+// In a real app, this should not be hardcoded in the client.
+const ADMIN_EMAIL = 'admin@ticketflow.com';
+
 interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
@@ -30,7 +33,14 @@ const getOrCreateUserProfile = async (user: FirebaseUser): Promise<UserProfile> 
   const docSnap = await getDoc(userRef);
 
   if (docSnap.exists()) {
-    return docSnap.data() as UserProfile;
+    const existingProfile = docSnap.data() as UserProfile;
+    // Ensure isAdmin status is correctly set on sign-in
+    if (user.email === ADMIN_EMAIL && !existingProfile.isAdmin) {
+      const updatedProfile = { ...existingProfile, isAdmin: true };
+      await setDoc(userRef, updatedProfile);
+      return updatedProfile;
+    }
+    return existingProfile;
   }
   
   const newUserProfile: UserProfile = {
@@ -39,6 +49,7 @@ const getOrCreateUserProfile = async (user: FirebaseUser): Promise<UserProfile> 
     displayName: user.displayName,
     photoURL: user.photoURL,
     subscriptionPlan: 'Free',
+    isAdmin: user.email === ADMIN_EMAIL,
   };
   await setDoc(userRef, newUserProfile);
   return newUserProfile;

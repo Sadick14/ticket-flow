@@ -9,19 +9,19 @@ import { Footer } from '@/components/layout/footer';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import { usePathname } from 'next/navigation';
-
-// Note: `metadata` export is no longer static because this is a client component.
-// For static metadata, this would need to be a Server Component again.
-// We are keeping it here for simplicity as the user's last change introduced this pattern.
-// export const metadata: Metadata = {
-//   title: 'TicketFlow - Modern Event Ticketing',
-//   description: 'A modern platform for creating, selling, and buying event tickets.',
-//   icons: [{ rel: 'icon', url: '/favicon.ico' }],
-// };
+import { AdminLayout } from '@/components/admin/admin-layout';
+import { useAuth } from '@/context/auth-context';
 
 function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  
   const isDashboardRoute = pathname.startsWith('/dashboard') || pathname === '/create';
+  const isAdminRoute = pathname.startsWith('/admin');
+
+  if (isAdminRoute) {
+    return <AdminLayout>{children}</AdminLayout>
+  }
 
   if (isDashboardRoute) {
     return <>{children}</>;
