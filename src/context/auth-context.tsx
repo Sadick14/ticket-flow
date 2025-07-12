@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { UserProfile, SubscriptionPlan } from '@/lib/types';
 
 // In a real app, this should not be hardcoded in the client.
-const ADMIN_EMAIL = 'admin@ticketflow.com';
+const ADMIN_EMAIL = 'issakasaddick14@gmail.com';
 
 interface AuthContextType {
   user: UserProfile | null;
