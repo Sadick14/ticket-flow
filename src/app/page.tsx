@@ -123,22 +123,22 @@ export default function Home() {
         </section>
 
         {/* In The News Section */}
-        {news.length > 0 && (
-          <section id="news" className="py-16 sm:py-24 bg-background">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center">
-                <h2 className="text-base text-primary font-semibold tracking-wide uppercase font-headline">In The News</h2>
-                <p className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl font-headline">
-                  Featured Events From Around the Web
-                </p>
-                <p className="mt-4 max-w-2xl mx-auto text-xl text-muted-foreground">
-                  Discover trending events curated by our team to keep you in the loop.
-                </p>
-              </div>
+        <section id="news" className="py-16 sm:py-24 bg-background">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <h2 className="text-base text-primary font-semibold tracking-wide uppercase font-headline">In The News</h2>
+              <p className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl font-headline">
+                Featured Events From Around the Web
+              </p>
+              <p className="mt-4 max-w-2xl mx-auto text-xl text-muted-foreground">
+                Discover trending events curated by our team to keep you in the loop.
+              </p>
+            </div>
 
-              <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-                {loading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
+            <div className="mt-12">
+              {loading ? (
+                 <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
                     <div key={i} className="flex flex-col space-y-3">
                       <Skeleton className="h-[200px] w-full rounded-xl" />
                       <div className="space-y-2">
@@ -146,16 +146,24 @@ export default function Home() {
                         <Skeleton className="h-4 w-1/2" />
                       </div>
                     </div>
-                  ))
-                ) : (
-                  news.slice(0, 3).map((article) => (
+                  ))}
+                </div>
+              ) : news.length > 0 ? (
+                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                  {news.slice(0, 3).map((article) => (
                     <NewsCard key={article.id} article={article} />
-                  ))
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                  <Newspaper className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <h3 className="mt-4 text-lg font-medium text-foreground">No News Yet</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">Check back soon for curated events and news from around the web!</p>
+                </div>
+              )}
             </div>
-          </section>
-        )}
+          </div>
+        </section>
       </div>
     </>
   );
