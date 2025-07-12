@@ -5,9 +5,12 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Event } from '@/lib/types';
-import { Calendar, MapPin, Tag, Edit, Video } from 'lucide-react';
+import { Calendar, MapPin, Tag, Edit, Video, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { usePathname, useRouter } from 'next/navigation';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useAppContext } from '@/context/app-context';
+import { useToast } from '@/hooks/use-toast';
 
 interface EventCardProps {
   event: Event;
@@ -17,16 +20,31 @@ export function EventCard({ event }: EventCardProps) {
   const eventDate = new Date(`${event.date}T${event.time}`);
   const pathname = usePathname();
   const router = useRouter();
+  const { deleteEvent } = useAppContext();
+  const { toast } = useToast();
   const isDashboard = pathname.startsWith('/dashboard');
 
   const handleViewClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     router.push(`/events/${event.id}`);
   };
 
   const handleEditClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     router.push(`/dashboard/edit/${event.id}`);
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await deleteEvent(event.id);
+      toast({ title: 'Event Deleted', description: `The event "${event.name}" has been successfully deleted.` });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete the event.' });
+    }
   };
 
   return (
@@ -70,10 +88,33 @@ export function EventCard({ event }: EventCardProps) {
               View Event
             </Button>
             {isDashboard && (
-              <Button variant="outline" className="w-full" onClick={handleEditClick}>
-                <Edit className="mr-2 h-4 w-4"/>
-                Edit
-              </Button>
+              <>
+                <Button variant="outline" className="w-full" onClick={handleEditClick}>
+                  <Edit className="mr-2 h-4 w-4"/>
+                  Edit
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="w-full" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                      <Trash2 className="mr-2 h-4 w-4"/>
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete your
+                        event and all associated data.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete}>Delete Event</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
             )}
         </CardFooter>
       </Link>
