@@ -4,6 +4,8 @@
 # Build settings
 [build]
   builder = "nixpacks"
+  buildCommand = "npm run build"
+  startCommand = "npm start"
 
 # Environment
 [env]
