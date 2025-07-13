@@ -1,3 +1,4 @@
+
 /**
  * Launch Configuration Utility
  * Manages the app's launch state and countdown functionality
