@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Event, Ticket, UserProfile, NewsArticle } from '@/lib/types';
+import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy } from 'firebase/firestore';
 
@@ -11,6 +11,7 @@ interface AppContextType {
   tickets: Ticket[];
   news: NewsArticle[];
   users: UserProfile[];
+  launchSubscribers: LaunchSubscriber[];
   loading: boolean;
   // Events
   addEvent: (event: Omit<Event, 'id' | 'collaboratorIds'>) => Promise<void>;
@@ -40,6 +41,8 @@ interface AppContextType {
   addNewsArticle: (article: Omit<NewsArticle, 'id'>) => Promise<void>;
   updateNewsArticle: (id: string, articleData: Partial<Omit<NewsArticle, 'id' | 'publishedDate'>>) => Promise<void>;
   deleteNewsArticle: (id: string) => Promise<void>;
+  // Launch Subscribers
+  addLaunchSubscriber: (name: string, email: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -49,6 +52,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [launchSubscribers, setLaunchSubscribers] = useState<LaunchSubscriber[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchEvents = useCallback(async () => {
@@ -95,15 +99,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const fetchLaunchSubscribers = useCallback(async () => {
+    try {
+        const subscribersCollection = collection(db, 'launch_subscribers');
+        const subscriberSnapshot = await getDocs(query(subscribersCollection, orderBy('subscribedAt', 'desc')));
+        const subscribersList = subscriberSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LaunchSubscriber));
+        setLaunchSubscribers(subscribersList);
+    } catch (error) {
+        console.error("Error fetching launch subscribers:", error);
+    }
+  }, []);
+
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([fetchEvents(), fetchTickets(), fetchNews(), fetchUsers()]);
+      await Promise.all([fetchEvents(), fetchTickets(), fetchNews(), fetchUsers(), fetchLaunchSubscribers()]);
       setLoading(false);
     }
     loadData();
-  }, [fetchEvents, fetchTickets, fetchNews, fetchUsers]);
+  }, [fetchEvents, fetchTickets, fetchNews, fetchUsers, fetchLaunchSubscribers]);
 
   const addEvent = async (eventData: Omit<Event, 'id' | 'collaboratorIds'>) => {
     try {
@@ -319,6 +334,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Launch Subscribers
+  const addLaunchSubscriber = async (name: string, email: string) => {
+    try {
+      const subscriberData = {
+        name,
+        email,
+        subscribedAt: new Date().toISOString(),
+      };
+      await addDoc(collection(db, 'launch_subscribers'), subscriberData);
+      await fetchLaunchSubscribers();
+    } catch (error) {
+      console.error("Error adding launch subscriber:", error);
+      throw error;
+    }
+  };
+
 
   return (
     <AppContext.Provider value={{ 
@@ -326,6 +357,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       tickets, 
       news,
       users,
+      launchSubscribers,
       loading, 
       addEvent, 
       updateEvent, 
@@ -346,6 +378,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addNewsArticle,
       updateNewsArticle,
       deleteNewsArticle,
+      addLaunchSubscriber,
     }}>
       {children}
     </AppContext.Provider>

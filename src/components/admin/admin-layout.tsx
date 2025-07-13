@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import * as React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
-import { Loader2, Newspaper, Shield, LogOut, Ticket } from 'lucide-react';
+import { Loader2, Newspaper, Shield, LogOut, Ticket, Users } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -71,6 +72,18 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/admin/subscribers')}
+                  tooltip={{ children: 'Launch Subscribers' }}
+                >
+                  <Link href="/admin/subscribers">
+                    <Users />
+                    <span>Subscribers</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter className="p-4 border-t">
@@ -100,6 +113,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                     <h1 className="text-lg font-semibold">
                       {pathname === '/admin' && 'Admin Dashboard'}
                       {pathname === '/admin/news' && 'News Management'}
+                      {pathname === '/admin/subscribers' && 'Launch Subscribers'}
                     </h1> 
                 </div>
             </header>

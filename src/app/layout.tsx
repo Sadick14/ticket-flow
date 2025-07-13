@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type { Metadata } from 'next';
@@ -24,12 +25,18 @@ function MainLayout({ children }: { children: React.ReactNode }) {
   
   const isDashboardRoute = pathname.startsWith('/dashboard') || pathname === '/create';
   const isAdminRoute = pathname.startsWith('/admin');
+  const isLaunchRoute = pathname === '/' || pathname === '/launch';
 
   if (isAdminRoute) {
     return <AdminLayout>{children}</AdminLayout>
   }
 
   if (isDashboardRoute) {
+    return <>{children}</>;
+  }
+
+  // Render only the children for the launch page, no header/footer
+  if (isLaunchRoute) {
     return <>{children}</>;
   }
 

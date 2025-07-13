@@ -1,4 +1,5 @@
 
+
 export interface Speaker {
   name: string;
   title: string;
@@ -70,4 +71,11 @@ export interface NewsArticle {
   publishedDate: string; // ISO String
   description: string;
   gallery: { url: string }[];
+}
+
+export interface LaunchSubscriber {
+    id: string;
+    name: string;
+    email: string;
+    subscribedAt: string; // ISO String
 }
