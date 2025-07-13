@@ -65,17 +65,33 @@ function CountdownDisplay({ value, label, delay }: CountdownDisplayProps) {
 }
 
 function FloatingParticle({ delay }: { delay: number }) {
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    function handleResize() {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  if (windowSize.width === 0) return null;
+
   return (
     <motion.div
       initial={{ 
         opacity: 0, 
-        x: Math.random() * window.innerWidth,
-        y: window.innerHeight + 50
+        x: Math.random() * windowSize.width,
+        y: windowSize.height + 50
       }}
       animate={{ 
         opacity: [0, 1, 0],
         y: -50,
-        x: Math.random() * window.innerWidth
+        x: Math.random() * windowSize.width
       }}
       transition={{ 
         duration: 8 + Math.random() * 4,
@@ -172,10 +188,8 @@ function NotifyMeForm() {
 
 export default function CountdownPage() {
   const [config, setConfig] = useState(getLaunchConfig());
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const interval = setInterval(() => {
       setConfig(getLaunchConfig());
     }, 1000);
@@ -183,28 +197,12 @@ export default function CountdownPage() {
     return () => clearInterval(interval);
   }, []);
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-purple-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
-  }
-
-  // Redirect to main app if launched and not in countdown mode
-  if (config.isLaunched && !config.isCountdownMode) {
-    window.location.href = '/';
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-purple-900 relative overflow-hidden">
-      {/* Animated Background Particles */}
       {Array.from({ length: 20 }).map((_, i) => (
         <FloatingParticle key={i} delay={i * 0.5} />
       ))}
-
-      {/* Animated Background Shapes */}
       <motion.div
         animate={{ 
           rotate: [0, 360],
@@ -232,7 +230,6 @@ export default function CountdownPage() {
       />
 
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-6">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -294,7 +291,6 @@ export default function CountdownPage() {
           </motion.div>
         </motion.div>
 
-        {/* Countdown Timer */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -334,7 +330,6 @@ export default function CountdownPage() {
           </div>
         </motion.div>
 
-        {/* Features Preview */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -378,7 +373,6 @@ export default function CountdownPage() {
           ))}
         </motion.div>
 
-        {/* Email Signup */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -391,7 +385,6 @@ export default function CountdownPage() {
           <NotifyMeForm />
         </motion.div>
 
-        {/* Footer */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
