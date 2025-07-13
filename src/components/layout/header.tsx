@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Ticket as TicketIcon, Menu, X, LogOut, LayoutDashboard, Shield } from 'lucide-react';
+import { Ticket as TicketIcon, Menu, X, LogOut, LayoutDashboard, Shield, Newspaper } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import {
@@ -88,6 +88,7 @@ export function Header() {
           <div className="hidden md:flex items-center space-x-2">
             <NavLink href="/">Home</NavLink>
             <NavLink href="/events">Browse Events</NavLink>
+            <NavLink href="/news">News</NavLink>
             <NavLink href="/create">Create Event</NavLink>
             <NavLink href="/tickets">My Tickets</NavLink>
             <NavLink href="/pricing">Pricing</NavLink>
@@ -121,6 +122,7 @@ export function Header() {
                   <nav className="flex flex-col space-y-4">
                     <NavLink href="/" onClick={closeMobileMenu}>Home</NavLink>
                     <NavLink href="/events" onClick={closeMobileMenu}>Browse Events</NavLink>
+                    <NavLink href="/news" onClick={closeMobileMenu}>News</NavLink>
                     <NavLink href="/create" onClick={closeMobileMenu}>Create Event</NavLink>
                     <NavLink href="/tickets" onClick={closeMobileMenu}>My Tickets</NavLink>
                     <NavLink href="/pricing" onClick={closeMobileMenu}>Pricing</NavLink>
