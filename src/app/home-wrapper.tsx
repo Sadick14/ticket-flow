@@ -1,3 +1,4 @@
+
 import { Metadata } from 'next';
 import { generatePageMetadata } from '@/lib/metadata';
 import HomePageClient from './home-client';
@@ -9,6 +10,6 @@ export const metadata: Metadata = generatePageMetadata({
   image: '/og-default.jpg',
 });
 
-export default function HomePage() {
+export default function HomePageWrapper() {
   return <HomePageClient />;
 }

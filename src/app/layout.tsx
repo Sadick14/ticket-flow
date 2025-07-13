@@ -25,7 +25,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
   
   const isDashboardRoute = pathname.startsWith('/dashboard') || pathname === '/create';
   const isAdminRoute = pathname.startsWith('/admin');
-  const isLaunchRoute = pathname === '/' || pathname === '/launch';
+  const isLaunchRoute = pathname === '/launch';
 
   if (isAdminRoute) {
     return <AdminLayout>{children}</AdminLayout>
