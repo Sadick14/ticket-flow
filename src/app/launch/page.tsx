@@ -79,7 +79,11 @@ export default function LaunchPage() {
         <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1, rotate: [0, 10, -10, 0] }}
-            transition={{ duration: 0.8, delay: 0.2, type: 'spring' }}
+            transition={{
+                scale: { duration: 0.5, type: 'spring' },
+                rotate: { repeat: Infinity, duration: 1.5, ease: "easeInOut", type: "tween" },
+                delay: 0.2,
+            }}
             className="inline-block mb-6"
         >
             <Rocket className="h-16 w-16 text-primary mx-auto" />
