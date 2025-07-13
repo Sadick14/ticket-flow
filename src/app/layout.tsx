@@ -6,8 +6,9 @@ import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
-import { shouldShowCountdown } from '@/lib/launch';
-import { redirect } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import RootLayoutClient from './layout-client';
+
 
 export const metadata: Metadata = {
   title: 'TicketFlow - Modern Event Ticketing',
@@ -20,16 +21,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   
-  if (!shouldShowCountdown()) {
-    // If launch is complete, the main app lives under /home
-    // The root path '/' should redirect to '/home'
-    // This logic can be refined depending on desired behavior post-launch.
-    // For now, we allow access to both, with the main content at /home.
-  }
-
-  // Render the main application layout for all pages.
-  // The root page ('/') will now be the launch page.
-  // The home page will be at '/home'.
   return (
     <html lang="en" className="h-full">
       <head>
@@ -42,12 +33,9 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <AuthProvider>
           <AppProvider>
-            <div className="flex flex-col min-h-screen">
-              <Header />
-              <main className="flex-grow">{children}</main>
-              <Footer />
-            </div>
-            <Toaster />
+            <RootLayoutClient>
+              {children}
+            </RootLayoutClient>
           </AppProvider>
         </AuthProvider>
       </body>
