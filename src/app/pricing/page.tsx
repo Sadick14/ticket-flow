@@ -1,4 +1,14 @@
 
+import { Metadata } from 'next';
+import { generatePageMetadata } from '@/lib/metadata';
+
+export const metadata: Metadata = generatePageMetadata({
+  slug: 'pricing',
+  title: 'Pricing Plans - TicketFlow',
+  description: 'Choose the perfect plan for your event management needs. From free events to enterprise solutions, TicketFlow has flexible pricing for organizers of all sizes.',
+  image: '/og-pricing.jpg',
+});
+
 'use client';
 
 import { Button } from '@/components/ui/button';

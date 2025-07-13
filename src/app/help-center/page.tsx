@@ -1,7 +1,16 @@
 
 'use client';
 
+import { Metadata } from 'next';
+import { generatePageMetadata } from '@/lib/metadata';
 import { useState } from 'react';
+
+export const metadata: Metadata = generatePageMetadata({
+  slug: 'help-center',
+  title: 'Help Center - TicketFlow Support & Resources',
+  description: 'Get help with TicketFlow! Access guides, tutorials, and support resources for event creation, ticket sales, and platform features.',
+  image: '/og-help.jpg',
+});
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';

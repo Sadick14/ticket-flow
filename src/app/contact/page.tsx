@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -11,6 +10,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Mail, Phone, MapPin, Clock, MessageCircle, Send, CheckCircle } from 'lucide-react';
+import { Metadata } from 'next';
+import { generatePageMetadata } from '@/lib/metadata';
+
+export const metadata: Metadata = generatePageMetadata({
+  slug: 'contact',
+  title: 'Contact Us - Get in Touch with TicketFlow',
+  description: 'Have questions about TicketFlow? Need support with your events? Contact our team via email, phone, or visit our offices. We\'re here to help!',
+  image: '/og-contact.jpg',
+});
 
 export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);

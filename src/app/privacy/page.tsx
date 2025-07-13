@@ -1,3 +1,12 @@
+import { Metadata } from 'next';
+import { generatePageMetadata } from '@/lib/metadata';
+
+export const metadata: Metadata = generatePageMetadata({
+  slug: 'privacy',
+  title: 'Privacy Policy - How TicketFlow Protects Your Data',
+  description: 'Learn how TicketFlow collects, uses, and protects your personal information. Our comprehensive privacy policy explains your rights and our data practices.',
+  image: '/og-privacy.jpg',
+});
 
 export default function PrivacyPolicyPage() {
   return (

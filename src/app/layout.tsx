@@ -10,6 +10,7 @@ import { usePathname } from 'next/navigation';
 import { AdminLayout } from '@/components/admin/admin-layout';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
+import LaunchWrapper from '@/components/launch-wrapper';
 
 
 // This is now a client component, so metadata should be defined statically here.
@@ -59,7 +60,9 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <AuthProvider>
           <AppProvider>
-            <MainLayout>{children}</MainLayout>
+            <LaunchWrapper>
+              <MainLayout>{children}</MainLayout>
+            </LaunchWrapper>
             <Toaster />
           </AppProvider>
         </AuthProvider>

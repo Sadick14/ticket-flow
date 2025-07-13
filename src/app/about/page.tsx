@@ -5,6 +5,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Users, Target, Zap, Heart, Award, Globe, Lightbulb, Shield } from 'lucide-react';
 import Link from 'next/link';
+import { Metadata } from 'next';
+import { generatePageMetadata } from '@/lib/metadata';
+
+export const metadata: Metadata = generatePageMetadata({
+  slug: 'about',
+  title: 'About Us - Learn About TicketFlow',
+  description: 'Discover the story behind TicketFlow, our mission to democratize event creation, and meet the passionate team building the future of event management.',
+  image: '/og-about.jpg',
+});
 
 export default function AboutPage() {
   const values = [

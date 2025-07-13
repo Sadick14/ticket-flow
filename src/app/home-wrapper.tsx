@@ -1,4 +1,3 @@
-
 import { Metadata } from 'next';
 import { generatePageMetadata } from '@/lib/metadata';
 import HomePageClient from './home-client';

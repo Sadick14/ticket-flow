@@ -1,3 +1,12 @@
+import { Metadata } from 'next';
+import { generatePageMetadata } from '@/lib/metadata';
+
+export const metadata: Metadata = generatePageMetadata({
+  slug: 'terms',
+  title: 'Terms of Service - TicketFlow User Agreement',
+  description: 'Review TicketFlow\'s terms of service, user responsibilities, and service limitations. Important information for all platform users and event organizers.',
+  image: '/og-terms.jpg',
+});
 
 export default function TermsPage() {
   return (

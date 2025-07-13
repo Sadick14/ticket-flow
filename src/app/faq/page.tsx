@@ -1,5 +1,6 @@
 'use client';
 
+import { Metadata } from 'next';
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -8,6 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, HelpCircle, MessageCircle, Book, CreditCard, Users, Calendar, Settings } from 'lucide-react';
 import Link from 'next/link';
+import { generatePageMetadata } from '@/lib/metadata';
+
+export const metadata: Metadata = generatePageMetadata({
+  slug: 'faq',
+  title: 'FAQ - Frequently Asked Questions | TicketFlow',
+  description: 'Find answers to common questions about TicketFlow event management platform. Get help with creating events, managing tickets, and using our features.',
+  image: '/og-faq.jpg',
+});
 
 export default function FAQPage() {
   const [searchQuery, setSearchQuery] = useState('');

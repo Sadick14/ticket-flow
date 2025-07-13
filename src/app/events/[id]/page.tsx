@@ -1,22 +1,148 @@
 
-'use client';
+import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { generateEventMetadata, generateEventStructuredData } from '@/lib/metadata';
+import EventDetailsClient from './event-details-client';
 
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useParams, notFound } from 'next/navigation';
-import { useAppContext } from '@/context/app-context';
-import { Button } from '@/components/ui/button';
-import { PurchaseTicketDialog } from '@/components/purchase-ticket-dialog';
-import { Calendar, MapPin, Clock, Loader2, Share2, Twitter, Facebook, Linkedin, Building, Mic, Users, Video, Link as LinkIcon } from 'lucide-react';
-import { format } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Event, Ticket } from '@/lib/types';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
+// Mock function to get event data - replace with your actual data fetching
+async function getEventData(id: string) {
+  // This would typically fetch from your database
+  // For now, return mock data structure
+  return {
+    id,
+    title: 'Sample Event',
+    description: 'This is a sample event description',
+    image: '/uploads/sample-event.jpg',
+    date: new Date().toISOString(),
+    location: 'Sample Location',
+    price: 25,
+    organizer: 'Event Organizer',
+    tags: ['technology', 'conference'],
+  };
+}
 
-export default function EventDetailsPage() {
+export async function generateMetadata(
+  { params }: { params: { id: string } }
+): Promise<Metadata> {
+  try {
+    const event = await getEventData(params.id);
+    
+    if (!event) {
+      return {
+        title: 'Event Not Found | TicketFlow',
+        description: 'The requested event could not be found.',
+      };
+    }
+
+    return generateEventMetadata(event);
+  } catch (error) {
+    return {
+      title: 'Event | TicketFlow',
+      description: 'View event details and purchase tickets on TicketFlow.',
+    };
+  }
+}
+
+export default async function EventDetailsPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  try {
+    const event = await getEventData(params.id);
+    
+    if (!event) {
+      notFound();
+    }
+
+    // Generate structured data for SEO
+    const structuredData = generateEventStructuredData(event);
+
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData),
+          }}
+        />
+        <EventDetailsClient eventId={params.id} />
+      </>
+    );
+  } catch (error) {
+    notFound();
+  }
+}
+
+// Mock function to get event data - replace with your actual data fetching
+async function getEventData(id: string) {
+  // This would typically fetch from your database
+  // For now, return mock data structure
+  return {
+    id,
+    title: 'Sample Event',
+    description: 'This is a sample event description',
+    image: '/uploads/sample-event.jpg',
+    date: new Date().toISOString(),
+    location: 'Sample Location',
+    price: 25,
+    organizer: 'Event Organizer',
+    tags: ['technology', 'conference'],
+  };
+}
+
+export async function generateMetadata(
+  { params }: { params: { id: string } }
+): Promise<Metadata> {
+  try {
+    const event = await getEventData(params.id);
+    
+    if (!event) {
+      return {
+        title: 'Event Not Found | TicketFlow',
+        description: 'The requested event could not be found.',
+      };
+    }
+
+    return generateEventMetadata(event);
+  } catch (error) {
+    return {
+      title: 'Event | TicketFlow',
+      description: 'View event details and purchase tickets on TicketFlow.',
+    };
+  }
+}
+
+export default async function EventDetailsPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  try {
+    const event = await getEventData(params.id);
+    
+    if (!event) {
+      notFound();
+    }
+
+    // Generate structured data for SEO
+    const structuredData = generateEventStructuredData(event);
+
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData),
+          }}
+        />
+        <EventDetailsClient eventId={params.id} />
+      </>
+    );
+  } catch (error) {
+    notFound();
+  }
+}
   const { getEventById, getTicketsByEvent, loading } = useAppContext();
   const { toast } = useToast();
   const [event, setEvent] = useState<Event | null>(null);

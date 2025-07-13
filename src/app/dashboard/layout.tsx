@@ -26,6 +26,7 @@ import {
   Megaphone,
   CreditCard,
   QrCode,
+  Mail,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/context/auth-context';
@@ -119,6 +120,20 @@ export default function DashboardLayout({
                   <Link href="/dashboard/scanner">
                     <QrCode />
                     <span>Ticket Scanner</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/dashboard/emails')}
+                  tooltip={{
+                    children: 'Email Management',
+                  }}
+                >
+                  <Link href="/dashboard/emails">
+                    <Mail />
+                    <span>Email Management</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
