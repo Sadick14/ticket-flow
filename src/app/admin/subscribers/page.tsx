@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAppContext } from '@/context/app-context';
@@ -13,14 +14,35 @@ import { useToast } from '@/hooks/use-toast';
 export default function AdminSubscribersPage() {
   const { launchSubscribers, loading } = useAppContext();
   const { toast } = useToast();
+  const [isNotifying, setIsNotifying] = useState(false);
 
-  const handleNotify = () => {
-    // In a real app, this would trigger a backend process to send emails.
-    toast({
-        title: 'Simulating Notifications',
-        description: `In a real app, emails would be sent to ${launchSubscribers.length} subscribers.`,
-    })
-  }
+  const handleNotify = async () => {
+    setIsNotifying(true);
+    try {
+      // The secret key here is a simple security measure for the demo.
+      // In a real production app, this should be a more secure, unique key
+      // stored in your environment variables.
+      const response = await fetch('/api/notify-subscribers?key=your-super-secret-key');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to send notifications.');
+      }
+
+      toast({
+        title: 'Notifications Sent!',
+        description: `Emails have been sent to ${data.sentCount} subscribers.`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error Sending Emails',
+        description: error.message || 'An unknown error occurred.',
+      });
+    } finally {
+      setIsNotifying(false);
+    }
+  };
   
   return (
     <div className="space-y-6">
@@ -29,9 +51,13 @@ export default function AdminSubscribersPage() {
           <h1 className="text-2xl font-bold">Launch Subscribers</h1>
           <p className="text-muted-foreground">Users waiting for the launch notification.</p>
         </div>
-        <Button onClick={handleNotify} disabled={launchSubscribers.length === 0}>
-            <Mail className="mr-2 h-4 w-4" />
-            Notify All Subscribers
+        <Button onClick={handleNotify} disabled={launchSubscribers.length === 0 || isNotifying}>
+            {isNotifying ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+                <Mail className="mr-2 h-4 w-4" />
+            )}
+            {isNotifying ? 'Sending...' : 'Notify All Subscribers'}
         </Button>
       </div>
 
