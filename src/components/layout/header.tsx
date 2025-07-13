@@ -80,13 +80,13 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center gap-2 text-xl font-bold text-primary font-headline">
+            <Link href="/home" className="flex items-center gap-2 text-xl font-bold text-primary font-headline">
               <TicketIcon className="h-6 w-6" />
               <span>TicketFlow</span>
             </Link>
           </div>
           <div className="hidden md:flex items-center space-x-2">
-            <NavLink href="/">Home</NavLink>
+            <NavLink href="/home">Home</NavLink>
             <NavLink href="/events">Browse Events</NavLink>
             <NavLink href="/news">News</NavLink>
             <NavLink href="/create">Create Event</NavLink>
@@ -111,7 +111,7 @@ export function Header() {
               <SheetContent side="right" className="w-[300px] sm:w-[400px]">
                 <div className="p-4">
                   <div className="flex justify-between items-center mb-6">
-                    <Link href="/" onClick={closeMobileMenu} className="flex items-center gap-2 text-xl font-bold text-primary font-headline">
+                    <Link href="/home" onClick={closeMobileMenu} className="flex items-center gap-2 text-xl font-bold text-primary font-headline">
                       <TicketIcon className="h-6 w-6" />
                       <span>TicketFlow</span>
                     </Link>
@@ -120,7 +120,7 @@ export function Header() {
                     </SheetClose>
                   </div>
                   <nav className="flex flex-col space-y-4">
-                    <NavLink href="/" onClick={closeMobileMenu}>Home</NavLink>
+                    <NavLink href="/home" onClick={closeMobileMenu}>Home</NavLink>
                     <NavLink href="/events" onClick={closeMobileMenu}>Browse Events</NavLink>
                     <NavLink href="/news" onClick={closeMobileMenu}>News</NavLink>
                     <NavLink href="/create" onClick={closeMobileMenu}>Create Event</NavLink>

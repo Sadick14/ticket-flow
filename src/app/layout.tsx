@@ -7,7 +7,7 @@ import './globals.css';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { shouldShowCountdown } from '@/lib/launch';
-import LaunchPage from './launch/page';
+import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'TicketFlow - Modern Event Ticketing',
@@ -20,30 +20,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   
-  if (shouldShowCountdown()) {
-    // If in countdown mode, render only the launch page.
-    return (
-      <html lang="en" className="h-full">
-        <head>
-          <title>TicketFlow - Launching Soon!</title>
-          <meta name="description" content="The future of event management is coming soon." />
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-          <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
-        </head>
-        <body className="font-body antialiased">
-          <AuthProvider>
-            <AppProvider>
-                <LaunchPage />
-                <Toaster />
-            </AppProvider>
-          </AuthProvider>
-        </body>
-      </html>
-    );
+  if (!shouldShowCountdown()) {
+    // If launch is complete, the main app lives under /home
+    // The root path '/' should redirect to '/home'
+    // This logic can be refined depending on desired behavior post-launch.
+    // For now, we allow access to both, with the main content at /home.
   }
 
-  // Otherwise, render the main application layout.
+  // Render the main application layout for all pages.
+  // The root page ('/') will now be the launch page.
+  // The home page will be at '/home'.
   return (
     <html lang="en" className="h-full">
       <head>
