@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { Printer, Ticket as TicketIcon, Calendar, Clock, MapPin, Building, Video, Link as LinkIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import QRCode from 'qrcode.react';
 
 interface ViewTicketDialogProps {
   ticket: Ticket;
@@ -22,20 +23,6 @@ interface ViewTicketDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const QRCodePlaceholder = () => (
-    <svg width="120" height="120" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="rounded-md bg-white p-1">
-        <path d="M0 0H100V100H0V0Z" fill="white"/>
-        <path d="M20 20H35V35H20V20Z" fill="black"/>
-        <path d="M25 25V30H30V25H25Z" fill="white"/>
-        <path d="M65 20H80V35H65V20Z" fill="black"/>
-        <path d="M70 25V30H75V25H70Z" fill="white"/>
-        <path d="M20 65H35V80H20V65Z" fill="black"/>
-        <path d="M25 70V75H30V70H25Z" fill="white"/>
-        <path fillRule="evenodd" clipRule="evenodd" d="M45 20H50V25H45V20ZM55 20H60V25H55V20ZM40 30H45V35H40V30ZM50 30H55V35H50V30ZM60 30H65V35H60V30ZM70 40H75V45H70V40ZM60 45H65V50H60V45ZM45 50H50V55H45V50ZM55 55H60V60H55V55ZM65 55H70V60H65V55ZM75 55H80V60H75V55ZM40 60H45V65H40V60ZM50 65H55V70H50V65ZM60 70H65V75H60V70ZM70 75H75V80H70V75ZM45 80H50V85H45V80Z" fill="black"/>
-    </svg>
-);
-
 
 export function ViewTicketDialog({ ticket, event, isOpen, onOpenChange }: ViewTicketDialogProps) {
   const eventDate = new Date(`${event.date}T${event.time}`);
@@ -108,8 +95,8 @@ export function ViewTicketDialog({ ticket, event, isOpen, onOpenChange }: ViewTi
             <div className="sm:w-56 flex-shrink-0 bg-muted/40 flex flex-col items-center justify-between p-6 border-t sm:border-t-0 sm:border-l border-dashed">
                 <div className="text-center">
                     <p className="text-muted-foreground text-xs">Scan at entry</p>
-                    <div className="mt-2">
-                        <QRCodePlaceholder />
+                    <div className="mt-2 bg-white p-1 rounded-md inline-block">
+                        <QRCode value={ticket.id} size={120} />
                     </div>
                     <p className="font-mono text-[10px] mt-2 break-all text-muted-foreground">{ticket.id}</p>
                 </div>
