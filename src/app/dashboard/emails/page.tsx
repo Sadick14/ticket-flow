@@ -10,9 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Mail, Send, Users, Calendar, Megaphone, Bell, Loader2, CheckCircle, XCircle, Shield } from 'lucide-react';
+import { Mail, Send, Users, Calendar, Megaphone, Bell, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { AdminEmailManagement } from '@/components/admin-email-management';
 
 interface EmailStatus {
   type: 'success' | 'error' | 'loading' | null;
@@ -25,8 +24,8 @@ interface EmailStatus {
 }
 
 export default function EmailManagementPage() {
-  const [emailType, setEmailType] = useState<'event-reminder' | 'event-update' | 'newsletter' | 'announcement'>('event-reminder');
-  const [recipientType, setRecipientType] = useState<'event-attendees' | 'all-users' | 'custom'>('event-attendees');
+  const [emailType, setEmailType] = useState<'event-reminder' | 'event-update'>('event-reminder');
+  const [recipientType, setRecipientType] = useState<'event-attendees' | 'custom'>('event-attendees');
   const [selectedEvent, setSelectedEvent] = useState('');
   const [customEmails, setCustomEmails] = useState('');
   const [subject, setSubject] = useState('');
@@ -36,10 +35,6 @@ export default function EmailManagementPage() {
   const [eventLocation, setEventLocation] = useState('');
   const [status, setStatus] = useState<EmailStatus>({ type: null, message: '', details: undefined });
   const { toast } = useToast();
-
-  // Mock user role - in real app, get from auth context
-  // TODO: Get actual user role from auth context
-  const userRole: 'admin' | 'organizer' = 'admin'; // Change based on actual user role
 
   // Mock events data - in real app, fetch from API
   const events = [
@@ -52,8 +47,6 @@ export default function EmailManagementPage() {
     switch (recipientType) {
       case 'event-attendees':
         return selectedEvent ? [`attendees-of-${selectedEvent}`] : [];
-      case 'all-users':
-        return ['all-users'];
       case 'custom':
         return customEmails.split(',').map(email => email.trim()).filter(email => email);
       default:
@@ -80,7 +73,7 @@ export default function EmailManagementPage() {
         eventTitle,
         eventDate,
         eventLocation,
-        senderRole: userRole,
+        senderRole: 'organizer', // Organizer specific page
       };
 
       const response = await fetch('/api/send-email', {
@@ -121,8 +114,6 @@ export default function EmailManagementPage() {
     switch (type) {
       case 'event-reminder': return <Calendar className="h-4 w-4" />;
       case 'event-update': return <Bell className="h-4 w-4" />;
-      case 'newsletter': return <Mail className="h-4 w-4" />;
-      case 'announcement': return <Megaphone className="h-4 w-4" />;
       default: return <Mail className="h-4 w-4" />;
     }
   };
@@ -133,64 +124,30 @@ export default function EmailManagementPage() {
     
     if (emailType === 'event-reminder' && (!eventTitle || !eventDate || !eventLocation)) return false;
     if (emailType === 'event-update' && !eventTitle) return false;
-    if ((emailType === 'newsletter' || emailType === 'announcement') && !subject) return false;
     
     return true;
   };
 
-  // Show admin interface if user is admin
-  if (userRole === 'admin') {
-    return (
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <AdminEmailManagement />
-      </div>
-    );
-  }
-
-  // Show organizer interface
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
         <Mail className="h-8 w-8 text-primary" />
         <div>
           <h1 className="text-3xl font-bold">Email Management</h1>
-          <p className="text-gray-600">Send emails to your event attendees and platform users</p>
+          <p className="text-gray-600">Send emails to your event attendees</p>
         </div>
       </div>
 
       <Tabs value={emailType} onValueChange={(value) => setEmailType(value as any)}>
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-          {userRole === 'organizer' ? (
-            <>
-              <TabsTrigger value="event-reminder" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Reminders
-              </TabsTrigger>
-              <TabsTrigger value="event-update" className="flex items-center gap-2">
-                <Bell className="h-4 w-4" />
-                Updates
-              </TabsTrigger>
-            </>
-          ) : (
-            <>
-              <TabsTrigger value="event-reminder" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Reminders
-              </TabsTrigger>
-              <TabsTrigger value="event-update" className="flex items-center gap-2">
-                <Bell className="h-4 w-4" />
-                Updates
-              </TabsTrigger>
-              <TabsTrigger value="newsletter" className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                Newsletter
-              </TabsTrigger>
-              <TabsTrigger value="announcement" className="flex items-center gap-2">
-                <Megaphone className="h-4 w-4" />
-                Announcements
-              </TabsTrigger>
-            </>
-          )}
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="event-reminder" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Reminders
+          </TabsTrigger>
+          <TabsTrigger value="event-update" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            Updates
+          </TabsTrigger>
         </TabsList>
 
         <Card>
@@ -199,15 +156,9 @@ export default function EmailManagementPage() {
               {getEmailTypeIcon(emailType)}
               {emailType === 'event-reminder' && 'Send Event Reminder'}
               {emailType === 'event-update' && 'Send Event Update'}
-              {emailType === 'newsletter' && 'Send Newsletter'}
-              {emailType === 'announcement' && 'Send Announcement'}
             </CardTitle>
             <CardDescription>
-              {userRole === 'admin' ? (
-                'As an admin, you can send any type of email to all users or specific groups.'
-              ) : (
-                'As an event organizer, you can send reminders and updates to your event attendees.'
-              )}
+              As an event organizer, you can send reminders and updates to your event attendees.
             </CardDescription>
           </CardHeader>
           
@@ -226,14 +177,6 @@ export default function EmailManagementPage() {
                       Event Attendees
                     </div>
                   </SelectItem>
-                  {userRole === 'admin' && (
-                    <SelectItem value="all-users">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        All Platform Users
-                      </div>
-                    </SelectItem>
-                  )}
                   <SelectItem value="custom">
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4" />
@@ -310,19 +253,6 @@ export default function EmailManagementPage() {
                     </>
                   )}
                 </div>
-              </div>
-            )}
-
-            {/* Subject (for newsletters and announcements) */}
-            {(emailType === 'newsletter' || emailType === 'announcement') && (
-              <div>
-                <Label htmlFor="subject">Subject</Label>
-                <Input
-                  id="subject"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Enter email subject"
-                />
               </div>
             )}
 
