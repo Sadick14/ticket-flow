@@ -8,13 +8,14 @@ import { notFound } from 'next/navigation';
 import { useAppContext } from '@/context/app-context';
 import { Button } from '@/components/ui/button';
 import { PurchaseTicketDialog } from '@/components/purchase-ticket-dialog';
-import { Calendar, MapPin, Clock, Loader2, Share2, Twitter, Facebook, Linkedin, Building, Mic, Users, Video, Link as LinkIcon } from 'lucide-react';
-import { format } from 'date-fns';
+import { Calendar, MapPin, Clock, Loader2, Share2, Twitter, Facebook, Linkedin, Building, Mic, Users, Video, Link as LinkIcon, Star, Tv } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Event, Ticket } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 interface EventDetailsClientProps {
   eventId: string;
@@ -57,7 +58,7 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
     notFound();
   }
 
-  const shareUrl = `${window.location.origin}/events/${event.id}`;
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const shareText = `Check out ${event.name} on TicketFlow!`;
 
   const handleShare = (platform: string) => {
@@ -92,9 +93,8 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
   const totalTicketsSold = tickets.length;
   const availabilityPercentage = totalTicketsAvailable > 0 ? (totalTicketsSold / totalTicketsAvailable) * 100 : 0;
   
-  // Check if tickets are available (price is set and capacity > 0)
-  const ticketsAvailable = typeof event.price === 'number' && event.capacity > 0;
-
+  const ticketsAvailableForPurchase = event.price >= 0 && event.capacity > 0;
+  
   // Check if event is in the past
   const eventDate = new Date(event.date);
   const isPastEvent = eventDate < new Date();
@@ -105,77 +105,48 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-8">
           {/* Event Image */}
-          <div className="relative h-64 md:h-96 rounded-lg overflow-hidden">
+          <div className="relative h-64 md:h-96 rounded-lg overflow-hidden shadow-lg">
             <Image
               src={event.imageUrl || '/placeholder-image.jpg'}
               alt={event.name}
               fill
               className="object-cover"
+              priority
             />
+             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+             <div className="absolute bottom-4 left-4 text-white">
+                <Badge variant="secondary" className="mb-2">{event.category}</Badge>
+                <h1 className="text-3xl md:text-4xl font-bold font-headline">
+                  {event.name}
+                </h1>
+             </div>
           </div>
 
           {/* Event Details */}
           <div className="space-y-6">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                  {event.name}
-                </h1>
-                
-                <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-6">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    <span>{format(new Date(event.date), 'PPP')}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    <span>{format(new Date(event.date), 'p')}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5" />
-                    <span>{event.location}</span>
-                  </div>
-                </div>
-              </div>
+            <Card>
+                <CardContent className="p-6 flex flex-wrap items-center gap-x-6 gap-y-4 text-gray-600">
+                    <div className="flex items-center gap-2">
+                        <Calendar className="h-5 w-5" />
+                        <span>{format(new Date(event.date), 'PPP')}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Clock className="h-5 w-5" />
+                        <span>{event.time}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {event.venueType === 'online' ? <Tv className="h-5 w-5" /> : <MapPin className="h-5 w-5" />}
+                        <span>{event.location}</span>
+                    </div>
+                    <div className="flex items-center gap-2 ml-auto">
+                        <Button variant="outline" size="sm" onClick={() => handleShare('copy')}><LinkIcon className="h-4 w-4 mr-2" />Copy Link</Button>
+                        <Button variant="outline" size="icon" onClick={() => handleShare('twitter')}><Twitter className="h-4 w-4" /></Button>
+                        <Button variant="outline" size="icon" onClick={() => handleShare('facebook')}><Facebook className="h-4 w-4" /></Button>
+                        <Button variant="outline" size="icon" onClick={() => handleShare('linkedin')}><Linkedin className="h-4 w-4" /></Button>
+                    </div>
+                </CardContent>
+            </Card>
 
-              {/* Share Buttons */}
-              <div className="flex items-center gap-2 ml-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleShare('copy')}
-                  className="flex items-center gap-2"
-                >
-                  <LinkIcon className="h-4 w-4" />
-                  Copy Link
-                </Button>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleShare('twitter')}
-                  >
-                    <Twitter className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleShare('facebook')}
-                  >
-                    <Facebook className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleShare('linkedin')}
-                  >
-                    <Linkedin className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Event Status */}
             {isPastEvent && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <p className="text-yellow-800 font-medium">This event has already taken place.</p>
@@ -183,128 +154,128 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
             )}
 
             {/* Organizer Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Event Organizer</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarFallback>
-                      <Building className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{event.organizationName || 'Event Organizer'}</p>
-                    <p className="text-sm text-gray-600">Event Creator</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Event Description */}
-            <Card>
+             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">About This Event</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="prose max-w-none">
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                    {event.description}
-                  </p>
+                <div className="flex items-start gap-4">
+                    {event.organizationLogoUrl && (
+                        <Avatar className="h-12 w-12 border">
+                            <AvatarImage src={event.organizationLogoUrl} alt={event.organizationName} />
+                            <AvatarFallback><Building className="h-5 w-5" /></AvatarFallback>
+                        </Avatar>
+                    )}
+                    <div>
+                        {event.organizationName && <p className="font-semibold">{event.organizationName}</p>}
+                        <div className="prose max-w-none mt-2">
+                            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                                {event.description}
+                            </p>
+                        </div>
+                    </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Event Features */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Event Features</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Mic className="h-5 w-5" />
-                    <span className="text-sm">Live Speakers</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Users className="h-5 w-5" />
-                    <span className="text-sm">Networking</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Video className="h-5 w-5" />
-                    <span className="text-sm">Recorded Sessions</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Calendar className="h-5 w-5" />
-                    <span className="text-sm">Interactive</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Speakers */}
+            {event.speakers && event.speakers.length > 0 && (
+                <Card>
+                    <CardHeader><CardTitle>Speakers</CardTitle></CardHeader>
+                    <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                        {event.speakers.map((speaker, index) => (
+                            <div key={index} className="flex items-center gap-4">
+                                <Avatar className="h-16 w-16">
+                                    <AvatarImage src={speaker.imageUrl} alt={speaker.name} />
+                                    <AvatarFallback>{speaker.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-bold">{speaker.name}</p>
+                                    <p className="text-sm text-muted-foreground">{speaker.title}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            )}
+
+             {/* Schedule / Activities */}
+            {event.activities && event.activities.length > 0 && (
+                <Card>
+                    <CardHeader><CardTitle>Schedule</CardTitle></CardHeader>
+                    <CardContent className="space-y-4">
+                        {event.activities.map((activity, index) => (
+                            <div key={index} className="flex gap-4 p-3 border-l-4 border-primary bg-muted/50 rounded-r-lg">
+                                <div className="font-semibold text-primary w-24">{activity.time}</div>
+                                <div className="flex-1">
+                                    <p className="font-semibold">{activity.name}</p>
+                                    <p className="text-sm text-muted-foreground">{activity.description}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            )}
+
+             {/* Sponsors */}
+            {event.sponsors && event.sponsors.length > 0 && (
+                <Card>
+                    <CardHeader><CardTitle>Our Sponsors</CardTitle></CardHeader>
+                    <CardContent className="flex flex-wrap items-center gap-8">
+                        {event.sponsors.map((sponsor, index) => (
+                            <div key={index} className="relative h-12 w-32 grayscale hover:grayscale-0 transition-all">
+                                <Image src={sponsor.logoUrl} alt={sponsor.name} layout="fill" objectFit="contain" />
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            )}
+
           </div>
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Ticket Purchase Card */}
           <Card className="sticky top-8">
             <CardHeader>
               <CardTitle className="text-xl">Get Your Tickets</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {ticketsAvailable ? (
+              {ticketsAvailableForPurchase ? (
                 <>
                   <div className="text-center">
                     <div className="text-3xl font-bold text-gray-900">
-                      {event.price === 0 ? 'Free' : `From $${event.price}`}
+                      {event.price === 0 ? 'Free' : `$${event.price.toFixed(2)}`}
                     </div>
                     <p className="text-sm text-gray-600">per ticket</p>
                   </div>
 
-                  {/* Availability Progress */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Tickets Sold</span>
-                      <span>{totalTicketsSold}/{totalTicketsAvailable}</span>
+                  {event.capacity > 0 && (
+                    <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                        <span>Tickets Sold</span>
+                        <span>{totalTicketsSold}/{totalTicketsAvailable}</span>
+                        </div>
+                        <Progress value={availabilityPercentage} className="h-2" />
+                        <p className="text-xs text-gray-600">
+                        {totalTicketsAvailable - totalTicketsSold} tickets remaining
+                        </p>
                     </div>
-                    <Progress value={availabilityPercentage} className="h-2" />
-                    <p className="text-xs text-gray-600">
-                      {totalTicketsAvailable - totalTicketsSold} tickets remaining
-                    </p>
-                  </div>
+                  )}
 
                   <Button
                     className="w-full"
                     size="lg"
                     onClick={() => setIsPurchaseModalOpen(true)}
-                    disabled={isPastEvent || totalTicketsSold >= totalTicketsAvailable}
+                    disabled={isPastEvent || (event.capacity > 0 && totalTicketsSold >= totalTicketsAvailable)}
                   >
                     {isPastEvent 
                       ? 'Event Ended' 
-                      : totalTicketsSold >= totalTicketsAvailable 
+                      : (event.capacity > 0 && totalTicketsSold >= totalTicketsAvailable) 
                         ? 'Sold Out' 
                         : event.price === 0 ? 'Get Free Ticket' : 'Buy Tickets'
                     }
                   </Button>
-
-                  {/* Ticket Info */}
-                  <div className="space-y-3 pt-4 border-t">
-                    <h4 className="font-medium text-gray-900">Ticket Information</h4>
-                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-sm">General Admission</p>
-                        <p className="text-xs text-gray-600">
-                          {totalTicketsAvailable - totalTicketsSold} of {totalTicketsAvailable} available
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-sm">
-                          {event.price === 0 ? 'Free' : `$${event.price}`}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
                 </>
               ) : (
                 <div className="text-center py-4">
@@ -313,60 +284,10 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
               )}
             </CardContent>
           </Card>
-
-          {/* Event Details Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Event Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-1">Date & Time</h4>
-                  <p className="text-sm text-gray-600">
-                    {format(new Date(event.date), 'EEEE, MMMM d, yyyy')}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {format(new Date(event.date), 'h:mm a')}
-                  </p>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-1">Location</h4>
-                  <p className="text-sm text-gray-600">{event.location}</p>
-                </div>
-
-                {event.category && (
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-1">Category</h4>
-                    <p className="text-sm text-gray-600 capitalize">{event.category}</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Related Events */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">More Events</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <p className="text-sm text-gray-600">
-                  Discover more events from this organizer and others in your area.
-                </p>
-                <Button variant="outline" className="w-full" asChild>
-                  <Link href="/events">Browse All Events</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
 
-      {/* Purchase Modal */}
-      {ticketsAvailable && (
+      {ticketsAvailableForPurchase && (
         <PurchaseTicketDialog
           isOpen={isPurchaseModalOpen}
           onOpenChange={setIsPurchaseModalOpen}
