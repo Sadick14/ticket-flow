@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -90,10 +91,9 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
   const totalTicketsAvailable = event.capacity;
   const totalTicketsSold = tickets.length;
   const availabilityPercentage = totalTicketsAvailable > 0 ? (totalTicketsSold / totalTicketsAvailable) * 100 : 0;
-
-  // Get lowest price ticket
-  const lowestPrice = Math.min(...tickets.map(t => t.price));
-  const hasTickets = tickets.length > 0;
+  
+  // Check if tickets are available (price is set and capacity > 0)
+  const ticketsAvailable = typeof event.price === 'number' && event.capacity > 0;
 
   // Check if event is in the past
   const eventDate = new Date(event.date);
@@ -253,11 +253,11 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
               <CardTitle className="text-xl">Get Your Tickets</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {hasTickets ? (
+              {ticketsAvailable ? (
                 <>
                   <div className="text-center">
                     <div className="text-3xl font-bold text-gray-900">
-                      {lowestPrice === 0 ? 'Free' : `From $${lowestPrice}`}
+                      {event.price === 0 ? 'Free' : `From $${event.price}`}
                     </div>
                     <p className="text-sm text-gray-600">per ticket</p>
                   </div>
@@ -284,7 +284,7 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
                       ? 'Event Ended' 
                       : totalTicketsSold >= totalTicketsAvailable 
                         ? 'Sold Out' 
-                        : 'Buy Tickets'
+                        : event.price === 0 ? 'Get Free Ticket' : 'Buy Tickets'
                     }
                   </Button>
 
@@ -366,7 +366,7 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
       </div>
 
       {/* Purchase Modal */}
-      {hasTickets && (
+      {ticketsAvailable && (
         <PurchaseTicketDialog
           isOpen={isPurchaseModalOpen}
           onOpenChange={setIsPurchaseModalOpen}

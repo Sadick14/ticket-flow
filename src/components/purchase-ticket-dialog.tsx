@@ -103,6 +103,7 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
   
   const eventDate = new Date(`${event.date}T${event.time}`);
   const totalPrice = event.price * quantity;
+  const isFree = event.price === 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
@@ -157,7 +158,7 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
            
             <div className="bg-muted/50 px-4 py-3 flex justify-between items-center rounded-md mt-4">
                 <p className="text-sm font-medium text-muted-foreground">Total Price</p>
-                <p className="text-xl font-bold">${totalPrice.toFixed(2)}</p>
+                <p className="text-xl font-bold">{isFree ? 'Free' : `$${totalPrice.toFixed(2)}`}</p>
             </div>
 
 
@@ -165,7 +166,7 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Confirm Purchase
+                {isFree ? 'Get Free Ticket' : 'Confirm Purchase'}
               </Button>
             </DialogFooter>
           </fieldset>
