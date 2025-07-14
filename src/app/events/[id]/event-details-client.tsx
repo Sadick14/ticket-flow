@@ -112,24 +112,68 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
                   priority
                 />
               </div>
-              <CardHeader>
-                <CardTitle className="text-3xl md:text-4xl font-bold font-headline">{event.name}</CardTitle>
-                <div className="flex items-center gap-2 pt-2">
-                    <Badge variant="outline">{event.category}</Badge>
-                    <p className="text-muted-foreground">Hosted by <span className="font-semibold text-foreground">{event.organizationName || 'Event Creator'}</span></p>
+            </Card>
+
+            <div className="space-y-4">
+                <h1 className="text-3xl md:text-4xl font-bold font-headline">{event.name}</h1>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
+                    <div className="flex items-center">
+                        <Calendar className="mr-2 h-4 w-4" />
+                        <span>{format(eventDate, 'PPP')}</span>
+                    </div>
+                    <div className="flex items-center">
+                        <Clock className="mr-2 h-4 w-4" />
+                        <span>{event.time}</span>
+                    </div>
+                     {event.venueType === 'online' ? (
+                        <div className="flex items-center">
+                            <Video className="mr-2 h-4 w-4" />
+                            <span>Online Event</span>
+                        </div>
+                    ) : (
+                        <div className="flex items-center">
+                            <MapPin className="mr-2 h-4 w-4" />
+                            <span>{event.location}</span>
+                        </div>
+                    )}
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="prose max-w-none">
-                  <h3 className="text-xl font-semibold mb-4">About This Event</h3>
+                 <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={() => handleShare('copy')}><LinkIcon className="mr-2 h-4 w-4" /> Copy Link</Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleShare('twitter')}><Twitter className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleShare('facebook')}><Facebook className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleShare('linkedin')}><Linkedin className="h-4 w-4" /></Button>
+                </div>
+            </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Event Organizer</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center gap-4">
+                        <Avatar className="h-12 w-12">
+                            <AvatarImage src={event.organizationLogoUrl} alt={event.organizationName} />
+                            <AvatarFallback><Building/></AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="font-bold">{event.organizationName || 'Event Creator'}</p>
+                            <p className="text-sm text-muted-foreground">Event Creator</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>About This Event</CardTitle>
+                </CardHeader>
+                <CardContent className="prose max-w-none">
                   <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                       {event.description}
                   </p>
-                </div>
-              </CardContent>
+                </CardContent>
             </Card>
-
-            {/* Speakers */}
+            
             {event.speakers && event.speakers.length > 0 && (
                 <Card>
                     <CardHeader><CardTitle>Speakers</CardTitle></CardHeader>
@@ -150,7 +194,6 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
                 </Card>
             )}
 
-            {/* Schedule / Activities */}
             {event.activities && event.activities.length > 0 && (
                 <Card>
                     <CardHeader><CardTitle>Schedule</CardTitle></CardHeader>
@@ -168,7 +211,6 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
                 </Card>
             )}
 
-            {/* Sponsors */}
             {event.sponsors && event.sponsors.length > 0 && (
                 <Card>
                     <CardHeader><CardTitle>Our Sponsors</CardTitle></CardHeader>
@@ -181,14 +223,6 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
                     </CardContent>
                 </Card>
             )}
-            
-            <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold">Share this Event:</h3>
-                <Button variant="outline" size="icon" onClick={() => handleShare('twitter')}><Twitter className="h-4 w-4" /></Button>
-                <Button variant="outline" size="icon" onClick={() => handleShare('facebook')}><Facebook className="h-4 w-4" /></Button>
-                <Button variant="outline" size="icon" onClick={() => handleShare('linkedin')}><Linkedin className="h-4 w-4" /></Button>
-                <Button variant="outline" size="icon" onClick={() => handleShare('copy')}><LinkIcon className="h-4 w-4" /></Button>
-            </div>
 
           </div>
 
@@ -249,36 +283,24 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm">
                     <div className="flex items-center">
-                        <Calendar className="mr-3 h-4 w-4 text-muted-foreground" />
-                        <span>{format(eventDate, 'PPP')}</span>
+                        <p className="font-semibold w-24">Date & Time</p>
+                        <span>{format(eventDate, 'PPPp')}</span>
                     </div>
                     <div className="flex items-center">
-                        <Clock className="mr-3 h-4 w-4 text-muted-foreground" />
-                        <span>{event.time}</span>
-                    </div>
-                    {event.venueType === 'online' ? (
-                        <div className="flex items-center">
-                            <Video className="mr-3 h-4 w-4 text-muted-foreground" />
+                         <p className="font-semibold w-24">Location</p>
+                        {event.venueType === 'online' ? (
                             <span>Online Event</span>
-                        </div>
-                    ) : (
-                        <div className="flex items-center">
-                            <MapPin className="mr-3 h-4 w-4 text-muted-foreground" />
+                        ) : (
                             <span>{event.location}</span>
-                        </div>
-                    )}
+                        )}
+                    </div>
                      <div className="flex items-center">
-                        <Tag className="mr-3 h-4 w-4 text-muted-foreground" />
+                        <p className="font-semibold w-24">Category</p>
                         <span>{event.category}</span>
                     </div>
                 </CardContent>
             </Card>
 
-            <div className="text-center">
-              <Button variant="link" asChild>
-                <Link href="/events">Browse All Events</Link>
-              </Button>
-            </div>
           </div>
         </div>
       </div>
