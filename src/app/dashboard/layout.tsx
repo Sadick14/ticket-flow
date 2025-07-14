@@ -88,22 +88,20 @@ export default function DashboardLayout({
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {isCreator && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive('/create')}
-                    tooltip={{
-                      children: 'Create Event',
-                    }}
-                  >
-                    <Link href="/create">
-                      <PlusCircle />
-                      <span>Create Event</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/dashboard/create')}
+                  tooltip={{
+                    children: 'Create Event',
+                  }}
+                >
+                  <Link href="/dashboard/create">
+                    <PlusCircle />
+                    <span>Create Event</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <Separator className="my-2" />
                <SidebarMenuItem>
                 <SidebarMenuButton
@@ -257,13 +255,13 @@ export default function DashboardLayout({
                 <div className="flex-1">
                     <h1 className="text-lg font-semibold">
                       {pathname === '/dashboard' && 'My Events'}
+                      {pathname === '/dashboard/create' && 'Create Event'}
                       {pathname === '/dashboard/attendees' && 'Attendees'}
                       {pathname === '/dashboard/scanner' && 'Ticket Scanner'}
                       {pathname === '/dashboard/sales' && 'Sales & Revenue'}
                       {pathname === '/dashboard/analytics' && 'Analytics Dashboard'}
                       {pathname === '/dashboard/marketing' && 'Marketing Tools'}
                       {pathname === '/dashboard/settings' && 'Settings'}
-                      {pathname === '/create' && 'Create Event'}
                       {pathname.startsWith('/dashboard/edit/') && 'Edit Event'}
                     </h1> 
                 </div>

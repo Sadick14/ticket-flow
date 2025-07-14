@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Ticket as TicketIcon, Menu, X, LogOut, LayoutDashboard, Shield, Newspaper } from 'lucide-react';
+import { Ticket as TicketIcon, Menu, X, LogOut, LayoutDashboard, Shield, Newspaper, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import {
@@ -89,17 +89,25 @@ export function Header() {
             <NavLink href="/home">Home</NavLink>
             <NavLink href="/events">Browse Events</NavLink>
             <NavLink href="/news">News</NavLink>
-            <NavLink href="/create">Create Event</NavLink>
             <NavLink href="/tickets">My Tickets</NavLink>
             <NavLink href="/pricing">Pricing</NavLink>
           </div>
           <div className="hidden md:flex items-center gap-4">
              {user ? (
                 <>
-                    <Badge variant={user.isAdmin ? "destructive" : "outline"}>{user.isAdmin ? "Admin" : `${user.subscriptionPlan} Plan`}</Badge>
+                    <Button asChild>
+                        <Link href="/dashboard/create"><PlusCircle className="mr-2 h-4 w-4" /> Create Event</Link>
+                    </Button>
                     <UserMenu />
                 </>
-             ) : <Button onClick={signInWithGoogle}>Sign In</Button>}
+             ) : (
+                <>
+                    <Button variant="ghost" onClick={signInWithGoogle}>Sign In</Button>
+                    <Button asChild>
+                        <Link href="/dashboard/create">Create Event</Link>
+                    </Button>
+                </>
+            )}
           </div>
           <div className="md:hidden">
             <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -123,7 +131,7 @@ export function Header() {
                     <NavLink href="/home" onClick={closeMobileMenu}>Home</NavLink>
                     <NavLink href="/events" onClick={closeMobileMenu}>Browse Events</NavLink>
                     <NavLink href="/news" onClick={closeMobileMenu}>News</NavLink>
-                    <NavLink href="/create" onClick={closeMobileMenu}>Create Event</NavLink>
+                    <NavLink href="/dashboard/create" onClick={closeMobileMenu}>Create Event</NavLink>
                     <NavLink href="/tickets" onClick={closeMobileMenu}>My Tickets</NavLink>
                     <NavLink href="/pricing" onClick={closeMobileMenu}>Pricing</NavLink>
                     {user ? (
