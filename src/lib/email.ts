@@ -1,4 +1,5 @@
 
+import 'dotenv/config';
 import nodemailer from 'nodemailer';
 import { emailTemplates, TemplateId, renderTemplate } from './email-templates';
 
