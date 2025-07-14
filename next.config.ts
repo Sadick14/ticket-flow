@@ -28,22 +28,6 @@ const nextConfig: NextConfig = {
       }
     ],
   },
-  // Webpack configuration to ignore root app directory
-  webpack: (config, { dev, isServer }) => {
-    if (dev) {
-      // Ignore the root app directory during development
-      config.watchOptions = {
-        ...config.watchOptions,
-        ignored: [
-          '**/node_modules/**',
-          '**/app/**', // Ignore root app directory
-          '**/.git/**',
-          '**/.next/**',
-        ],
-      };
-    }
-    return config;
-  },
 };
 
 export default nextConfig;
