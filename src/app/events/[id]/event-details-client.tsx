@@ -182,15 +182,13 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
                 </Card>
             )}
             
-            <Card>
-                <CardHeader><CardTitle>Share this Event</CardTitle></CardHeader>
-                <CardContent className="flex flex-wrap gap-2">
-                    <Button variant="outline" onClick={() => handleShare('copy')}><LinkIcon className="h-4 w-4 mr-2" />Copy Link</Button>
-                    <Button variant="outline" size="icon" onClick={() => handleShare('twitter')}><Twitter className="h-4 w-4" /></Button>
-                    <Button variant="outline" size="icon" onClick={() => handleShare('facebook')}><Facebook className="h-4 w-4" /></Button>
-                    <Button variant="outline" size="icon" onClick={() => handleShare('linkedin')}><Linkedin className="h-4 w-4" /></Button>
-                </CardContent>
-            </Card>
+            <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold">Share this Event:</h3>
+                <Button variant="outline" size="icon" onClick={() => handleShare('twitter')}><Twitter className="h-4 w-4" /></Button>
+                <Button variant="outline" size="icon" onClick={() => handleShare('facebook')}><Facebook className="h-4 w-4" /></Button>
+                <Button variant="outline" size="icon" onClick={() => handleShare('linkedin')}><Linkedin className="h-4 w-4" /></Button>
+                <Button variant="outline" size="icon" onClick={() => handleShare('copy')}><LinkIcon className="h-4 w-4" /></Button>
+            </div>
 
           </div>
 
