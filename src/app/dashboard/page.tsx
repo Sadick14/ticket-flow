@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { useAppContext } from '@/context/app-context';
-import { Loader2, PlusCircle, Calendar, Edit, Trash2, Eye, CalendarX } from 'lucide-react';
+import { Loader2, PlusCircle, Calendar, Edit, Trash2, Eye, CalendarX, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import type { Event } from '@/lib/types';
@@ -81,13 +81,16 @@ export default function DashboardPage() {
                     <TableHead>Event</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Sales</TableHead>
+                    <TableHead>Check-ins</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {allVisibleEvents.map((event: Event) => {
                     const ticketsSold = getTicketsByEvent(event.id).length;
+                    const checkedInCount = getTicketsByEvent(event.id).filter(t => t.checkedIn).length;
                     const salesRate = event.capacity > 0 ? (ticketsSold / event.capacity) * 100 : 0;
+                    const checkInRate = ticketsSold > 0 ? (checkedInCount / ticketsSold) * 100 : 0;
                     const isCreator = event.creatorId === user.uid;
 
                     return (
@@ -109,6 +112,14 @@ export default function DashboardPage() {
                                 <span>{salesRate.toFixed(1)}%</span>
                             </div>
                             <Progress value={salesRate} className="h-2" />
+                           </div>
+                        </TableCell>
+                        <TableCell>
+                           <div className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                                <span>{checkedInCount} / {ticketsSold} checked in</span>
+                            </div>
+                            <Progress value={checkInRate} className="h-2" />
                            </div>
                         </TableCell>
                         <TableCell className="text-right">
