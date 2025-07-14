@@ -2,18 +2,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email';
 import { renderTemplate } from '@/lib/email-templates';
+import { db } from '@/lib/firebase';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 // In a real application, this should be a secure, time-sensitive, and single-use
 // value stored in your database (e.g., Firestore) or a caching layer (e.g., Redis).
-// For this demo, we will use a simplified, predictable "OTP" for a given email.
-const generateOTP = (email: string) => {
-  let hash = 0;
-  for (let i = 0; i < email.length; i++) {
-    const char = email.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash |= 0; // Convert to 32bit integer
-  }
-  return Math.abs(hash).toString().substr(0, 6).padStart(6, '0');
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+const storeOtp = async (email: string, otp: string) => {
+  const otpRef = doc(db, 'otps', email);
+  // Store OTP with a timestamp (expires in 10 minutes)
+  await setDoc(otpRef, { 
+    code: otp, 
+    createdAt: serverTimestamp(),
+  });
+};
+
+const verifyOtp = async (email: string, otp: string): Promise<boolean> => {
+    const otpRef = doc(db, 'otps', email);
+    const docSnap = await getDoc(otpRef);
+
+    if (!docSnap.exists()) {
+        return false;
+    }
+    const data = docSnap.data();
+    const isExpired = (new Date().getTime() - data.createdAt.toDate().getTime()) > 10 * 60 * 1000; // 10 minutes
+    
+    if(isExpired) {
+        return false;
+    }
+
+    return data.code === otp;
 };
 
 
@@ -25,7 +46,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    const otp = generateOTP(email);
+    const otp = generateOTP();
+    await storeOtp(email, otp);
     
     const emailToSend = renderTemplate('emailVerification', {
         attendeeName: name || 'there',
@@ -59,12 +81,12 @@ export async function PUT(request: NextRequest) {
             return NextResponse.json({ error: 'Email and OTP are required' }, { status: 400 });
         }
 
-        const expectedOtp = generateOTP(email);
+        const isValid = await verifyOtp(email, otp);
 
-        if (otp === expectedOtp) {
+        if (isValid) {
             return NextResponse.json({ success: true, message: 'Email verified successfully.' });
         } else {
-            return NextResponse.json({ success: false, error: 'Invalid OTP.' }, { status: 400 });
+            return NextResponse.json({ success: false, error: 'Invalid or expired OTP.' }, { status: 400 });
         }
 
     } catch (error) {
