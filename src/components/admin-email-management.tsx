@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,124 +9,143 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { 
   Mail, 
   Send, 
   Users, 
-  Calendar, 
+  Rocket,
   Megaphone, 
   Loader2, 
   FileText,
   Shield,
   Globe,
-  Target
+  Target,
+  Users2,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface AdminEmailTemplate {
   id: string;
   name: string;
   subject: string;
   content: string;
-  category: 'newsletter' | 'announcement' | 'promotion' | 'system';
+  category: 'newsletter' | 'announcement' | 'system' | 'promotion';
 }
 
+interface RecipientGroup {
+    id: 'all-users' | 'event-creators' | 'launch-subscribers' | 'custom';
+    name: string;
+    icon: React.ReactNode;
+}
+
+interface EmailStatus {
+  type: 'success' | 'error' | 'loading' | null;
+  message: string;
+  details?: {
+    total: number;
+    successful: number;
+    failed: number;
+  };
+}
+
+
 export default function AdminEmailManagement() {
-  const [emailType, setEmailType] = useState<'newsletter' | 'announcement' | 'system' | 'promotion'>('newsletter');
-  const [recipientType, setRecipientType] = useState<'all-users' | 'event-creators' | 'attendees' | 'custom'>('all-users');
+  const [emailType, setEmailType] = useState<'newsletter' | 'announcement'>('newsletter');
+  const [recipientType, setRecipientType] = useState<RecipientGroup['id']>('all-users');
   const [subject, setSubject] = useState('');
   const [content, setContent] = useState('');
   const [customEmails, setCustomEmails] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Mock templates - in real app, fetch from database
-  const templates: AdminEmailTemplate[] = [
-    {
-      id: '1', name: 'Monthly Newsletter', subject: 'TicketFlow Monthly Update',
-      content: `<h2>🎉 What's New This Month</h2><p>Here are the latest updates...</p>`, category: 'newsletter'
-    },
-    {
-      id: '2', name: 'System Maintenance', subject: '🔧 Scheduled Maintenance Notice',
-      content: `<h2>Scheduled System Maintenance</h2><p>We'll be performing maintenance...</p>`, category: 'system'
-    },
-    {
-      id: '3', name: 'New Feature', subject: '🚀 New Feature Announcement',
-      content: `<h2>🚀 Exciting New Feature!</h2><p>Introducing our latest feature...</p>`, category: 'announcement'
-    }
-  ];
-
-  const recipientStats = {
-    'all-users': { count: 15420, description: 'All registered users' },
-    'event-creators': { count: 2340, description: 'Active event organizers' },
-    'attendees': { count: 13080, description: 'Event attendees' },
-    'custom': { count: customEmails.split(',').filter(e => e.trim()).length, description: 'Custom email list' }
-  };
-
-  const handleTemplateSelect = (templateId: string) => {
-    const template = templates.find(t => t.id === templateId);
-    if (template) {
-      setSelectedTemplate(template.id);
-      setSubject(template.subject);
-      setContent(template.content);
-      setEmailType(template.category);
-    }
-  };
+  const [status, setStatus] = useState<EmailStatus>({ type: null, message: '', details: undefined });
+  const { toast } = useToast();
 
   const handleSendEmail = async () => {
-    setIsLoading(true);
-    // Simulate sending
-    console.log('Sending email:', {
-      type: emailType,
-      recipients: recipientType,
-      subject,
-      content,
-      customEmails: recipientType === 'custom' ? customEmails : undefined
-    });
-    setTimeout(() => setIsLoading(false), 2000);
+    setStatus({ type: 'loading', message: 'Sending emails...', details: undefined });
+
+    try {
+      const emailData = {
+        type: emailType,
+        recipientType,
+        recipients: recipientType === 'custom' ? customEmails.split(',').map(e => e.trim()).filter(Boolean) : [],
+        subject,
+        message: content,
+        senderRole: 'admin',
+      };
+
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emailData),
+      });
+      
+      const result = await response.json();
+
+      if (response.ok) {
+        setStatus({ type: 'success', message: 'Email batch processed!', details: result.details });
+        toast({ title: 'Success', description: `Emails sent to ${result.details.successful} recipients.`});
+      } else {
+        setStatus({ type: 'error', message: result.error || 'Failed to send emails' });
+      }
+    } catch (error) {
+       setStatus({ type: 'error', message: 'An unexpected error occurred.' });
+    }
   };
 
-  const getEmailTypeIcon = (type: string) => {
-    const icons = {
-      newsletter: <FileText className="h-4 w-4" />,
-      announcement: <Megaphone className="h-4 w-4" />,
-      system: <Shield className="h-4 w-4" />,
-      promotion: <Target className="h-4 w-4" />,
-    };
-    return icons[type as keyof typeof icons] || <Mail className="h-4 w-4" />;
-  };
+  const isFormValid = subject.trim() !== '' && content.trim() !== '' && (recipientType !== 'custom' || customEmails.trim() !== '');
+  
+  const recipientGroups: RecipientGroup[] = [
+    { id: 'all-users', name: 'All Users', icon: <Globe /> },
+    { id: 'event-creators', name: 'Event Creators', icon: <Users2 /> },
+    { id: 'launch-subscribers', name: 'Launch Subscribers', icon: <Rocket /> },
+    { id: 'custom', name: 'Custom List', icon: <Mail /> },
+  ];
+
+  const getEmailTypeIcon = (type: string) => ({
+    newsletter: <FileText className="h-4 w-4" />,
+    announcement: <Megaphone className="h-4 w-4" />,
+  }[type] || <Mail className="h-4 w-4" />);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Column 1: Templates and Stats */}
       <div className="lg:col-span-1 space-y-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Email Templates</CardTitle>
-            <CardDescription>Start with a pre-built template.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {templates.map((template) => (
-              <Button
-                key={template.id}
-                variant={selectedTemplate === template.id ? 'default' : 'outline'}
-                className="w-full justify-start h-auto"
-                onClick={() => handleTemplateSelect(template.id)}
-              >
-                <div className="flex items-center gap-3 py-1">
-                  {getEmailTypeIcon(template.category)}
-                  <div className="text-left">
-                    <p className="font-medium">{template.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{template.subject}</p>
+            <CardHeader>
+                <CardTitle>Recipient Group</CardTitle>
+                <CardDescription>Select who will receive this email.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+                <Select value={recipientType} onValueChange={(value) => setRecipientType(value as any)}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select a group" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {recipientGroups.map(group => (
+                            <SelectItem key={group.id} value={group.id}>
+                                <div className="flex items-center gap-2">
+                                    {group.icon} {group.name}
+                                </div>
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                 {recipientType === 'custom' && (
+                  <div className="pt-2">
+                    <Textarea
+                      placeholder="Enter emails separated by commas..."
+                      value={customEmails}
+                      onChange={(e) => setCustomEmails(e.target.value)}
+                      className="min-h-[100px]"
+                    />
                   </div>
-                </div>
-              </Button>
-            ))}
-          </CardContent>
+                )}
+            </CardContent>
         </Card>
       </div>
 
-      {/* Column 2: Composer */}
       <div className="lg:col-span-2">
         <Card>
           <CardHeader>
@@ -134,67 +153,20 @@ export default function AdminEmailManagement() {
             <CardDescription>Create and send platform-wide communications.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label>Email Type</Label>
-                <Select value={emailType} onValueChange={(value) => setEmailType(value as any)}>
-                  <SelectTrigger>{getEmailTypeIcon(emailType)} <span className="ml-2 capitalize">{emailType}</span></SelectTrigger>
-                  <SelectContent>
-                    {['newsletter', 'announcement', 'system', 'promotion'].map(type => (
-                      <SelectItem key={type} value={type}>
-                        <div className="flex items-center gap-2">
-                          {getEmailTypeIcon(type)}
-                          <span className="capitalize">{type}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Recipients</Label>
-                <Select value={recipientType} onValueChange={(value) => setRecipientType(value as any)}>
-                  <SelectTrigger>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      <span>
-                        {recipientStats[recipientType].description} ({recipientStats[recipientType].count.toLocaleString()})
-                      </span>
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(recipientStats).map(([key, value]) => (
-                      <SelectItem key={key} value={key}>
-                        <div className="flex items-center gap-2">
-                          {key === 'all-users' ? <Globe className="h-4 w-4" /> : <Users className="h-4 w-4" />}
-                          <span>{value.description} ({value.count.toLocaleString()})</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {recipientType === 'custom' && (
-              <div>
-                <Label>Custom Email List</Label>
-                <Textarea
-                  placeholder="Enter email addresses separated by commas..."
-                  value={customEmails}
-                  onChange={(e) => setCustomEmails(e.target.value)}
-                  className="min-h-[80px]"
-                />
-              </div>
-            )}
-
+             <Tabs value={emailType} onValueChange={(value) => setEmailType(value as any)} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="newsletter">Newsletter</TabsTrigger>
+                    <TabsTrigger value="announcement">Announcement</TabsTrigger>
+                </TabsList>
+             </Tabs>
+             
             <div>
               <Label htmlFor="subject">Subject</Label>
               <Input
                 id="subject"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder="Enter email subject..."
+                placeholder="Announcing our new feature..."
               />
             </div>
 
@@ -204,17 +176,44 @@ export default function AdminEmailManagement() {
                 id="content"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Enter email content..."
-                className="min-h-[250px]"
+                placeholder="<h1>New Feature!</h1><p>We're excited to announce...</p>"
+                className="min-h-[250px] font-mono"
               />
             </div>
+            
+            {status.type && (
+              <Alert className={
+                status.type === 'success' ? 'border-green-200 bg-green-50' :
+                status.type === 'error' ? 'border-red-200 bg-red-50' :
+                'border-blue-200 bg-blue-50'
+              }>
+                <div className="flex items-center gap-2">
+                  {status.type === 'loading' && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {status.type === 'success' && <CheckCircle className="h-4 w-4 text-green-600" />}
+                  {status.type === 'error' && <XCircle className="h-4 w-4 text-red-600" />}
+                  <AlertDescription>
+                    {status.message}
+                    {status.details && (
+                      <div className="mt-2 flex gap-4">
+                        <Badge variant="outline">Total: {status.details.total}</Badge>
+                        <Badge variant="outline" className="text-green-600">
+                          Successful: {status.details.successful}
+                        </Badge>
+                        {status.details.failed > 0 && (
+                          <Badge variant="outline" className="text-red-600">
+                            Failed: {status.details.failed}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </AlertDescription>
+                </div>
+              </Alert>
+            )}
 
-            <Separator />
-
-            <div className="flex justify-end gap-3">
-              <Button variant="outline">Preview</Button>
-              <Button onClick={handleSendEmail} disabled={isLoading || !subject || !content}>
-                {isLoading ? (
+            <div className="flex justify-end gap-3 pt-2">
+              <Button onClick={handleSendEmail} disabled={status.type === 'loading' || !isFormValid}>
+                {status.type === 'loading' ? (
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending...</>
                 ) : (
                   <><Send className="h-4 w-4 mr-2" /> Send Email</>

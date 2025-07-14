@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,8 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Mail, Send, Users, Calendar, Megaphone, Bell, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Mail, Send, Users, Calendar, Bell, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/auth-context';
+import { useAppContext } from '@/context/app-context';
+import type { Event } from '@/lib/types';
+
 
 interface EmailStatus {
   type: 'success' | 'error' | 'loading' | null;
@@ -24,63 +28,43 @@ interface EmailStatus {
 }
 
 export default function EmailManagementPage() {
-  const [emailType, setEmailType] = useState<'event-reminder' | 'event-update'>('event-reminder');
-  const [recipientType, setRecipientType] = useState<'event-attendees' | 'custom'>('event-attendees');
-  const [selectedEvent, setSelectedEvent] = useState('');
-  const [customEmails, setCustomEmails] = useState('');
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
-  const [eventTitle, setEventTitle] = useState('');
-  const [eventDate, setEventDate] = useState('');
-  const [eventLocation, setEventLocation] = useState('');
-  const [status, setStatus] = useState<EmailStatus>({ type: null, message: '', details: undefined });
+  const { user } = useAuth();
+  const { getEventsByCreator } = useAppContext();
   const { toast } = useToast();
+  
+  const [emailType, setEmailType] = useState<'event-reminder' | 'event-update'>('event-reminder');
+  const [selectedEventId, setSelectedEventId] = useState('');
+  const [message, setMessage] = useState('');
+  const [status, setStatus] = useState<EmailStatus>({ type: null, message: '', details: undefined });
 
-  // Mock events data - in real app, fetch from API
-  const events = [
-    { id: '1', title: 'Tech Conference 2025', date: '2025-08-15', location: 'Convention Center' },
-    { id: '2', title: 'Music Festival', date: '2025-09-20', location: 'Central Park' },
-    { id: '3', title: 'Workshop: React Basics', date: '2025-07-25', location: 'Online' },
-  ];
-
-  const getRecipients = () => {
-    switch (recipientType) {
-      case 'event-attendees':
-        return selectedEvent ? [`attendees-of-${selectedEvent}`] : [];
-      case 'custom':
-        return customEmails.split(',').map(email => email.trim()).filter(email => email);
-      default:
-        return [];
-    }
-  };
+  const userEvents = user ? getEventsByCreator(user.uid) : [];
+  const selectedEvent = userEvents.find(e => e.id === selectedEventId);
 
   const handleSendEmail = async () => {
-    try {
-      setStatus({ type: 'loading', message: 'Sending emails...', details: undefined });
-
-      const recipients = getRecipients();
-      
-      if (recipients.length === 0) {
-        setStatus({ type: 'error', message: 'Please select recipients or enter email addresses', details: undefined });
+    if (!selectedEvent) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Please select an event.' });
         return;
-      }
+    }
+    
+    setStatus({ type: 'loading', message: 'Sending emails...', details: undefined });
 
+    try {
       const emailData = {
         type: emailType,
-        recipients,
-        subject,
+        recipientType: 'event-attendees',
+        eventId: selectedEvent.id,
+        recipients: [], // Will be fetched on the server
+        subject: '', // Will be generated on server
         message,
-        eventTitle,
-        eventDate,
-        eventLocation,
-        senderRole: 'organizer', // Organizer specific page
+        eventTitle: selectedEvent.name,
+        eventDate: new Date(selectedEvent.date).toLocaleDateString('en-US', { dateStyle: 'full' }),
+        eventLocation: selectedEvent.location,
+        senderRole: 'organizer',
       };
 
       const response = await fetch('/api/send-email', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(emailData),
       });
 
@@ -89,244 +73,146 @@ export default function EmailManagementPage() {
       if (response.ok) {
         setStatus({
           type: 'success',
-          message: 'Emails sent successfully!',
+          message: 'Email batch processed!',
           details: result.details
         });
-        
-        // Reset form
-        setSubject('');
         setMessage('');
-        setCustomEmails('');
-        
         toast({
           title: 'Success',
           description: `Emails sent to ${result.details?.successful || 0} recipients`,
         });
       } else {
-        setStatus({ type: 'error', message: result.error || 'Failed to send emails', details: undefined });
+        setStatus({ type: 'error', message: result.error || 'Failed to send emails' });
       }
     } catch (error) {
-      setStatus({ type: 'error', message: 'An error occurred while sending emails', details: undefined });
+      setStatus({ type: 'error', message: 'An error occurred while sending emails' });
     }
   };
 
-  const getEmailTypeIcon = (type: string) => {
-    switch (type) {
-      case 'event-reminder': return <Calendar className="h-4 w-4" />;
-      case 'event-update': return <Bell className="h-4 w-4" />;
-      default: return <Mail className="h-4 w-4" />;
-    }
-  };
+  const getEmailTypeIcon = (type: string) => ({
+    'event-reminder': <Calendar className="h-4 w-4" />,
+    'event-update': <Bell className="h-4 w-4" />,
+  }[type] || <Mail className="h-4 w-4" />);
 
   const isFormValid = () => {
-    if (getRecipients().length === 0) return false;
-    if (!message.trim()) return false;
-    
-    if (emailType === 'event-reminder' && (!eventTitle || !eventDate || !eventLocation)) return false;
-    if (emailType === 'event-update' && !eventTitle) return false;
-    
+    if (!selectedEventId) return false;
+    if (emailType === 'event-update' && !message.trim()) return false;
     return true;
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
         <Mail className="h-8 w-8 text-primary" />
         <div>
-          <h1 className="text-3xl font-bold">Email Management</h1>
-          <p className="text-gray-600">Send emails to your event attendees</p>
+          <h1 className="text-3xl font-bold">Email Your Attendees</h1>
+          <p className="text-gray-600">Send reminders and updates for your events.</p>
         </div>
       </div>
 
-      <Tabs value={emailType} onValueChange={(value) => setEmailType(value as any)}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="event-reminder" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Reminders
-          </TabsTrigger>
-          <TabsTrigger value="event-update" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            Updates
-          </TabsTrigger>
-        </TabsList>
+      <Card>
+        <CardHeader>
+          <CardTitle>Compose Email</CardTitle>
+          <CardDescription>
+            Select an event and compose your message below.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <Tabs value={emailType} onValueChange={(value) => setEmailType(value as any)} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="event-reminder" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Event Reminder
+              </TabsTrigger>
+              <TabsTrigger value="event-update" className="flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                Event Update
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {getEmailTypeIcon(emailType)}
-              {emailType === 'event-reminder' && 'Send Event Reminder'}
-              {emailType === 'event-update' && 'Send Event Update'}
-            </CardTitle>
-            <CardDescription>
-              As an event organizer, you can send reminders and updates to your event attendees.
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent className="space-y-6">
-            {/* Recipients Section */}
-            <div className="space-y-4">
-              <Label>Recipients</Label>
-              <Select value={recipientType} onValueChange={(value) => setRecipientType(value as any)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select recipient type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="event-attendees">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      Event Attendees
-                    </div>
+          <div>
+            <Label htmlFor="eventSelect">Select Event</Label>
+            <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+              <SelectTrigger id="eventSelect">
+                <SelectValue placeholder="Choose an event..." />
+              </SelectTrigger>
+              <SelectContent>
+                {userEvents.length > 0 ? userEvents.map((event) => (
+                  <SelectItem key={event.id} value={event.id}>
+                    {event.name} - {new Date(event.date).toLocaleDateString()}
                   </SelectItem>
-                  <SelectItem value="custom">
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4" />
-                      Custom Email List
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                )) : <SelectItem value="none" disabled>No events found</SelectItem>}
+              </SelectContent>
+            </Select>
+          </div>
 
-              {recipientType === 'event-attendees' && (
-                <Select value={selectedEvent} onValueChange={setSelectedEvent}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select an event" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {events.map((event) => (
-                      <SelectItem key={event.id} value={event.id}>
-                        {event.title} - {event.date}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+          <div>
+            <Label htmlFor="message">
+              {emailType === 'event-reminder' ? 'Additional Message (optional)' : 'Update Message'}
+            </Label>
+            <Textarea
+              id="message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder={
+                emailType === 'event-reminder' 
+                  ? 'Add any extra details...'
+                  : 'Let attendees know what has changed...'
+              }
+              className="min-h-[150px]"
+            />
+             <p className="text-sm text-gray-500 mt-1">
+                {emailType === 'event-reminder' 
+                ? 'A standard reminder with event details will be sent. Add any extra notes here.'
+                : 'Your message will be sent as an update to all attendees of the selected event.'}
+            </p>
+          </div>
 
-              {recipientType === 'custom' && (
-                <div>
-                  <Textarea
-                    placeholder="Enter email addresses separated by commas..."
-                    value={customEmails}
-                    onChange={(e) => setCustomEmails(e.target.value)}
-                    className="min-h-[100px]"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Example: user1@example.com, user2@example.com
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Event Details (for reminders and updates) */}
-            {(emailType === 'event-reminder' || emailType === 'event-update') && (
-              <div className="space-y-4">
-                <Label>Event Details</Label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="eventTitle">Event Title</Label>
-                    <Input
-                      id="eventTitle"
-                      value={eventTitle}
-                      onChange={(e) => setEventTitle(e.target.value)}
-                      placeholder="Enter event title"
-                    />
-                  </div>
-                  {emailType === 'event-reminder' && (
-                    <>
-                      <div>
-                        <Label htmlFor="eventDate">Event Date</Label>
-                        <Input
-                          id="eventDate"
-                          type="date"
-                          value={eventDate}
-                          onChange={(e) => setEventDate(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="eventLocation">Event Location</Label>
-                        <Input
-                          id="eventLocation"
-                          value={eventLocation}
-                          onChange={(e) => setEventLocation(e.target.value)}
-                          placeholder="Enter event location"
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Message */}
-            <div>
-              <Label htmlFor="message">
-                {emailType === 'event-reminder' ? 'Additional Message (optional)' : 'Message'}
-              </Label>
-              <Textarea
-                id="message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder={
-                  emailType === 'event-reminder' 
-                    ? 'Add any additional information for attendees...'
-                    : 'Enter your message...'
-                }
-                className="min-h-[150px]"
-              />
-            </div>
-
-            {/* Status Alert */}
-            {status.type && (
-              <Alert className={
-                status.type === 'success' ? 'border-green-200 bg-green-50' :
-                status.type === 'error' ? 'border-red-200 bg-red-50' :
-                'border-blue-200 bg-blue-50'
-              }>
-                <div className="flex items-center gap-2">
-                  {status.type === 'loading' && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {status.type === 'success' && <CheckCircle className="h-4 w-4 text-green-600" />}
-                  {status.type === 'error' && <XCircle className="h-4 w-4 text-red-600" />}
-                  <AlertDescription>
-                    {status.message}
-                    {status.details && (
-                      <div className="mt-2 flex gap-4">
-                        <Badge variant="outline">Total: {status.details.total}</Badge>
-                        <Badge variant="outline" className="text-green-600">
-                          Successful: {status.details.successful}
+          {status.type && (
+            <Alert className={
+              status.type === 'success' ? 'border-green-200 bg-green-50' :
+              status.type === 'error' ? 'border-red-200 bg-red-50' :
+              'border-blue-200 bg-blue-50'
+            }>
+              <div className="flex items-center gap-2">
+                {status.type === 'loading' && <Loader2 className="h-4 w-4 animate-spin" />}
+                {status.type === 'success' && <CheckCircle className="h-4 w-4 text-green-600" />}
+                {status.type === 'error' && <XCircle className="h-4 w-4 text-red-600" />}
+                <AlertDescription>
+                  {status.message}
+                  {status.details && (
+                    <div className="mt-2 flex gap-4">
+                      <Badge variant="outline">Total Recipients: {status.details.total}</Badge>
+                      <Badge variant="outline" className="text-green-600">
+                        Successful: {status.details.successful}
+                      </Badge>
+                      {status.details.failed > 0 && (
+                        <Badge variant="outline" className="text-red-600">
+                          Failed: {status.details.failed}
                         </Badge>
-                        {status.details.failed > 0 && (
-                          <Badge variant="outline" className="text-red-600">
-                            Failed: {status.details.failed}
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-                  </AlertDescription>
-                </div>
-              </Alert>
-            )}
+                      )}
+                    </div>
+                  )}
+                </AlertDescription>
+              </div>
+            </Alert>
+          )}
 
-            {/* Send Button */}
-            <Button
-              onClick={handleSendEmail}
-              disabled={!isFormValid() || status.type === 'loading'}
-              className="w-full"
-              size="lg"
-            >
-              {status.type === 'loading' ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Sending Emails...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Send Emails
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      </Tabs>
+          <Button
+            onClick={handleSendEmail}
+            disabled={!isFormValid() || status.type === 'loading'}
+            className="w-full"
+            size="lg"
+          >
+            {status.type === 'loading' ? (
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending...</>
+            ) : (
+              <><Send className="h-4 w-4 mr-2" /> Send Email</>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
