@@ -1,12 +1,11 @@
 
-
 'use client';
 
 import * as React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
-import { Loader2, Newspaper, Shield, LogOut, Ticket, Users, Mail } from 'lucide-react';
+import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -18,9 +17,18 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth();
@@ -67,32 +75,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   tooltip={{ children: 'Dashboard' }}
                 >
                   <Link href="/admin">
-                    <Shield />
+                    <Home />
                     <span>Dashboard</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive('/admin/news')}
-                  tooltip={{ children: 'Manage News' }}
-                >
-                  <Link href="/admin/news">
-                    <Newspaper />
-                    <span>Manage News</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive('/admin/subscribers')}
-                  tooltip={{ children: 'Launch Subscribers' }}
-                >
-                  <Link href="/admin/subscribers">
-                    <Users />
-                    <span>Subscribers</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -104,7 +88,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 >
                   <Link href="/admin/emails">
                     <Mail />
-                    <span>Emails</span>
+                    <span>Email Management</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/admin/settings')}
+                  tooltip={{ children: 'Settings' }}
+                >
+                  <Link href="/admin/settings">
+                    <Settings />
+                    <span>Settings</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -112,19 +108,41 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </SidebarContent>
           <SidebarFooter className="p-4 border-t">
             {user && (
-              <div className="flex items-center gap-3">
-                 <Avatar className="h-9 w-9">
-                    <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
-                    <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 overflow-hidden">
-                    <p className="text-sm font-medium truncate">{user.displayName}</p>
-                    <Badge variant="destructive" className="mt-1">Admin</Badge>
-                </div>
-                 <Button variant="ghost" size="icon" onClick={signOut} className="ml-auto flex-shrink-0">
-                    <LogOut className="h-5 w-5" />
-                 </Button>
-              </div>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="w-full justify-start items-center gap-3 px-2 h-auto">
+                            <Avatar className="h-9 w-9">
+                                <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
+                                <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 text-left overflow-hidden">
+                                <p className="text-sm font-medium truncate">{user.displayName}</p>
+                                <Badge variant="destructive" className="mt-1">Admin</Badge>
+                            </div>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56 mb-2" align="start" forceMount>
+                        <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                            <p className="text-sm font-medium leading-none">{user.displayName}</p>
+                            <p className="text-xs leading-none text-muted-foreground">
+                            {user.email}
+                            </p>
+                        </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                            <Link href="/home">
+                                <Globe className="mr-2 h-4 w-4" />
+                                <span>View Website</span>
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={signOut}>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Log out</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             )}
           </SidebarFooter>
         </Sidebar>
@@ -136,9 +154,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <div className="flex-1">
                     <h1 className="text-lg font-semibold">
                       {pathname === '/admin' && 'Admin Dashboard'}
-                      {pathname === '/admin/news' && 'News Management'}
-                      {pathname === '/admin/subscribers' && 'Launch Subscribers'}
                       {pathname === '/admin/emails' && 'Email Management'}
+                      {pathname === '/admin/settings' && 'Admin Settings'}
                     </h1> 
                 </div>
             </header>

@@ -9,10 +9,20 @@ import { shouldShowCountdown } from '@/lib/launch';
 
 export default function RootLayoutClient({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    // The launch page is the root page, but it doesn't have a header/footer.
-    // We check the path directly to avoid showing them.
     const isLaunchPage = pathname === '/';
+    const isAdminPage = pathname.startsWith('/admin');
 
+    // Show only the page content for admin routes
+    if (isAdminPage) {
+        return (
+            <div className="flex flex-col min-h-screen">
+                <main className="flex-grow">{children}</main>
+                <Toaster />
+            </div>
+        );
+    }
+    
+    // Show only the launch page content if countdown is active
     if (isLaunchPage && shouldShowCountdown()) {
         return (
              <div className="flex flex-col min-h-screen">
@@ -22,7 +32,7 @@ export default function RootLayoutClient({ children }: { children: React.ReactNo
         )
     }
 
-    // For all other pages, show the full layout
+    // For all other public pages, show the full layout with header and footer
     return (
         <div className="flex flex-col min-h-screen">
             <Header />
