@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
-import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe } from 'lucide-react';
+import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -28,7 +28,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth();
@@ -49,7 +48,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => pathname.startsWith(path);
 
   return (
     <SidebarProvider>
@@ -71,12 +70,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={isActive('/admin')}
+                  isActive={pathname === '/admin'}
                   tooltip={{ children: 'Dashboard' }}
                 >
                   <Link href="/admin">
                     <Home />
                     <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/admin/news')}
+                  tooltip={{ children: 'News Management' }}
+                >
+                  <Link href="/admin/news">
+                    <Newspaper />
+                    <span>News Management</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/admin/subscribers')}
+                  tooltip={{ children: 'Subscribers' }}
+                >
+                  <Link href="/admin/subscribers">
+                    <Users />
+                    <span>Subscribers</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -154,6 +177,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <div className="flex-1">
                     <h1 className="text-lg font-semibold">
                       {pathname === '/admin' && 'Admin Dashboard'}
+                      {pathname === '/admin/news' && 'News Management'}
+                      {pathname === '/admin/subscribers' && 'Launch Subscribers'}
                       {pathname === '/admin/emails' && 'Email Management'}
                       {pathname === '/admin/settings' && 'Admin Settings'}
                     </h1> 
