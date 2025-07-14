@@ -1,7 +1,8 @@
 
 import 'dotenv/config';
 import nodemailer from 'nodemailer';
-import { emailTemplates, TemplateId, renderTemplate } from './email-templates';
+import { emailTemplates, renderTemplate } from './email-templates';
+import type { TemplateId } from './email-templates';
 
 const smtpHost = process.env.SMTP_HOST;
 const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
@@ -58,4 +59,5 @@ export const sendEmail = async (mailOptions: MailOptions): Promise<boolean> => {
 };
 
 // Re-export for server-side usage
-export { emailTemplates, TemplateId, renderTemplate };
+export { emailTemplates, renderTemplate };
+export type { TemplateId };
