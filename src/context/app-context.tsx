@@ -5,6 +5,8 @@ import { createContext, useContext, useState, ReactNode, useEffect, useCallback 
 import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy } from 'firebase/firestore';
+import { sendEmail, renderTemplate } from '@/lib/email';
+import { format, parseISO } from 'date-fns';
 
 interface AppContextType {
   events: Event[];
@@ -158,8 +160,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       checkedIn: false,
     };
     try {
-      await addDoc(collection(db, 'tickets'), newTicket);
+      const docRef = await addDoc(collection(db, 'tickets'), newTicket);
       await fetchTickets();
+
+      // Send confirmation email
+      const event = await getEventById(ticketData.eventId);
+      if(event) {
+        const eventDate = parseISO(`${event.date}T${event.time}`);
+        const emailContent = renderTemplate('ticketConfirmation', {
+          eventName: event.name,
+          eventDate: format(eventDate, 'PPP p'),
+          attendeeName: ticketData.attendeeName,
+          ticketUrl: `${window.location.origin}/tickets`,
+        });
+        await sendEmail({
+          to: ticketData.attendeeEmail,
+          subject: emailContent.subject,
+          html: emailContent.html,
+          text: emailContent.text
+        });
+      }
     } catch (error) {
        console.error("Error adding ticket:", error);
        throw error;

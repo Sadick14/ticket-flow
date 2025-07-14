@@ -105,7 +105,50 @@ export const emailTemplates = {
       return { subject, html, text };
     }
   },
-  // Organizer-specific templates (not for admin panel, but same system)
+  // --- Internal System Emails ---
+  emailVerification: {
+    name: "Email Verification",
+    category: "announcement",
+    fields: {
+      attendeeName: { label: 'Attendee Name', placeholder: '', type: 'text' },
+      otpCode: { label: 'OTP Code', placeholder: '', type: 'text' },
+    },
+    generate: (content) => {
+      const { attendeeName, otpCode } = content;
+      const subject = `Your TicketFlow Verification Code`;
+      const html = emailWrapper('Verify Your Email', `
+        <h2>Hello ${attendeeName},</h2>
+        <p>To access your tickets, please use the following verification code:</p>
+        <p style="font-size: 24px; font-weight: bold; letter-spacing: 4px; margin: 20px 0; text-align: center;">${otpCode}</p>
+        <p>This code is valid for a short time. If you didn't request this, you can safely ignore this email.</p>
+      `);
+      const text = `Hello ${attendeeName},\n\nYour verification code is: ${otpCode}\n\nThis code is valid for a short time.`;
+      return { subject, html, text };
+    },
+  },
+  ticketConfirmation: {
+    name: 'Ticket Confirmation',
+    category: 'announcement', // Not selectable in admin
+    fields: {
+      eventName: { label: 'Event Name', placeholder: '', type: 'text'},
+      eventDate: { label: 'Event Date', placeholder: '', type: 'text'},
+      attendeeName: { label: 'Attendee Name', placeholder: '', type: 'text'},
+      ticketUrl: { label: 'Ticket URL', placeholder: '', type: 'url'},
+    },
+    generate: (content) => {
+        const { eventName, eventDate, attendeeName, ticketUrl } = content;
+        const subject = `✅ Your Ticket for ${eventName} is Confirmed!`;
+        const html = emailWrapper('Ticket Confirmed!', `
+            <h2>Congratulations, ${attendeeName}!</h2>
+            <p>Your ticket purchase for <strong>${eventName}</strong> is complete. We can't wait to see you!</p>
+            <p><strong>Event Date:</strong> ${eventDate}</p>
+            <p>You can view and manage your tickets at any time by clicking the button below.</p>
+            <a href="${ticketUrl}" class="button">View My Tickets</a>
+        `);
+        const text = `Congratulations, ${attendeeName}!\n\nYour ticket for ${eventName} on ${eventDate} is confirmed.\n\nView your tickets here: ${ticketUrl}`;
+        return { subject, html, text };
+    }
+  },
   eventReminder: {
     name: 'Event Reminder',
     category: 'announcement', // Not selectable in admin
