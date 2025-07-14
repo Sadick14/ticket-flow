@@ -11,9 +11,10 @@ export default function RootLayoutClient({ children }: { children: React.ReactNo
     const pathname = usePathname();
     const isLaunchPage = pathname === '/';
     const isAdminPage = pathname.startsWith('/admin');
+    const isDashboardPage = pathname.startsWith('/dashboard');
 
-    // Show only the page content for admin routes
-    if (isAdminPage) {
+    // Show only the page content for admin or dashboard routes
+    if (isAdminPage || isDashboardPage) {
         return (
             <div className="flex flex-col min-h-screen">
                 <main className="flex-grow">{children}</main>

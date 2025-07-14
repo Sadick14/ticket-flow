@@ -52,19 +52,6 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground font-headline">My Events</h1>
-          <p className="mt-1 text-lg text-muted-foreground">Events you have created or are collaborating on.</p>
-        </div>
-        <Button asChild>
-          <Link href="/create">
-            <PlusCircle className="mr-2 h-5 w-5" />
-            Create New Event
-          </Link>
-        </Button>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle>Your Events List</CardTitle>

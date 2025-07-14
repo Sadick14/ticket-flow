@@ -34,6 +34,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useAppContext } from '@/context/app-context';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Globe } from 'lucide-react';
+
 
 export default function DashboardLayout({
   children,
@@ -201,19 +211,41 @@ export default function DashboardLayout({
           </SidebarContent>
           <SidebarFooter className="p-4 border-t">
             {user && (
-              <div className="flex items-center gap-3">
-                 <Avatar className="h-9 w-9">
-                    <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
-                    <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 overflow-hidden">
-                    <p className="text-sm font-medium truncate">{user.displayName}</p>
-                    <Badge variant="secondary" className="mt-1">{user.subscriptionPlan} Plan</Badge>
-                </div>
-                 <Button variant="ghost" size="icon" onClick={signOut} className="ml-auto flex-shrink-0">
-                    <LogOut className="h-5 w-5" />
-                 </Button>
-              </div>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="w-full justify-start items-center gap-3 px-2 h-auto">
+                            <Avatar className="h-9 w-9">
+                                <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
+                                <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 text-left overflow-hidden">
+                                <p className="text-sm font-medium truncate">{user.displayName}</p>
+                                <Badge variant="secondary" className="mt-1">{user.subscriptionPlan} Plan</Badge>
+                            </div>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56 mb-2" align="start" forceMount>
+                        <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                            <p className="text-sm font-medium leading-none">{user.displayName}</p>
+                            <p className="text-xs leading-none text-muted-foreground">
+                            {user.email}
+                            </p>
+                        </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                            <Link href="/home">
+                                <Globe className="mr-2 h-4 w-4" />
+                                <span>View Website</span>
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={signOut}>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Log out</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             )}
           </SidebarFooter>
         </Sidebar>
