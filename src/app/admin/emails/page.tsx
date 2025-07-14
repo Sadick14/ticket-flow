@@ -1,6 +1,6 @@
 'use client';
 
-import { AdminEmailManagement } from '@/components/admin-email-management';
+import AdminEmailManagement from '@/components/admin-email-management';
 
 export default function AdminEmailsPage() {
   return (

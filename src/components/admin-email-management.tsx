@@ -35,7 +35,7 @@ interface AdminEmailTemplate {
   category: 'newsletter' | 'announcement' | 'promotion' | 'system';
 }
 
-export function AdminEmailManagement() {
+export default function AdminEmailManagement() {
   const [emailType, setEmailType] = useState<'newsletter' | 'announcement' | 'system' | 'promotion'>('newsletter');
   const [recipientType, setRecipientType] = useState<'all-users' | 'event-creators' | 'attendees' | 'custom'>('all-users');
   const [subject, setSubject] = useState('');
