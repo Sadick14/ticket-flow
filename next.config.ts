@@ -3,12 +3,15 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   typescript: {
     ignoreBuildErrors: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Moved from experimental to root level
+  serverExternalPackages: [],
   images: {
     remotePatterns: [
       {
@@ -24,6 +27,22 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       }
     ],
+  },
+  // Webpack configuration to ignore root app directory
+  webpack: (config, { dev, isServer }) => {
+    if (dev) {
+      // Ignore the root app directory during development
+      config.watchOptions = {
+        ...config.watchOptions,
+        ignored: [
+          '**/node_modules/**',
+          '**/app/**', // Ignore root app directory
+          '**/.git/**',
+          '**/.next/**',
+        ],
+      };
+    }
+    return config;
   },
 };
 

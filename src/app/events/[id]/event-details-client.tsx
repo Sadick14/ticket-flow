@@ -57,7 +57,7 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
   }
 
   const shareUrl = `${window.location.origin}/events/${event.id}`;
-  const shareText = `Check out ${event.title} on TicketFlow!`;
+  const shareText = `Check out ${event.name} on TicketFlow!`;
 
   const handleShare = (platform: string) => {
     let url = '';
@@ -87,8 +87,8 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
   };
 
   // Calculate tickets sold and availability
-  const totalTicketsAvailable = tickets.reduce((sum, ticket) => sum + ticket.quantity, 0);
-  const totalTicketsSold = tickets.reduce((sum, ticket) => sum + ticket.sold, 0);
+  const totalTicketsAvailable = event.capacity;
+  const totalTicketsSold = tickets.length;
   const availabilityPercentage = totalTicketsAvailable > 0 ? (totalTicketsSold / totalTicketsAvailable) * 100 : 0;
 
   // Get lowest price ticket
@@ -107,8 +107,8 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
           {/* Event Image */}
           <div className="relative h-64 md:h-96 rounded-lg overflow-hidden">
             <Image
-              src={event.image || '/placeholder-image.jpg'}
-              alt={event.title}
+              src={event.imageUrl || '/placeholder-image.jpg'}
+              alt={event.name}
               fill
               className="object-cover"
             />
@@ -119,7 +119,7 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                  {event.title}
+                  {event.name}
                 </h1>
                 
                 <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-6">
@@ -195,7 +195,7 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{event.organizerName || 'Event Organizer'}</p>
+                    <p className="font-medium">{event.organizationName || 'Event Organizer'}</p>
                     <p className="text-sm text-gray-600">Event Creator</p>
                   </div>
                 </div>
@@ -288,24 +288,22 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
                     }
                   </Button>
 
-                  {/* Ticket Types */}
+                  {/* Ticket Info */}
                   <div className="space-y-3 pt-4 border-t">
-                    <h4 className="font-medium text-gray-900">Available Tickets</h4>
-                    {tickets.map((ticket) => (
-                      <div key={ticket.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="font-medium text-sm">{ticket.type}</p>
-                          <p className="text-xs text-gray-600">
-                            {ticket.quantity - ticket.sold} of {ticket.quantity} available
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-sm">
-                            {ticket.price === 0 ? 'Free' : `$${ticket.price}`}
-                          </p>
-                        </div>
+                    <h4 className="font-medium text-gray-900">Ticket Information</h4>
+                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-sm">General Admission</p>
+                        <p className="text-xs text-gray-600">
+                          {totalTicketsAvailable - totalTicketsSold} of {totalTicketsAvailable} available
+                        </p>
                       </div>
-                    ))}
+                      <div className="text-right">
+                        <p className="font-bold text-sm">
+                          {event.price === 0 ? 'Free' : `$${event.price}`}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </>
               ) : (
@@ -371,9 +369,8 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
       {hasTickets && (
         <PurchaseTicketDialog
           isOpen={isPurchaseModalOpen}
-          onClose={() => setIsPurchaseModalOpen(false)}
+          onOpenChange={setIsPurchaseModalOpen}
           event={event}
-          tickets={tickets}
         />
       )}
     </div>

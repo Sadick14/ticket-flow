@@ -44,6 +44,11 @@ FLUTTERWAVE_SECRET_KEY=FLWSECK_TEST-...
 DATABASE_URL=postgresql://...
 MONGODB_URL=mongodb://...
 
+# Firebase Configuration
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxx@your-project.iam.gserviceaccount.com
+
 # Email Service
 SENDGRID_API_KEY=SG....
 SMTP_HOST=smtp.gmail.com
@@ -54,95 +59,135 @@ SMTP_PASSWORD=your_password
 
 ## 🏗️ Implementation Steps
 
-### 1. Database Schema
+### 1. Firebase Firestore Collections
 
-Add these tables to your database:
+Set up these collections in your Firebase Firestore:
 
-```sql
--- Payment Gateways Configuration
-CREATE TABLE payment_gateways (
-  id VARCHAR(50) PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  enabled BOOLEAN DEFAULT true,
-  processing_fee DECIMAL(5,2) NOT NULL,
-  fixed_fee INTEGER DEFAULT 0,
-  supported_countries JSON,
-  currencies JSON,
-  config JSON
-);
+```typescript
+// Firestore Collection Structure
 
--- Creator Payment Profiles
-CREATE TABLE creator_payment_profiles (
-  user_id VARCHAR(100) PRIMARY KEY,
-  preferred_gateway VARCHAR(50) REFERENCES payment_gateways(id),
-  bank_account_details JSON,
-  paypal_email VARCHAR(255),
-  stripe_connect_account_id VARCHAR(100),
-  tax_information JSON,
-  minimum_payout_amount INTEGER DEFAULT 2000,
-  payout_schedule VARCHAR(20) DEFAULT 'weekly',
-  is_verified BOOLEAN DEFAULT false,
-  verification_documents JSON,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+// /paymentGateways/{gatewayId}
+interface PaymentGatewayDoc {
+  id: string;
+  name: string;
+  enabled: boolean;
+  processingFee: number;
+  fixedFee: number;
+  supportedCountries: string[];
+  currencies: string[];
+  config: Record<string, any>;
+}
 
--- Transactions
-CREATE TABLE transactions (
-  id VARCHAR(100) PRIMARY KEY,
-  ticket_id VARCHAR(100) NOT NULL,
-  event_id VARCHAR(100) NOT NULL,
-  creator_id VARCHAR(100) NOT NULL,
-  amount INTEGER NOT NULL,
-  currency VARCHAR(3) DEFAULT 'USD',
-  payment_gateway VARCHAR(50) NOT NULL,
-  gateway_transaction_id VARCHAR(255),
-  status VARCHAR(20) DEFAULT 'pending',
-  payment_split JSON NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  completed_at TIMESTAMP,
-  refunded_at TIMESTAMP,
-  metadata JSON
-);
+// /users/{userId}/paymentProfile
+interface CreatorPaymentProfileDoc {
+  userId: string;
+  preferredGateway: string;
+  bankAccountDetails?: {
+    accountNumber: string;
+    routingNumber: string;
+    accountHolderName: string;
+    bankName: string;
+    country: string;
+  };
+  paypalEmail?: string;
+  stripeConnectAccountId?: string;
+  taxInformation?: {
+    taxId: string;
+    country: string;
+    businessType: 'individual' | 'business';
+  };
+  minimumPayoutAmount: number;
+  payoutSchedule: 'daily' | 'weekly' | 'monthly';
+  isVerified: boolean;
+  verificationDocuments?: string[];
+  createdAt: FirebaseFirestore.Timestamp;
+  updatedAt: FirebaseFirestore.Timestamp;
+}
 
--- Payouts
-CREATE TABLE payouts (
-  id VARCHAR(100) PRIMARY KEY,
-  creator_id VARCHAR(100) NOT NULL,
-  amount INTEGER NOT NULL,
-  currency VARCHAR(3) DEFAULT 'USD',
-  status VARCHAR(20) DEFAULT 'pending',
-  payment_method VARCHAR(50) NOT NULL,
-  transaction_ids JSON NOT NULL,
-  scheduled_date DATE NOT NULL,
-  processed_date DATE,
-  failure_reason TEXT,
-  gateway_payout_id VARCHAR(255),
-  metadata JSON,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+// /transactions/{transactionId}
+interface TransactionDoc {
+  id: string;
+  ticketId: string;
+  eventId: string;
+  creatorId: string;
+  amount: number;
+  currency: string;
+  paymentGateway: string;
+  gatewayTransactionId: string;
+  status: 'pending' | 'completed' | 'failed' | 'refunded' | 'disputed';
+  paymentSplit: {
+    ticketPrice: number;
+    platformCommission: number;
+    adminCommission: number;
+    paymentProcessingFee: number;
+    creatorPayout: number;
+    gatewayUsed: string;
+  };
+  createdAt: FirebaseFirestore.Timestamp;
+  completedAt?: FirebaseFirestore.Timestamp;
+  refundedAt?: FirebaseFirestore.Timestamp;
+  metadata?: Record<string, any>;
+}
 
--- Refund Requests
-CREATE TABLE refund_requests (
-  id VARCHAR(100) PRIMARY KEY,
-  transaction_id VARCHAR(100) REFERENCES transactions(id),
-  ticket_id VARCHAR(100) NOT NULL,
-  amount INTEGER NOT NULL,
-  reason TEXT NOT NULL,
-  status VARCHAR(20) DEFAULT 'pending',
-  requested_by VARCHAR(100) NOT NULL,
-  processed_by VARCHAR(100),
-  request_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  process_date TIMESTAMP,
-  refund_method VARCHAR(50) DEFAULT 'original_payment'
-);
+// /payouts/{payoutId}
+interface PayoutDoc {
+  id: string;
+  creatorId: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  paymentMethod: 'bank_transfer' | 'paypal' | 'stripe_express';
+  transactionIds: string[];
+  scheduledDate: FirebaseFirestore.Timestamp;
+  processedDate?: FirebaseFirestore.Timestamp;
+  failureReason?: string;
+  gatewayPayoutId?: string;
+  metadata?: Record<string, any>;
+  createdAt: FirebaseFirestore.Timestamp;
+}
 
--- Add indexes for performance
-CREATE INDEX idx_transactions_creator_id ON transactions(creator_id);
-CREATE INDEX idx_transactions_event_id ON transactions(event_id);
-CREATE INDEX idx_transactions_status ON transactions(status);
-CREATE INDEX idx_payouts_creator_id ON payouts(creator_id);
-CREATE INDEX idx_payouts_status ON payouts(status);
+// /refundRequests/{refundId}
+interface RefundRequestDoc {
+  id: string;
+  transactionId: string;
+  ticketId: string;
+  amount: number;
+  reason: string;
+  status: 'pending' | 'approved' | 'denied' | 'processed';
+  requestedBy: string;
+  processedBy?: string;
+  requestDate: FirebaseFirestore.Timestamp;
+  processDate?: FirebaseFirestore.Timestamp;
+  refundMethod: 'original_payment' | 'store_credit';
+}
+```
+
+### Initialize Firebase Collections with Default Data
+
+```typescript
+// src/lib/firebase-setup.ts
+import { db } from './firebase';
+import { PAYMENT_GATEWAYS } from './payment-config';
+import { doc, setDoc, collection } from 'firebase/firestore';
+
+export async function initializePaymentGateways() {
+  const batch = db.batch();
+  
+  for (const gateway of PAYMENT_GATEWAYS) {
+    const gatewayRef = doc(db, 'paymentGateways', gateway.id);
+    batch.set(gatewayRef, {
+      ...gateway,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+  }
+  
+  await batch.commit();
+  console.log('Payment gateways initialized in Firestore');
+}
+
+// Run this once to initialize your payment gateways
+// initializePaymentGateways();
 ```
 
 ### 2. Environment-based Configuration

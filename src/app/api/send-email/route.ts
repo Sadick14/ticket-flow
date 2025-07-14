@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     // Send emails in batches to avoid overwhelming the SMTP server
     const batchSize = 50;
-    const batches = [];
+    const batches: string[][] = [];
     
     for (let i = 0; i < recipients.length; i += batchSize) {
       batches.push(recipients.slice(i, i + batchSize));
@@ -80,28 +80,29 @@ export async function POST(request: NextRequest) {
     let successCount = 0;
     let failureCount = 0;
 
+    if (!emailTemplate) {
+      return NextResponse.json({ error: 'Email template could not be generated' }, { status: 500 });
+    }
+
     for (const batch of batches) {
       const emailPromises = batch.map(async (email) => {
         try {
           const success = await sendEmail({
             to: email,
-            subject: emailTemplate.subject,
-            html: emailTemplate.html,
-            text: emailTemplate.text,
+            subject: emailTemplate.subject ?? subject ?? '',
+            html: emailTemplate.html ?? message ?? '',
+            text: emailTemplate.text ?? message ?? '',
           });
-          
-          if (success) {
-            successCount++;
-          } else {
-            failureCount++;
-          }
+          return success ? 'success' : 'failure';
         } catch (error) {
           console.error(`Failed to send email to ${email}:`, error);
-          failureCount++;
+          return 'failure';
         }
       });
 
-      await Promise.all(emailPromises);
+      const results = await Promise.all(emailPromises);
+      successCount += results.filter(r => r === 'success').length;
+      failureCount += results.filter(r => r === 'failure').length;
       
       // Add a small delay between batches to be respectful to Gmail's rate limits
       if (batches.indexOf(batch) < batches.length - 1) {

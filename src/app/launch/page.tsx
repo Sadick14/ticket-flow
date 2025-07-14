@@ -36,45 +36,9 @@ export default function LaunchPage() {
   });
 
   useEffect(() => {
-<<<<<<< HEAD
     const timer = setInterval(() => {
       const config = getLaunchConfig();
       setTimeLeft(config.timeRemaining);
-=======
-    const getNextFriday12pm = () => {
-        const now = new Date();
-        const nextFriday = new Date(now);
-        // Day of week: Sunday = 0, Monday = 1, ..., Friday = 5
-        const daysUntilFriday = (5 - now.getDay() + 7) % 7;
-        // If today is Friday, target next Friday, unless it's before noon.
-        if (daysUntilFriday === 0 && now.getHours() >= 12) {
-            nextFriday.setDate(now.getDate() + 7);
-        } else {
-            nextFriday.setDate(now.getDate() + daysUntilFriday);
-        }
-        nextFriday.setHours(12, 0, 0, 0);
-        return nextFriday;
-    }
-
-    const launchDate = getNextFriday12pm();
-
-    const interval = setInterval(() => {
-      const now = new Date().getTime();
-      const distance = launchDate.getTime() - now;
-
-      if (distance < 0) {
-        clearInterval(interval);
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return;
-      }
-
-      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-      setTimeLeft({ days, hours, minutes, seconds });
->>>>>>> 57ec44c (lets change it to friday 12pm rather)
     }, 1000);
     return () => clearInterval(timer);
   }, []);

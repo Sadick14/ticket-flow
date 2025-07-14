@@ -19,7 +19,15 @@ const CountdownUnit = ({ value, label }: { value: number; label: string }) => (
 );
 
 export default function CountdownPage({ children }: { children: React.ReactNode }) {
-  const [timeLeft, setTimeLeft] = useState({
+  type TimeLeft = {
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+    total: number;
+  };
+
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
     hours: 0,
     minutes: 0,

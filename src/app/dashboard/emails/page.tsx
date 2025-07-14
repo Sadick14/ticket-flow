@@ -38,7 +38,8 @@ export default function EmailManagementPage() {
   const { toast } = useToast();
 
   // Mock user role - in real app, get from auth context
-  const userRole: 'admin' | 'organizer' = 'organizer'; // Change based on actual user role
+  // TODO: Get actual user role from auth context
+  const userRole: 'admin' | 'organizer' = 'admin'; // Change based on actual user role
 
   // Mock events data - in real app, fetch from API
   const events = [

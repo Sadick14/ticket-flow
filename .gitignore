@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# Prevent root app directory creation (we use src/app)
+/app/
+
 # production
 /build
 

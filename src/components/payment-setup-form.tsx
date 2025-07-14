@@ -14,11 +14,11 @@ import {
   CreditCard, 
   DollarSign, 
   Shield, 
-  AlertCircle, 
+  AlertCircle,
   CheckCircle,
-  Bank,
   Wallet,
-  Info
+  Info,
+  Ban
 } from 'lucide-react';
 import { PAYMENT_GATEWAYS, PaymentCalculator } from '@/lib/payment-config';
 import type { PaymentGateway, CreatorPaymentProfile } from '@/lib/payment-types';
@@ -313,7 +313,7 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
               
               <TabsContent value="razorpay" className="space-y-4">
                 <Alert>
-                  <Bank className="h-4 w-4" />
+                  <Ban className="h-4 w-4" />
                   <AlertDescription>
                     Razorpay will handle payouts to your bank account. Popular in India and Southeast Asia.
                   </AlertDescription>
@@ -342,7 +342,7 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
               
               <TabsContent value="flutterwave" className="space-y-4">
                 <Alert>
-                  <Bank className="h-4 w-4" />
+                  <Wallet className="h-4 w-4" />
                   <AlertDescription>
                     Flutterwave supports bank transfers across Africa. Great for Nigeria, Ghana, Kenya, and more.
                   </AlertDescription>

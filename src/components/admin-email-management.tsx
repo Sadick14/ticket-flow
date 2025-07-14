@@ -36,7 +36,7 @@ interface AdminEmailTemplate {
 }
 
 export function AdminEmailManagement() {
-  const [emailType, setEmailType] = useState<'newsletter' | 'announcement' | 'system' | 'promotional'>('newsletter');
+  const [emailType, setEmailType] = useState<'newsletter' | 'announcement' | 'system' | 'promotion'>('newsletter');
   const [recipientType, setRecipientType] = useState<'all-users' | 'event-creators' | 'attendees' | 'custom'>('all-users');
   const [subject, setSubject] = useState('');
   const [content, setContent] = useState('');
@@ -161,7 +161,7 @@ export function AdminEmailManagement() {
       case 'newsletter': return <FileText className="h-4 w-4" />;
       case 'announcement': return <Megaphone className="h-4 w-4" />;
       case 'system': return <Shield className="h-4 w-4" />;
-      case 'promotional': return <Target className="h-4 w-4" />;
+      case 'promotion': return <Target className="h-4 w-4" />;
       default: return <Mail className="h-4 w-4" />;
     }
   };
@@ -266,7 +266,7 @@ export function AdminEmailManagement() {
                         System Notice
                       </div>
                     </SelectItem>
-                    <SelectItem value="promotional">
+                    <SelectItem value="promotion">
                       <div className="flex items-center gap-2">
                         <Target className="h-4 w-4" />
                         Promotional
