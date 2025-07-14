@@ -1,50 +1,60 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { sendEmail, emailTemplates } from '@/lib/email';
+import { sendEmail, emailTemplates, renderTemplate } from '@/lib/email';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { UserProfile, Ticket } from '@/lib/types';
+import type { TemplateId } from '@/lib/email';
 
 interface EmailRequest {
-  type: 'event-reminder' | 'event-update' | 'newsletter' | 'announcement';
+  type: 'event-reminder' | 'event-update' | 'template';
   recipients: string[];
-  recipientType: 'all-users' | 'event-creators' | 'event-attendees' | 'custom';
+  recipientType: 'all-users' | 'event-creators' | 'event-attendees' | 'launch-subscribers' | 'custom';
   subject?: string;
-  message: string;
+  message?: string;
   eventId?: string;
   eventTitle?: string;
   eventDate?: string;
   eventLocation?: string;
   senderRole: 'admin' | 'organizer';
+
+  // For template-based emails
+  templateId?: TemplateId;
+  templateContent?: Record<string, string>;
 }
 
 async function getRecipientEmails(type: string, eventId?: string): Promise<string[]> {
     let emails: string[] = [];
-    switch(type) {
-        case 'all-users':
-            const usersSnapshot = await getDocs(collection(db, 'users'));
-            emails = usersSnapshot.docs.map(doc => (doc.data() as UserProfile).email).filter((email): email is string => !!email);
-            break;
-        case 'event-creators':
-            const eventsSnapshot = await getDocs(collection(db, 'events'));
-            const creatorIds = new Set(eventsSnapshot.docs.map(doc => doc.data().creatorId));
-            if (creatorIds.size > 0) {
-                 const creatorsQuery = query(collection(db, 'users'), where('uid', 'in', Array.from(creatorIds)));
-                 const creatorsSnapshot = await getDocs(creatorsQuery);
-                 emails = creatorsSnapshot.docs.map(doc => (doc.data() as UserProfile).email).filter((email): email is string => !!email);
-            }
-            break;
-        case 'event-attendees':
-            if (eventId) {
-                const ticketsQuery = query(collection(db, 'tickets'), where('eventId', '==', eventId));
-                const ticketsSnapshot = await getDocs(ticketsQuery);
-                const attendeeEmails = new Set(ticketsSnapshot.docs.map(doc => (doc.data() as Ticket).attendeeEmail));
-                emails = Array.from(attendeeEmails);
-            }
-            break;
-        case 'launch-subscribers':
-            const subscribersSnapshot = await getDocs(collection(db, 'launch_subscribers'));
-            emails = subscribersSnapshot.docs.map(doc => doc.data().email).filter((email): email is string => !!email);
-            break;
+    try {
+        switch(type) {
+            case 'all-users':
+                const usersSnapshot = await getDocs(collection(db, 'users'));
+                emails = usersSnapshot.docs.map(doc => (doc.data() as UserProfile).email).filter((email): email is string => !!email);
+                break;
+            case 'event-creators':
+                const eventsSnapshot = await getDocs(collection(db, 'events'));
+                const creatorIds = [...new Set(eventsSnapshot.docs.map(doc => doc.data().creatorId))];
+                if (creatorIds.length > 0) {
+                     const creatorsQuery = query(collection(db, 'users'), where('uid', 'in', creatorIds));
+                     const creatorsSnapshot = await getDocs(creatorsQuery);
+                     emails = creatorsSnapshot.docs.map(doc => (doc.data() as UserProfile).email).filter((email): email is string => !!email);
+                }
+                break;
+            case 'event-attendees':
+                if (eventId) {
+                    const ticketsQuery = query(collection(db, 'tickets'), where('eventId', '==', eventId));
+                    const ticketsSnapshot = await getDocs(ticketsQuery);
+                    const attendeeEmails = [...new Set(ticketsSnapshot.docs.map(doc => (doc.data() as Ticket).attendeeEmail))];
+                    emails = attendeeEmails;
+                }
+                break;
+            case 'launch-subscribers':
+                const subscribersSnapshot = await getDocs(collection(db, 'launch_subscribers'));
+                emails = subscribersSnapshot.docs.map(doc => doc.data().email).filter((email): email is string => !!email);
+                break;
+        }
+    } catch(e) {
+        console.error("Error fetching emails for type:", type, e);
     }
     return emails;
 }
@@ -53,7 +63,20 @@ async function getRecipientEmails(type: string, eventId?: string): Promise<strin
 export async function POST(request: NextRequest) {
   try {
     const body: EmailRequest = await request.json();
-    const { type, recipientType, eventId, recipients: customRecipients, subject, message, eventTitle, eventDate, eventLocation, senderRole } = body;
+    const { 
+        type, 
+        recipientType, 
+        eventId, 
+        recipients: customRecipients, 
+        subject, 
+        message, 
+        eventTitle, 
+        eventDate, 
+        eventLocation, 
+        senderRole,
+        templateId,
+        templateContent 
+    } = body;
 
     let recipients: string[] = [];
 
@@ -66,38 +89,26 @@ export async function POST(request: NextRequest) {
     if (recipients.length === 0) {
       return NextResponse.json({ error: 'No recipients found for the selected group.' }, { status: 400 });
     }
-    if (!message) {
-      return NextResponse.json({ error: 'Message is required' }, { status: 400 });
-    }
 
     if (senderRole === 'organizer' && !['event-reminder', 'event-update'].includes(type)) {
       return NextResponse.json({ error: 'Organizers can only send event reminders and updates' }, { status: 403 });
     }
 
-    let emailTemplate;
-    switch (type) {
-      case 'event-reminder':
-        if (!eventTitle || !eventDate || !eventLocation) {
-          return NextResponse.json({ error: 'Event details are required for reminders' }, { status: 400 });
+    let emailToSend;
+
+    if (type === 'template' && templateId && templateContent) {
+        const template = emailTemplates[templateId];
+        if (!template) {
+            return NextResponse.json({ error: 'Invalid email template' }, { status: 400 });
         }
-        emailTemplate = emailTemplates.eventReminder(eventTitle, eventDate, eventLocation);
-        break;
-      case 'event-update':
-        if (!eventTitle) {
-          return NextResponse.json({ error: 'Event title is required for updates' }, { status: 400 });
-        }
-        emailTemplate = emailTemplates.eventUpdate(eventTitle, message);
-        break;
-      case 'newsletter':
-        if (!subject) return NextResponse.json({ error: 'Subject is required' }, { status: 400 });
-        emailTemplate = emailTemplates.newsletter(subject, message);
-        break;
-      case 'announcement':
-        if (!subject) return NextResponse.json({ error: 'Subject is required' }, { status: 400 });
-        emailTemplate = emailTemplates.announcement(subject, message);
-        break;
-      default:
-        return NextResponse.json({ error: 'Invalid email type' }, { status: 400 });
+        emailToSend = renderTemplate(templateId, templateContent);
+    } else if (type === 'event-reminder' || type === 'event-update') {
+        if (!eventTitle) return NextResponse.json({ error: 'Event details required' }, { status: 400 });
+        emailToSend = type === 'event-reminder' 
+            ? renderTemplate('eventReminder', { eventName: eventTitle, eventDate: eventDate || '', eventLocation: eventLocation || '', optionalMessage: message || '' })
+            : renderTemplate('eventUpdate', { eventName: eventTitle, updateMessage: message || ''});
+    } else {
+        return NextResponse.json({ error: 'Invalid email type or missing data' }, { status: 400 });
     }
 
     const batchSize = 50;
@@ -109,9 +120,9 @@ export async function POST(request: NextRequest) {
       const emailPromises = batch.map(email =>
         sendEmail({
           to: email,
-          subject: emailTemplate.subject,
-          html: emailTemplate.html,
-          text: emailTemplate.text,
+          subject: emailToSend.subject,
+          html: emailToSend.html,
+          text: emailToSend.text,
         })
       );
       const results = await Promise.all(emailPromises);

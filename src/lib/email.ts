@@ -1,6 +1,6 @@
+
 import nodemailer from 'nodemailer';
 
-// These should be stored in your .env file or environment variables
 const smtpHost = process.env.SMTP_HOST;
 const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
 const smtpUser = process.env.SMTP_USER;
@@ -18,7 +18,7 @@ if (!isEmailConfigured) {
 const transporter = isEmailConfigured ? nodemailer.createTransport({
   host: smtpHost,
   port: smtpPort,
-  secure: smtpPort === 465, // true for 465, false for other ports
+  secure: smtpPort === 465,
   auth: {
     user: smtpUser,
     pass: smtpPass,
@@ -35,8 +35,6 @@ interface MailOptions {
 export const sendEmail = async (mailOptions: MailOptions): Promise<boolean> => {
   if (!transporter) {
     console.error('Email service is not configured. Cannot send email.');
-    // In a real app, you might want to throw an error, but for DX we can fail gracefully.
-    // For this demo, we'll simulate a successful send in non-configured environments.
     if (process.env.NODE_ENV !== 'production') {
         console.log(`[Email Simulation] Sent to: ${mailOptions.to}, Subject: ${mailOptions.subject}`);
         return true;
@@ -58,124 +56,162 @@ export const sendEmail = async (mailOptions: MailOptions): Promise<boolean> => {
 };
 
 
-// --- Email Templates ---
-const emailBaseStyles = `
-  font-family: Arial, sans-serif; 
-  max-width: 600px; 
-  margin: 0 auto; 
-  padding: 20px;
-  background-color: #f9fafb;
+// --- Email Template System ---
+
+const emailWrapper = (title: string, content: string) => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; margin: 0; padding: 0; background-color: #f8fafc; }
+    .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb; }
+    .header { background: linear-gradient(135deg, #1e40af, #7c3aed); color: white; padding: 40px; text-align: center; }
+    .header h1 { margin: 0; font-size: 28px; }
+    .content { padding: 30px; color: #374151; line-height: 1.6; }
+    .content h2 { color: #1e40af; margin-top: 0; }
+    .button { display: inline-block; background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 20px; }
+    .footer { text-align: center; padding: 20px; color: #94a3b8; font-size: 14px; }
+    .footer a { color: #1e40af; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header"><h1>${title}</h1></div>
+    <div class="content">${content}</div>
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} TicketFlow. All rights reserved.</p>
+      <p>You're receiving this because you're a part of the TicketFlow community.</p>
+    </div>
+  </div>
+</body>
+</html>
 `;
 
-const headerStyles = `
-  background: linear-gradient(135deg, #1e40af, #7c3aed); 
-  color: white; 
-  padding: 30px; 
-  border-radius: 12px; 
-  text-align: center; 
-  margin-bottom: 20px;
-`;
-
-const contentStyles = `
-  padding: 20px; 
-  background: #ffffff; 
-  border-radius: 8px; 
-  margin-bottom: 20px;
-  border: 1px solid #e5e7eb;
-`;
-
-const footerStyles = `
-  text-align: center; 
-  border-top: 1px solid #e2e8f0; 
-  padding-top: 20px; 
-  color: #94a3b8; 
-  font-size: 14px;
-`;
-
-
-interface TemplateResult {
-    subject: string;
-    html: string;
-    text: string;
+export interface EmailTemplate {
+  name: string;
+  category: 'newsletter' | 'announcement';
+  fields: {
+    [key: string]: {
+      label: string;
+      placeholder: string;
+      type: 'text' | 'textarea' | 'url';
+    }
+  };
+  generate: (content: Record<string, string>) => { subject: string, html: string, text: string };
 }
 
 export const emailTemplates = {
-  eventReminder: (eventName: string, eventDate: string, eventLocation: string): TemplateResult => ({
-    subject: `📅 Reminder: ${eventName} is tomorrow!`,
-    html: `
-      <div style="${emailBaseStyles}">
-        <div style="${headerStyles}">
-          <h1 style="margin: 0; font-size: 28px;">Event Reminder</h1>
-        </div>
-        <div style="${contentStyles}">
-          <h2 style="color: #1e40af; margin-top: 0;">Don't Forget!</h2>
-          <p>This is a friendly reminder that <strong>${eventName}</strong> is happening tomorrow, ${eventDate}.</p>
-          <p><strong>Location:</strong> ${eventLocation}</p>
-          <p>We're excited to see you there!</p>
-        </div>
-        <div style="${footerStyles}">
-          <p>© ${new Date().getFullYear()} TicketFlow. All rights reserved.</p>
-        </div>
-      </div>
-    `,
-    text: `Don't Forget! This is a reminder for ${eventName} tomorrow, ${eventDate} at ${eventLocation}.`
-  }),
+  simpleAnnouncement: {
+    name: 'Simple Announcement',
+    category: 'announcement',
+    fields: {
+      subject: { label: 'Subject', placeholder: 'A quick update from TicketFlow', type: 'text' },
+      headline: { label: 'Headline', placeholder: 'Important News!', type: 'text' },
+      message: { label: 'Message', placeholder: 'Here\'s what you need to know...', type: 'textarea' },
+    },
+    generate: (content) => {
+      const { subject, headline, message } = content;
+      const html = emailWrapper(headline, `<h2>${headline}</h2><p>${message.replace(/\n/g, '<br>')}</p>`);
+      const text = `${headline}\n\n${message}`;
+      return { subject, html, text };
+    }
+  },
+  callToAction: {
+    name: 'Call to Action',
+    category: 'announcement',
+    fields: {
+      subject: { label: 'Subject', placeholder: 'Don\'t Miss Out!', type: 'text' },
+      headline: { label: 'Headline', placeholder: 'An Exciting Opportunity', type: 'text' },
+      message: { label: 'Message', placeholder: 'We have something special for you...', type: 'textarea' },
+      buttonText: { label: 'Button Text', placeholder: 'Learn More', type: 'text' },
+      buttonUrl: { label: 'Button URL', placeholder: 'https://example.com/link', type: 'url' },
+    },
+    generate: (content) => {
+      const { subject, headline, message, buttonText, buttonUrl } = content;
+      const html = emailWrapper(headline, `<h2>${headline}</h2><p>${message.replace(/\n/g, '<br>')}</p><a href="${buttonUrl}" class="button">${buttonText}</a>`);
+      const text = `${headline}\n\n${message}\n\n${buttonText}: ${buttonUrl}`;
+      return { subject, html, text };
+    }
+  },
+  featureNewsletter: {
+    name: 'Feature Newsletter',
+    category: 'newsletter',
+    fields: {
+      subject: { label: 'Subject', placeholder: 'This Month at TicketFlow', type: 'text' },
+      headline: { label: 'Main Headline', placeholder: 'New Features to Explore', type: 'text' },
+      intro: { label: 'Introduction', placeholder: 'We\'ve been busy building things...', type: 'textarea' },
+      feature1Title: { label: 'Feature 1 Title', placeholder: 'Awesome New Feature', type: 'text' },
+      feature1Desc: { label: 'Feature 1 Description', placeholder: 'Details about the feature...', type: 'textarea' },
+      buttonText: { label: 'Button Text', placeholder: 'Explore Now', type: 'text' },
+      buttonUrl: { label: 'Button URL', placeholder: 'https://example.com/features', type: 'url' },
+    },
+    generate: (content) => {
+       const { subject, headline, intro, feature1Title, feature1Desc, buttonText, buttonUrl } = content;
+      const html = emailWrapper('TicketFlow Newsletter', `
+        <h2>${headline}</h2>
+        <p>${intro.replace(/\n/g, '<br>')}</p>
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+        <h3>${feature1Title}</h3>
+        <p>${feature1Desc.replace(/\n/g, '<br>')}</p>
+        <a href="${buttonUrl}" class="button">${buttonText}</a>
+      `);
+      const text = `${headline}\n\n${intro}\n\n${feature1Title}\n${feature1Desc}\n\n${buttonText}: ${buttonUrl}`;
+      return { subject, html, text };
+    }
+  },
+  // Organizer-specific templates (not for admin panel, but same system)
+  eventReminder: {
+    name: 'Event Reminder',
+    category: 'announcement', // Not selectable in admin
+    fields: {
+      eventName: { label: 'Event Name', placeholder: '', type: 'text'},
+      eventDate: { label: 'Event Date', placeholder: '', type: 'text'},
+      eventLocation: { label: 'Event Location', placeholder: '', type: 'text'},
+      optionalMessage: { label: 'Optional Message', placeholder: '', type: 'textarea'},
+    },
+    generate: (content) => {
+        const { eventName, eventDate, eventLocation, optionalMessage } = content;
+        const subject = `📅 Reminder: ${eventName} is almost here!`;
+        const html = emailWrapper('Event Reminder', `
+            <h2>Don't Forget!</h2>
+            <p>This is a friendly reminder that <strong>${eventName}</strong> is happening soon.</p>
+            <p><strong>Date:</strong> ${eventDate}<br><strong>Location:</strong> ${eventLocation}</p>
+            ${optionalMessage ? `<p><strong>A note from the organizer:</strong><br>${optionalMessage.replace(/\n/g, '<br>')}</p>` : ''}
+            <p>We're excited to see you there!</p>
+        `);
+        const text = `Don't Forget! Reminder for ${eventName}.\nDate: ${eventDate}\nLocation: ${eventLocation}\n${optionalMessage ? `Note: ${optionalMessage}` : ''}`;
+        return { subject, html, text };
+    },
+  },
+  eventUpdate: {
+    name: 'Event Update',
+    category: 'announcement', // Not selectable in admin
+    fields: {
+        eventName: { label: 'Event Name', placeholder: '', type: 'text' },
+        updateMessage: { label: 'Update Message', placeholder: '', type: 'textarea' },
+    },
+    generate: (content) => {
+        const { eventName, updateMessage } = content;
+        const subject = `📢 Update for ${eventName}`;
+        const html = emailWrapper('Event Update', `
+            <h2>An important update regarding ${eventName}:</h2>
+            <p>${updateMessage.replace(/\n/g, '<br>')}</p>
+        `);
+        const text = `Update for ${eventName}:\n\n${updateMessage}`;
+        return { subject, html, text };
+    }
+  }
+} as const;
 
-  eventUpdate: (eventName: string, updateMessage: string): TemplateResult => ({
-    subject: `📢 Update for ${eventName}`,
-    html: `
-      <div style="${emailBaseStyles}">
-        <div style="${headerStyles}">
-          <h1 style="margin: 0; font-size: 28px;">Event Update</h1>
-        </div>
-        <div style="${contentStyles}">
-          <h2 style="color: #1e40af; margin-top: 0;">An important update regarding ${eventName}:</h2>
-          <div style="white-space: pre-wrap; color: #374151;">${updateMessage}</div>
-        </div>
-        <div style="${footerStyles}">
-          <p>© ${new Date().getFullYear()} TicketFlow. All rights reserved.</p>
-        </div>
-      </div>
-    `,
-    text: `An important update for ${eventName}: ${updateMessage}`
-  }),
+export type TemplateId = keyof typeof emailTemplates;
 
-  newsletter: (subject: string, content: string): TemplateResult => ({
-    subject,
-    html: `
-      <div style="${emailBaseStyles}">
-        <div style="${headerStyles}">
-          <h1 style="margin: 0; font-size: 28px;">TicketFlow Newsletter</h1>
-        </div>
-        <div style="${contentStyles}">
-          <h2 style="color: #1e40af; margin-top: 0;">${subject}</h2>
-          <div style="white-space: pre-wrap; color: #374151;">${content}</div>
-        </div>
-        <div style="${footerStyles}">
-          <p>You're receiving this because you're a part of the TicketFlow community.</p>
-          <p>© ${new Date().getFullYear()} TicketFlow. All rights reserved.</p>
-        </div>
-      </div>
-    `,
-    text: `${subject}\n\n${content}`
-  }),
-
-  announcement: (subject: string, content: string): TemplateResult => ({
-    subject,
-    html: `
-      <div style="${emailBaseStyles}">
-        <div style="${headerStyles}">
-          <h1 style="margin: 0; font-size: 28px;">Platform Announcement</h1>
-        </div>
-        <div style="${contentStyles}">
-          <h2 style="color: #1e40af; margin-top: 0;">${subject}</h2>
-          <div style="white-space: pre-wrap; color: #374151;">${content}</div>
-        </div>
-        <div style="${footerStyles}">
-          <p>© ${new Date().getFullYear()} TicketFlow. All rights reserved.</p>
-        </div>
-      </div>
-    `,
-    text: `${subject}\n\n${content}`
-  }),
-};
+export function renderTemplate(templateId: TemplateId, content: Record<string, string>) {
+  const template = emailTemplates[templateId];
+  if (!template) {
+    throw new Error('Invalid template ID');
+  }
+  return template.generate(content);
+}

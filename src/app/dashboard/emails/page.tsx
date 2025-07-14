@@ -1,16 +1,16 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Mail, Send, Users, Calendar, Bell, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Mail, Send, Calendar, Bell, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useAppContext } from '@/context/app-context';
@@ -54,7 +54,6 @@ export default function EmailManagementPage() {
         recipientType: 'event-attendees',
         eventId: selectedEvent.id,
         recipients: [], // Will be fetched on the server
-        subject: '', // Will be generated on server
         message,
         eventTitle: selectedEvent.name,
         eventDate: new Date(selectedEvent.date).toLocaleDateString('en-US', { dateStyle: 'full' }),
@@ -88,11 +87,6 @@ export default function EmailManagementPage() {
       setStatus({ type: 'error', message: 'An error occurred while sending emails' });
     }
   };
-
-  const getEmailTypeIcon = (type: string) => ({
-    'event-reminder': <Calendar className="h-4 w-4" />,
-    'event-update': <Bell className="h-4 w-4" />,
-  }[type] || <Mail className="h-4 w-4" />);
 
   const isFormValid = () => {
     if (!selectedEventId) return false;
