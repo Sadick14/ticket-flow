@@ -4,7 +4,7 @@ import { sendEmail, emailTemplates, renderTemplate } from '@/lib/email';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { UserProfile, Ticket } from '@/lib/types';
-import type { TemplateId } from '@/lib/email';
+import type { TemplateId } from '@/lib/email-templates';
 
 interface EmailRequest {
   type: 'event-reminder' | 'event-update' | 'template';

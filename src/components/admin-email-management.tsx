@@ -24,7 +24,7 @@ import {
   Palette
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { emailTemplates, type EmailTemplate, type TemplateId } from '@/lib/email';
+import { emailTemplates, type EmailTemplate, type TemplateId } from '@/lib/email-templates';
 
 interface RecipientGroup {
     id: 'all-users' | 'event-creators' | 'launch-subscribers' | 'custom';
