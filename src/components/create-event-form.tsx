@@ -156,7 +156,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
         imageUrl: eventToEdit.imageUrl,
         organizationLogoUrl: eventToEdit.organizationLogoUrl || '',
         speakers: eventToEdit.speakers?.map(s => ({...s, imageUrl: s.imageUrl || ''})) || [],
-        activities: eventToEdit.activities?.map(a => ({...a, time: a && a.time ? format(new Date(`1970-01-01T${a.time.replace(/(am|pm)/i, '')}`), 'HH:mm') : '' })) || [],
+        activities: eventToEdit.activities?.map(a => ({...a, time: a && a.time ? format(new Date(`1970-01-01T${a.time.replace(/(am|pm)/i, '').trim()}`), 'HH:mm') : '' })) || [],
         sponsors: eventToEdit.sponsors?.map(s => ({...s, logoUrl: s.logoUrl || ''})) || [],
       });
     }
