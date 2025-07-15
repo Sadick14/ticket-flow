@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import * as React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
-import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users } from 'lucide-react';
+import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users, Archive } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -115,6 +116,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/admin/archived-events')}
+                  tooltip={{ children: 'Archived Events' }}
+                >
+                  <Link href="/admin/archived-events">
+                    <Archive />
+                    <span>Archived Events</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -180,6 +193,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       {pathname === '/admin/news' && 'News Management'}
                       {pathname === '/admin/subscribers' && 'Launch Subscribers'}
                       {pathname === '/admin/emails' && 'Email Management'}
+                      {pathname === '/admin/archived-events' && 'Archived Events'}
                       {pathname === '/admin/settings' && 'Admin Settings'}
                     </h1> 
                 </div>

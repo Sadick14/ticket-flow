@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -14,9 +15,9 @@ interface AppContextType {
   launchSubscribers: LaunchSubscriber[];
   loading: boolean;
   // Events
-  addEvent: (event: Omit<Event, 'id' | 'collaboratorIds'>) => Promise<void>;
+  addEvent: (event: Omit<Event, 'id' | 'collaboratorIds' | 'status'>) => Promise<void>;
   updateEvent: (id: string, eventData: Partial<Omit<Event, 'id'>>) => Promise<void>;
-  deleteEvent: (id: string) => Promise<void>;
+  deleteEvent: (id: string) => Promise<void>; // This will now archive the event
   getEventById: (id: string) => Promise<Event | undefined>;
   getEventsByCreator: (creatorId: string) => Event[];
   getCollaboratedEvents: (userId: string) => Event[];
@@ -120,9 +121,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     loadData();
   }, [fetchEvents, fetchTickets, fetchNews, fetchUsers, fetchLaunchSubscribers]);
 
-  const addEvent = async (eventData: Omit<Event, 'id' | 'collaboratorIds'>) => {
+  const addEvent = async (eventData: Omit<Event, 'id' | 'collaboratorIds' | 'status'>) => {
     try {
-      await addDoc(collection(db, 'events'), { ...eventData, collaboratorIds: [] });
+      await addDoc(collection(db, 'events'), { 
+        ...eventData, 
+        collaboratorIds: [],
+        status: 'active' 
+      });
       await fetchEvents();
     } catch (error) {
        console.error("Error adding event:", error);
@@ -143,10 +148,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteEvent = async (id: string) => {
     try {
-      await deleteDoc(doc(db, 'events', id));
+      const eventRef = doc(db, 'events', id);
+      await updateDoc(eventRef, { status: 'archived' });
       await fetchEvents();
     } catch (error) {
-      console.error("Error deleting event:", error);
+      console.error("Error archiving event:", error);
       throw error;
     }
   };
@@ -235,11 +241,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getEventsByCreator = (creatorId: string): Event[] => {
-    return events.filter(event => event.creatorId === creatorId);
+    return events.filter(event => event.creatorId === creatorId && event.status === 'active');
   }
 
   const getCollaboratedEvents = (userId: string): Event[] => {
-    return events.filter(event => event.collaboratorIds?.includes(userId));
+    return events.filter(event => event.collaboratorIds?.includes(userId) && event.status === 'active');
   }
 
   const getUserTickets = (email: string): Ticket[] => {

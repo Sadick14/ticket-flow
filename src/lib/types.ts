@@ -21,6 +21,7 @@ export interface Event {
   id: string;
   creatorId: string;
   name: string;
+  status: 'active' | 'archived' | 'cancelled';
   organizationName?: string;
   organizationLogoUrl?: string;
   category: string;
