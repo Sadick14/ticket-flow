@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import QrScanner from 'react-qr-scanner';
+import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-context';
 import { useAuth } from '@/context/auth-context';
@@ -25,37 +25,54 @@ export function TicketScanner({ onScanSuccess }: TicketScannerProps) {
   const [event, setEvent] = useState<Event | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [scanResult, setScanResult] = useState<any>(null);
-  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
-  const videoRef = useRef(null);
+  const [isScanning, setIsScanning] = useState(true);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerRegionId = "qr-scanner-region";
 
   useEffect(() => {
-    const getCameraPermission = async () => {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          setHasCameraPermission(true);
-          if (videoRef.current) {
-            (videoRef.current as any).srcObject = stream;
-          }
-        } catch (error) {
-          console.error('Error accessing camera:', error);
-          setHasCameraPermission(false);
-          setError("Camera permission denied. Please enable camera access in your browser settings.");
-        }
-      } else {
-        setHasCameraPermission(false);
-        setError("Camera not supported. This device does not support camera access.");
-      }
-    };
-    getCameraPermission();
-  }, []);
+    if (isScanning && !scannerRef.current) {
+        const qrScanner = new Html5Qrcode(scannerRegionId);
+        scannerRef.current = qrScanner;
 
-  useEffect(() => {
-    if (scanResult) {
-      handleScanResult(scanResult.text);
+        const startScanner = async () => {
+            try {
+                await qrScanner.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    (decodedText) => {
+                        handleScanResult(decodedText);
+                        qrScanner.pause();
+                        setIsScanning(false);
+                    },
+                    (errorMessage) => {
+                        // ignore error messages, they are verbose
+                    }
+                );
+            } catch (err) {
+                setError("Failed to start QR scanner. Please check camera permissions.");
+                console.error("QR Scanner Start Error:", err);
+            }
+        };
+
+        Html5Qrcode.getCameras().then(cameras => {
+            if (cameras && cameras.length) {
+                startScanner();
+            } else {
+                setError("No camera found on this device.");
+            }
+        }).catch(err => {
+            setError("Could not access camera. Please enable permissions in your browser settings.");
+        });
     }
-  }, [scanResult]);
+
+    return () => {
+        if (scannerRef.current && scannerRef.current.isScanning) {
+            scannerRef.current.stop().catch(console.error);
+            scannerRef.current = null;
+        }
+    };
+  }, [isScanning]);
+
 
   const handleScanResult = async (result: string) => {
     if (!user) {
@@ -121,29 +138,13 @@ export function TicketScanner({ onScanSuccess }: TicketScannerProps) {
   };
 
   const resetScanner = () => {
-    setScanResult(null);
     setTicket(null);
     setEvent(null);
     setError(null);
     setIsLoading(false);
+    setIsScanning(true);
   };
-
-  if (hasCameraPermission === null) {
-    return <div className="flex flex-col items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="mt-4">Requesting camera permission...</p></div>;
-  }
   
-  if (hasCameraPermission === false) {
-    return (
-       <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Camera Access Required</AlertTitle>
-            <AlertDescription>
-                {error || "Camera access is required to scan tickets. Please enable permissions in your browser settings."}
-            </AlertDescription>
-        </Alert>
-    )
-  }
-
   if (isLoading && !ticket && !error) {
     return <div className="flex flex-col items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="mt-4">Verifying ticket...</p></div>;
   }
@@ -203,7 +204,7 @@ export function TicketScanner({ onScanSuccess }: TicketScannerProps) {
     );
   }
   
-  if (error) {
+  if (error && !isScanning) {
     return (
        <Card className="text-left border-destructive">
          <CardHeader>
@@ -222,18 +223,18 @@ export function TicketScanner({ onScanSuccess }: TicketScannerProps) {
 
   return (
     <div className="space-y-4">
-      <div className="relative w-full aspect-square max-w-sm mx-auto overflow-hidden rounded-lg border">
-        <QrScanner
-          onScan={(result) => setScanResult(result)}
-          onError={(error) => console.log(error?.message)}
-          constraints={{ video: { facingMode: 'environment' } }}
-          style={{ width: '100%', height: '100%' }}
-        />
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <ScanLine className="h-2/3 w-2/3 text-white/50 animate-pulse" />
-        </div>
+      <div id={scannerRegionId} className="w-full aspect-square max-w-sm mx-auto overflow-hidden rounded-lg border bg-black">
+        {error && (
+            <div className="flex h-full items-center justify-center p-4">
+                <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Scanner Error</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            </div>
+        )}
       </div>
-      <p className="text-sm text-muted-foreground text-center">
+       <p className="text-sm text-muted-foreground text-center">
         Point your camera at the QR code on the ticket.
       </p>
     </div>
