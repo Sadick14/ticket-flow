@@ -90,10 +90,67 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Mobile-first optimizations */
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: contain;
+  }
+  
+  /* Mobile-first touch interactions */
+  @media (max-width: 768px) {
+    button, [role="button"] {
+      @apply min-h-[44px] min-w-[44px];
+    }
+    
+    input, textarea, select {
+      @apply text-base; /* Prevents zoom on iOS */
+    }
   }
 }
 
 @layer utilities {
+  /* Mobile-first utility classes */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+  
+  .safe-area-inset {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Enhanced mobile scrolling */
+  .smooth-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Mobile-optimized animations */
+  @media (prefers-reduced-motion: no-preference) {
+    .animate-slide-up {
+      animation: slide-up 0.3s ease-out;
+    }
+    
+    @keyframes slide-up {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  }
+  
   @media print {
     body {
       background: white !important;

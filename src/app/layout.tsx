@@ -10,6 +10,9 @@ import Script from 'next/script';
 export const metadata: Metadata = {
   title: 'TicketFlow - Modern Event Ticketing',
   description: 'The all-in-one platform for event organizers and attendees.',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes',
+  themeColor: '#2563eb',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
@@ -21,11 +24,16 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes" />
+        <meta name="theme-color" content="#2563eb" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="TicketFlow" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased">
+      <body className="font-body antialiased touch-manipulation safe-area-inset">
         <AuthProvider>
           <AppProvider>
             <RootLayoutClient>
