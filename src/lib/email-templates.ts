@@ -8,21 +8,26 @@ const emailWrapper = (title: string, content: string) => `
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; margin: 0; padding: 0; background-color: #f8fafc; }
-    .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb; }
-    .header { background: linear-gradient(135deg, #1e40af, #7c3aed); color: white; padding: 40px; text-align: center; }
-    .header h1 { margin: 0; font-size: 28px; }
-    .content { padding: 30px; color: #374151; line-height: 1.6; }
-    .content h2 { color: #1e40af; margin-top: 0; }
-    .button { display: inline-block; background-color: #1e40af; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 20px; }
-    .footer { text-align: center; padding: 20px; color: #94a3b8; font-size: 14px; }
-    .footer a { color: #1e40af; text-decoration: none; }
+    body { font-family: 'PT Sans', Arial, sans-serif; margin: 0; padding: 0; background-color: #F0F8FF; }
+    .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+    .header { background-color: #237A7A; color: white; padding: 24px; text-align: center; }
+    .logo { font-size: 28px; font-weight: 700; color: #ffffff; text-decoration: none; letter-spacing: 1px; }
+    .content { padding: 30px; color: #334155; line-height: 1.6; }
+    .content h2 { color: #237A7A; margin-top: 0; }
+    .button { display: inline-block; background-color: #70A4A4; color: white !important; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 20px; }
+    .footer { text-align: center; padding: 20px; color: #64748b; font-size: 14px; }
+    .footer a { color: #237A7A; text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header"><h1>${title}</h1></div>
+    <div class="header">
+        <div class="logo">TicketFlow</div>
+    </div>
     <div class="content">${content}</div>
     <div class="footer">
       <p>© ${new Date().getFullYear()} TicketFlow. All rights reserved.</p>
