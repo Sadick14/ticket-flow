@@ -33,7 +33,6 @@ import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useAppContext } from '@/context/app-context';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,11 +50,10 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, signOut } = useAuth();
-  const { getEventsByCreator } = useAppContext();
   const pathname = usePathname();
-
-  const isCreator = user ? getEventsByCreator(user.uid).length > 0 : false;
   const isActive = (path: string) => pathname === path;
+  
+  const hasPaidPlan = user?.subscriptionPlan === 'Starter' || user?.subscriptionPlan === 'Pro';
 
   return (
     <SidebarProvider>
@@ -145,8 +143,9 @@ export default function DashboardLayout({
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {isCreator && (
+              {hasPaidPlan && (
                 <>
+                  <Separator className="my-2" />
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
@@ -189,22 +188,23 @@ export default function DashboardLayout({
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive('/dashboard/settings')}
-                      tooltip={{
-                        children: 'Settings',
-                      }}
-                    >
-                      <Link href="/dashboard/settings">
-                        <Settings />
-                        <span>Settings</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
                 </>
               )}
+               <Separator className="my-2" />
+               <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/dashboard/settings')}
+                  tooltip={{
+                    children: 'Settings',
+                  }}
+                >
+                  <Link href="/dashboard/settings">
+                    <Settings />
+                    <span>Settings</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter className="p-4 border-t">

@@ -231,9 +231,9 @@ export default function SettingsPage() {
   };
 
   const planFeatures = {
-    Free: ['2 Events', 'Basic Analytics', 'Email Support'],
-    Starter: ['10 Events', 'Advanced Analytics', 'Priority Support', 'Custom Branding'],
-    Pro: ['Unlimited Events', 'Full Analytics Suite', '24/7 Support', 'White Label', 'API Access'],
+    Free: ['Up to 5 events', 'Basic dashboard', 'Standard email support'],
+    Starter: ['Up to 20 events', 'Advanced dashboard with Analytics', 'Priority email support', 'Team collaboration'],
+    Pro: ['Unlimited events', 'Full feature suite', 'Dedicated phone support', 'API Access'],
   };
 
   return (
@@ -403,7 +403,7 @@ export default function SettingsPage() {
               )}
 
               <div className="flex gap-2">
-                {user?.subscriptionPlan === 'Free' && (
+                {user?.subscriptionPlan !== 'Pro' && (
                   <Button asChild>
                     <Link href="/pricing">Upgrade Plan</Link>
                   </Button>
@@ -411,11 +411,6 @@ export default function SettingsPage() {
                 <Button variant="outline">
                   View Billing History
                 </Button>
-                {user?.subscriptionPlan !== 'Free' && (
-                  <Button variant="outline">
-                    Manage Subscription
-                  </Button>
-                )}
               </div>
             </CardContent>
           </Card>

@@ -304,13 +304,13 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
          {hasReachedFreeLimit && (
-            <Alert className="mb-8">
+            <Alert className="mb-8 border-yellow-500 text-yellow-700">
               <Zap className="h-4 w-4" />
-              <AlertTitle>You've Reached Your Limit!</AlertTitle>
+              <AlertTitle className="text-yellow-800 font-bold">You've Reached Your Limit!</AlertTitle>
               <AlertDescription>
-                You have created {userEventCount} of {FREE_PLAN_EVENT_LIMIT} events included in the Free plan. Please upgrade to a Starter or Pro plan to create more events.
+                You have created {userEventCount} of {FREE_PLAN_EVENT_LIMIT} events included in the Free plan. Please upgrade to create more events.
               </AlertDescription>
-               <Button size="sm" className="mt-4" asChild>
+               <Button size="sm" className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-white" asChild>
                 <Link href="/pricing">Upgrade Plan</Link>
                </Button>
             </Alert>
