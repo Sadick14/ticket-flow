@@ -6,8 +6,8 @@ export function Footer() {
   return (
     <footer className="bg-primary/90 text-primary-foreground safe-area-bottom">
       <div className="max-w-7xl mx-auto py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-          <div className="col-span-1 sm:col-span-2 lg:col-span-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 sm:gap-8">
+          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
             <h3 className="text-sm font-semibold tracking-wider uppercase font-headline">TicketFlow</h3>
             <p className="mt-3 sm:mt-4 text-sm sm:text-base text-primary-foreground/70 max-w-sm">
               The all-in-one platform for event organizers and attendees.
@@ -19,6 +19,7 @@ export function Footer() {
               <li><Link href="/events" className="text-sm sm:text-base text-primary-foreground/70 hover:text-primary-foreground transition-colors">Browse Events</Link></li>
               <li><Link href="/news" className="text-sm sm:text-base text-primary-foreground/70 hover:text-primary-foreground transition-colors">News</Link></li>
               <li><Link href="/pricing" className="text-sm sm:text-base text-primary-foreground/70 hover:text-primary-foreground transition-colors">Pricing</Link></li>
+              <li><Link href="/tickets" className="text-sm sm:text-base text-primary-foreground/70 hover:text-primary-foreground transition-colors">My Tickets</Link></li>
             </ul>
           </div>
           <div>
@@ -26,6 +27,14 @@ export function Footer() {
             <ul className="mt-3 sm:mt-4 space-y-2">
               <li><Link href="/create" className="text-sm sm:text-base text-primary-foreground/70 hover:text-primary-foreground transition-colors">Create Event</Link></li>
               <li><Link href="/dashboard" className="text-sm sm:text-base text-primary-foreground/70 hover:text-primary-foreground transition-colors">Dashboard</Link></li>
+            </ul>
+          </div>
+           <div>
+            <h3 className="text-sm font-semibold text-primary-foreground/80 tracking-wider uppercase font-headline">Company</h3>
+            <ul className="mt-3 sm:mt-4 space-y-2">
+              <li><Link href="/about" className="text-sm sm:text-base text-primary-foreground/70 hover:text-primary-foreground transition-colors">About Us</Link></li>
+              <li><Link href="/terms" className="text-sm sm:text-base text-primary-foreground/70 hover:text-primary-foreground transition-colors">Terms of Service</Link></li>
+              <li><Link href="/privacy" className="text-sm sm:text-base text-primary-foreground/70 hover:text-primary-foreground transition-colors">Privacy Policy</Link></li>
             </ul>
           </div>
           <div>
