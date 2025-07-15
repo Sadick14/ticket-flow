@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '@/context/app-context';
 import { useAuth } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import type { Ticket } from '@/lib/types';
+import QRCode from 'qrcode.react';
 
 export default function MarketingPage() {
   const { user } = useAuth();
@@ -41,6 +42,7 @@ export default function MarketingPage() {
   const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [emailTemplate, setEmailTemplate] = useState('');
   const [socialPost, setSocialPost] = useState('');
+  const qrCodeRef = useRef<HTMLDivElement>(null);
 
   const userEvents = user ? getEventsByCreator(user.uid) : [];
   const selectedEventData = userEvents.find(e => e.id === selectedEventId);
@@ -151,13 +153,27 @@ Get your tickets now: ${generateShareUrl(event.id)}
     }
   };
 
-  const downloadQRCode = async () => {
-    if (!selectedEventData) return;
-    
-    toast({
-      title: 'QR Code Generated',
-      description: 'In a real app, a QR code for your event would be downloaded.',
-    });
+  const downloadQRCode = () => {
+    const qrCodeElement = qrCodeRef.current?.querySelector('canvas');
+    if (qrCodeElement && selectedEventData) {
+      const dataUrl = qrCodeElement.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `qrcode-${selectedEventData.name.replace(/\s+/g, '-')}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast({
+        title: 'QR Code Downloading',
+        description: 'Your QR code has been downloaded.',
+      });
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Download Failed',
+        description: 'Could not generate QR code for download.',
+      });
+    }
   };
 
   const generateMarketing = (type: 'email' | 'social') => {
@@ -207,7 +223,7 @@ Get your tickets now: ${generateShareUrl(event.id)}
                 Create your first event to start marketing it.
               </p>
               <Button asChild>
-                <Link href="/create">Create Event</Link>
+                <Link href="/dashboard/create">Create Event</Link>
               </Button>
             </div>
           )}
@@ -466,14 +482,23 @@ Get your tickets now: ${generateShareUrl(event.id)}
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="text-center p-8 border-2 border-dashed border-muted-foreground/25 rounded-lg">
-                    <QrCode className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold">QR Code Preview</h3>
+                    <div ref={qrCodeRef} className="inline-block bg-white p-4 rounded-lg">
+                        <QRCode
+                          value={generateShareUrl(selectedEventData.id)}
+                          size={128}
+                          bgColor={"#ffffff"}
+                          fgColor={"#000000"}
+                          level={"L"}
+                          includeMargin={false}
+                        />
+                    </div>
+                    <h3 className="text-lg font-semibold mt-4">QR Code Preview</h3>
                     <p className="text-muted-foreground mb-4">
-                      QR code will link to: {generateShareUrl(selectedEventData.id)}
+                      Links to: {generateShareUrl(selectedEventData.id)}
                     </p>
                     <Button onClick={downloadQRCode}>
                       <Download className="mr-2 h-4 w-4" />
-                      Generate & Download QR Code
+                      Download QR Code
                     </Button>
                   </div>
 
