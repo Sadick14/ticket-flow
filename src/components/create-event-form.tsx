@@ -33,7 +33,7 @@ import { useAuth } from '@/context/auth-context';
 import { generateEventDescription } from '@/ai/flows/generate-event-description';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { Event } from '@/lib/types';
+import type { Event, SubscriptionPlan } from '@/lib/types';
 import { ImageUploader } from '@/components/image-uploader';
 
 const eventFormSchema = z.object({
@@ -96,7 +96,12 @@ const eventFormSchema = z.object({
 type EventFormValues = z.infer<typeof eventFormSchema>;
 
 const categories = ["Music", "Sports", "Food & Drink", "Arts & Theater", "Technology", "Business", "Other"];
-const FREE_PLAN_EVENT_LIMIT = 5;
+
+const eventLimits: Record<SubscriptionPlan, number> = {
+    Free: 1,
+    Starter: 10,
+    Pro: 45,
+};
 
 interface CreateEventFormProps {
     eventToEdit?: Event;
@@ -180,10 +185,10 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
   const watchEventType = form.watch('eventType');
   const watchVenueType = form.watch('venueType');
 
-  const userIsOnFreePlan = user?.subscriptionPlan === 'Free';
+  const currentPlan = user?.subscriptionPlan || 'Free';
   const userEventCount = user ? getEventsByCreator(user.uid).length : 0;
-  const hasReachedFreeLimit = !isEditMode && userIsOnFreePlan && userEventCount >= FREE_PLAN_EVENT_LIMIT;
-
+  const limit = eventLimits[currentPlan];
+  const hasReachedLimit = !isEditMode && userEventCount >= limit;
 
   const handleGenerateDescription = async () => {
     setIsGenerating(true);
@@ -237,11 +242,11 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
         return;
     }
 
-    if (hasReachedFreeLimit) {
+    if (hasReachedLimit) {
         toast({
             variant: 'destructive',
             title: 'Upgrade Required',
-            description: 'You have reached the event limit for the Free plan.',
+            description: `You have reached the event limit for the ${currentPlan} plan.`,
         });
         return;
     }
@@ -303,19 +308,19 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-         {hasReachedFreeLimit && (
+         {hasReachedLimit && (
             <Alert className="mb-8 border-yellow-500 text-yellow-700">
               <Zap className="h-4 w-4" />
               <AlertTitle className="text-yellow-800 font-bold">You've Reached Your Limit!</AlertTitle>
               <AlertDescription>
-                You have created {userEventCount} of {FREE_PLAN_EVENT_LIMIT} events included in the Free plan. Please upgrade to create more events.
+                You have created {userEventCount} of {limit} events included in the {currentPlan} plan. Please upgrade to create more events.
               </AlertDescription>
                <Button size="sm" className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-white" asChild>
                 <Link href="/pricing">Upgrade Plan</Link>
                </Button>
             </Alert>
         )}
-        <fieldset disabled={hasReachedFreeLimit || isSubmitting} className="space-y-8">
+        <fieldset disabled={hasReachedLimit || isSubmitting} className="space-y-8">
           <Card>
             <CardHeader>
               <CardTitle>Core Details</CardTitle>
@@ -838,7 +843,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
 
           <div className="flex justify-end space-x-4 mt-8">
              <Button type="button" variant="outline" onClick={() => router.push('/dashboard')}>Cancel</Button>
-             <Button type="submit" disabled={isSubmitting || hasReachedFreeLimit}>
+             <Button type="submit" disabled={isSubmitting || hasReachedLimit}>
                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                {isEditMode ? 'Save Changes' : 'Create Event'}
               </Button>

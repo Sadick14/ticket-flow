@@ -53,7 +53,8 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const isActive = (path: string) => pathname === path;
   
-  const hasPaidPlan = user?.subscriptionPlan === 'Starter' || user?.subscriptionPlan === 'Pro';
+  const hasStarterPlan = user?.subscriptionPlan === 'Starter' || user?.subscriptionPlan === 'Pro';
+  const hasProPlan = user?.subscriptionPlan === 'Pro';
 
   return (
     <SidebarProvider>
@@ -143,7 +144,7 @@ export default function DashboardLayout({
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {hasPaidPlan && (
+              {hasStarterPlan && (
                 <>
                   <Separator className="my-2" />
                   <SidebarMenuItem>
@@ -174,6 +175,9 @@ export default function DashboardLayout({
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                </>
+              )}
+              {hasProPlan && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
@@ -188,7 +192,6 @@ export default function DashboardLayout({
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                </>
               )}
                <Separator className="my-2" />
                <SidebarMenuItem>

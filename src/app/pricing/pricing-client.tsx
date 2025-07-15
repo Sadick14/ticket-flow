@@ -16,9 +16,9 @@ const plans: {name: SubscriptionPlan, price: string, priceFrequency: string, des
         priceFrequency: '/ month',
         description: 'For hobbyists and new organizers getting started.',
         features: [
-            'Create up to 5 events',
-            'Basic event page',
-            'Standard support'
+            'Create up to 1 event',
+            'Basic dashboard',
+            'Standard email support'
         ],
         cta: 'Get Started',
         isCurrent: (plan: SubscriptionPlan) => plan === 'Free'
@@ -29,8 +29,9 @@ const plans: {name: SubscriptionPlan, price: string, priceFrequency: string, des
         priceFrequency: '/ month',
         description: 'For growing organizers who need more capacity.',
         features: [
-            'Create up to 20 events',
-            'Customizable event pages',
+            'Create up to 10 events',
+            'Sales & Marketing Tools',
+            'Team Collaboration',
             'Priority email support'
         ],
         cta: 'Coming Soon',
@@ -43,8 +44,9 @@ const plans: {name: SubscriptionPlan, price: string, priceFrequency: string, des
         priceFrequency: '/ month',
         description: 'For professional organizers at scale.',
         features: [
-            'Unlimited events',
-            'Advanced analytics & reporting',
+            'Create up to 45 events',
+            'Advanced Analytics',
+            'Team Collaboration',
             'Dedicated phone support'
         ],
         cta: 'Coming Soon',

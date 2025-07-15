@@ -231,10 +231,12 @@ export default function SettingsPage() {
   };
 
   const planFeatures = {
-    Free: ['Up to 5 events', 'Basic dashboard', 'Standard email support'],
-    Starter: ['Up to 20 events', 'Advanced dashboard with Analytics', 'Priority email support', 'Team collaboration'],
-    Pro: ['Unlimited events', 'Full feature suite', 'Dedicated phone support', 'API Access'],
+    Free: ['Up to 1 event', 'Basic dashboard', 'Standard email support'],
+    Starter: ['Up to 10 events', 'Sales & Marketing Tools', 'Team Collaboration', 'Priority email support'],
+    Pro: ['Up to 45 events', 'Advanced Analytics', 'Team Collaboration', 'Dedicated phone support', 'API Access'],
   };
+
+  const hasPaidPlan = user?.subscriptionPlan === 'Starter' || user?.subscriptionPlan === 'Pro';
 
   return (
     <div className="space-y-6">
@@ -342,7 +344,28 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="team">
-          <TeamManager />
+          {hasPaidPlan ? (
+            <TeamManager />
+          ) : (
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Users2 className="h-5 w-5" />Team Management</CardTitle>
+                    <CardDescription>Upgrade to a paid plan to add collaborators to your events.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Alert className="border-yellow-500 text-yellow-700">
+                      <Zap className="h-4 w-4" />
+                      <AlertTitle className="text-yellow-800 font-bold">Premium Feature</AlertTitle>
+                      <AlertDescription>
+                        Team collaboration is available on our Starter and Pro plans.
+                      </AlertDescription>
+                    </Alert>
+                    <Button asChild className="mt-4">
+                        <Link href="/pricing">Upgrade Plan</Link>
+                    </Button>
+                </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="subscription" className="space-y-4">
