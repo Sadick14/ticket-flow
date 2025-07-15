@@ -13,9 +13,8 @@ async function getEventData(id: string): Promise<Event | null> {
   const docSnap = await getDoc(docRef);
 
   if (docSnap.exists()) {
-    // The name property is what is expected by generateEventMetadata
     const data = docSnap.data();
-    return { id: docSnap.id, ...data, name: data.name, title: data.name } as Event;
+    return { id: docSnap.id, ...data } as Event;
   }
   return null;
 }
@@ -33,9 +32,7 @@ export async function generateMetadata(
       };
     }
     
-    // The title property is what is expected by generateEventMetadata
-    const eventForMetadata = {...event, title: event.name };
-    return generateEventMetadata(eventForMetadata);
+    return generateEventMetadata({ ...event, title: event.name });
   } catch (error) {
     console.error('Error generating metadata:', error);
     return {

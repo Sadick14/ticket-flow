@@ -1,3 +1,4 @@
+
 import { Metadata } from 'next';
 
 export interface PageMetadata {
@@ -18,7 +19,7 @@ export interface PageMetadata {
 export function generateMetadata(data: PageMetadata): Metadata {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ticket-flow.up.railway.app';
   const fullUrl = data.url ? `${baseUrl}${data.url}` : baseUrl;
-  const imageUrl = data.image ? (data.image.startsWith('http') ? data.image : `${baseUrl}${data.image}`) : `${baseUrl}/og-default.jpg`;
+  const imageUrl = data.image ? (data.image.startsWith('http') ? data.image : `${baseUrl}${data.image}`) : `${baseUrl}/tf-logo.png`;
 
   return {
     title: data.title,
@@ -72,12 +73,12 @@ export function generateEventMetadata(event: {
   id: string;
   title: string;
   description: string;
-  image?: string;
+  imageUrl?: string; // Corrected to match Event type
   date: string;
   location: string;
   price?: number;
-  organizer?: string;
-  tags?: string[];
+  organizationName?: string;
+  category?: string;
 }): Metadata {
   const eventDate = new Date(event.date);
   const formattedDate = eventDate.toLocaleDateString('en-US', {
@@ -94,11 +95,11 @@ export function generateEventMetadata(event: {
   return generateMetadata({
     title: `${event.title} | TicketFlow Events`,
     description: `Join us for ${event.title} on ${formattedDate} at ${event.location}. ${event.description.substring(0, 120)}... ${priceText}`,
-    image: event.image,
+    image: event.imageUrl,
     url: `/events/${event.id}`,
     type: 'event',
-    author: event.organizer,
-    tags: event.tags,
+    author: event.organizationName,
+    tags: event.category ? [event.category] : [],
     eventDate: event.date,
     eventLocation: event.location,
     price: event.price?.toString(),
@@ -108,23 +109,20 @@ export function generateEventMetadata(event: {
 export function generateNewsMetadata(article: {
   id: string;
   title: string;
-  content: string;
-  image?: string;
-  publishedAt: string;
-  updatedAt?: string;
-  author?: string;
-  tags?: string[];
+  description: string;
+  imageUrl?: string;
+  publishedDate: string;
+  source?: string;
 }): Metadata {
   return generateMetadata({
     title: `${article.title} | TicketFlow News`,
-    description: article.content.substring(0, 160).replace(/<[^>]*>/g, '') + '...',
-    image: article.image,
+    description: article.description.substring(0, 160).replace(/<[^>]*>/g, '') + '...',
+    image: article.imageUrl,
     url: `/news/${article.id}`,
     type: 'article',
-    publishedTime: article.publishedAt,
-    modifiedTime: article.updatedAt,
-    author: article.author,
-    tags: article.tags,
+    publishedTime: article.publishedDate,
+    author: article.source || 'TicketFlow',
+    tags: ['news', 'events', article.source || ''],
   });
 }
 
@@ -148,21 +146,20 @@ export function generatePageMetadata(page: {
 // Schema.org structured data generators
 export function generateEventStructuredData(event: {
   id: string;
-  title: string;
+  name: string; // Corrected to 'name' for consistency with Event type
   description: string;
-  image?: string;
+  imageUrl?: string;
   date: string;
   location: string;
   price?: number;
-  organizer?: string;
-  url?: string;
+  organizationName?: string;
 }) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ticket-flow.up.railway.app';
   
   return {
     '@context': 'https://schema.org',
     '@type': 'Event',
-    name: event.title,
+    name: event.name,
     description: event.description,
     startDate: event.date,
     location: {
@@ -170,10 +167,10 @@ export function generateEventStructuredData(event: {
       name: event.location,
       address: event.location,
     },
-    image: event.image ? (event.image.startsWith('http') ? event.image : `${baseUrl}${event.image}`) : undefined,
-    organizer: event.organizer ? {
+    image: event.imageUrl ? (event.imageUrl.startsWith('http') ? event.imageUrl : `${baseUrl}${event.imageUrl}`) : undefined,
+    organizer: event.organizationName ? {
       '@type': 'Organization',
-      name: event.organizer,
+      name: event.organizationName,
     } : undefined,
     offers: event.price ? {
       '@type': 'Offer',
@@ -189,11 +186,10 @@ export function generateEventStructuredData(event: {
 export function generateArticleStructuredData(article: {
   id: string;
   title: string;
-  content: string;
-  image?: string;
-  publishedAt: string;
-  updatedAt?: string;
-  author?: string;
+  description: string;
+  imageUrl?: string;
+  publishedDate: string;
+  source?: string;
 }) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ticket-flow.up.railway.app';
   
@@ -201,13 +197,12 @@ export function generateArticleStructuredData(article: {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: article.title,
-    articleBody: article.content.replace(/<[^>]*>/g, ''),
-    image: article.image ? (article.image.startsWith('http') ? article.image : `${baseUrl}${article.image}`) : undefined,
-    datePublished: article.publishedAt,
-    dateModified: article.updatedAt || article.publishedAt,
-    author: article.author ? {
-      '@type': 'Person',
-      name: article.author,
+    articleBody: article.description.replace(/<[^>]*>/g, ''),
+    image: article.imageUrl ? (article.imageUrl.startsWith('http') ? article.imageUrl : `${baseUrl}${article.imageUrl}`) : undefined,
+    datePublished: article.publishedDate,
+    author: article.source ? {
+      '@type': 'Organization',
+      name: article.source,
     } : undefined,
     publisher: {
       '@type': 'Organization',
@@ -217,6 +212,9 @@ export function generateArticleStructuredData(article: {
         url: `${baseUrl}/tf-logo.png`,
       },
     },
-    url: `${baseUrl}/news/${article.id}`,
+    mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': `${baseUrl}/news/${article.id}`
+    }
   };
 }
