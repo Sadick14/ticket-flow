@@ -46,11 +46,11 @@ export default function EventsPageClient() {
   const renderEventList = (eventList: Event[]) => {
     if (loading) {
       return (
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 9 }).map((_, i) => (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-6">
+          {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="flex flex-col space-y-3">
-              <Skeleton className="h-[200px] w-full rounded-xl" />
-              <div className="space-y-2">
+              <Skeleton className="h-[160px] sm:h-[200px] w-full rounded-xl" />
+              <div className="space-y-2 p-2 sm:p-0">
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
               </div>
@@ -62,7 +62,7 @@ export default function EventsPageClient() {
     
     if (eventList.length > 0) {
       return (
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-6">
           {eventList.map((event) => (
             <EventCard key={event.id} event={event} />
           ))}
@@ -114,6 +114,7 @@ export default function EventsPageClient() {
                         key={category} 
                         variant={selectedCategory === category ? 'default' : 'outline'}
                         onClick={() => setSelectedCategory(category)}
+                        size="sm"
                     >
                         {category}
                     </Button>
