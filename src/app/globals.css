@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -34,14 +35,15 @@
 
     --radius: 0.5rem;
 
-    --sidebar-background: 222.2 84% 4.9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 180 56% 41%;
-    --sidebar-primary-foreground: 180 100% 95%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 180 56% 41%;
+    /* Sleek Sidebar Theme */
+    --sidebar-background: 180 56% 31%; /* Primary color */
+    --sidebar-foreground: 180 100% 95%; /* Primary foreground */
+    --sidebar-primary: 210 100% 100%; /* White for active items */
+    --sidebar-primary-foreground: 180 56% 31%; /* Primary for text on active */
+    --sidebar-accent: 180 56% 41%; /* Slightly lighter primary for hover */
+    --sidebar-accent-foreground: 180 100% 95%;
+    --sidebar-border: 180 56% 41%;
+    --sidebar-ring: 210 100% 100%;
   }
 
   .dark {
@@ -72,15 +74,16 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 180 56% 41%;
-
-    --sidebar-background: 222.2 84% 4.9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 180 56% 41%;
-    --sidebar-primary-foreground: 180 100% 95%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 180 56% 41%;
+    
+    /* Dark mode sidebar can be same or different if needed */
+    --sidebar-background: 180 56% 31%;
+    --sidebar-foreground: 180 100% 95%;
+    --sidebar-primary: 210 100% 100%;
+    --sidebar-primary-foreground: 180 56% 31%;
+    --sidebar-accent: 180 56% 41%;
+    --sidebar-accent-foreground: 180 100% 95%;
+    --sidebar-border: 180 56% 41%;
+    --sidebar-ring: 210 100% 100%;
   }
 }
 

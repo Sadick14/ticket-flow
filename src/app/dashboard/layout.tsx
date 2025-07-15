@@ -27,6 +27,7 @@ import {
   CreditCard,
   QrCode,
   Mail,
+  Globe
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/context/auth-context';
@@ -41,7 +42,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Globe } from 'lucide-react';
 
 
 export default function DashboardLayout({
@@ -61,15 +61,13 @@ export default function DashboardLayout({
       <div className="flex h-screen w-screen overflow-hidden bg-muted/40">
         <Sidebar>
           <SidebarHeader className="p-4">
-            <div className="flex items-center gap-2">
-              <Link
-                href="/home"
-                className="flex items-center gap-2 text-xl font-bold text-primary font-headline"
-              >
-                <Ticket className="h-6 w-6" />
-                <span>TicketFlow</span>
-              </Link>
-            </div>
+            <Link
+              href="/home"
+              className="flex items-center gap-2 text-xl font-bold text-sidebar-foreground font-headline"
+            >
+              <Ticket className="h-6 w-6" />
+              <span>TicketFlow</span>
+            </Link>
           </SidebarHeader>
           <SidebarContent className="p-2">
             <SidebarMenu>
@@ -210,18 +208,18 @@ export default function DashboardLayout({
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter className="p-4 border-t">
+          <SidebarFooter className="p-4 border-t border-sidebar-border">
             {user && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="w-full justify-start items-center gap-3 px-2 h-auto">
+                        <Button variant="ghost" className="w-full justify-start items-center gap-3 px-2 h-auto text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                             <Avatar className="h-9 w-9">
                                 <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
                                 <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
                             </Avatar>
                             <div className="flex-1 text-left overflow-hidden">
                                 <p className="text-sm font-medium truncate">{user.displayName}</p>
-                                <Badge variant="secondary" className="mt-1">{user.subscriptionPlan} Plan</Badge>
+                                <Badge variant="secondary" className="mt-1 bg-sidebar-accent text-sidebar-accent-foreground">{user.subscriptionPlan} Plan</Badge>
                             </div>
                         </Button>
                     </DropdownMenuTrigger>
@@ -261,6 +259,7 @@ export default function DashboardLayout({
                       {pathname === '/dashboard/create' && 'Create Event'}
                       {pathname === '/dashboard/attendees' && 'Attendees'}
                       {pathname === '/dashboard/scanner' && 'Ticket Scanner'}
+                      {pathname === '/dashboard/emails' && 'Email Management'}
                       {pathname === '/dashboard/sales' && 'Sales & Revenue'}
                       {pathname === '/dashboard/analytics' && 'Analytics Dashboard'}
                       {pathname === '/dashboard/marketing' && 'Marketing Tools'}

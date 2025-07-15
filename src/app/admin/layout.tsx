@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -56,15 +55,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex h-screen w-screen overflow-hidden bg-muted/40">
         <Sidebar>
           <SidebarHeader className="p-4">
-            <div className="flex items-center gap-2">
-              <Link
-                href="/admin"
-                className="flex items-center gap-2 text-xl font-bold text-primary font-headline"
-              >
-                <Shield className="h-6 w-6" />
-                <span>Admin Panel</span>
-              </Link>
-            </div>
+            <Link
+              href="/admin"
+              className="flex items-center gap-2 text-xl font-bold text-sidebar-foreground font-headline"
+            >
+              <Shield className="h-6 w-6" />
+              <span>Admin Panel</span>
+            </Link>
           </SidebarHeader>
           <SidebarContent className="p-2">
             <SidebarMenu>
@@ -154,11 +151,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter className="p-4 border-t">
+          <SidebarFooter className="p-4 border-t border-sidebar-border">
             {user && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="w-full justify-start items-center gap-3 px-2 h-auto">
+                        <Button variant="ghost" className="w-full justify-start items-center gap-3 px-2 h-auto text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                             <Avatar className="h-9 w-9">
                                 <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
                                 <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
