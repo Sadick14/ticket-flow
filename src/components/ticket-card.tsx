@@ -18,21 +18,31 @@ interface TicketCardProps {
 export function TicketCard({ ticket, onViewTicket }: TicketCardProps) {
   const { getEventById } = useAppContext();
   const [event, setEvent] = useState<Event | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchEvent = async () => {
       const eventData = await getEventById(ticket.eventId);
-      if (eventData) setEvent(eventData);
+      if (eventData) {
+        setEvent(eventData);
+      }
+      setLoading(false);
     };
     fetchEvent();
   }, [ticket.eventId, getEventById]);
 
-  if (!event) {
+  if (loading) {
     return (
       <Card className="overflow-hidden sm:flex transition-all hover:shadow-md p-6 h-[124px] items-center">
         <Loader2 className="h-5 w-5 animate-spin" />
       </Card>
     );
+  }
+
+  if (!event) {
+    // If loading is finished and there's no event, the event was likely deleted.
+    // Don't render the card.
+    return null;
   }
 
   const eventDate = new Date(`${event.date}T${event.time}`);
