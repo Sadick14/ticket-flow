@@ -13,7 +13,7 @@ const generateOTP = () => {
 
 const storeOtp = async (email: string, otp: string) => {
   const otpRef = doc(db, 'otps', email);
-  // Store OTP with a timestamp (expires in 10 minutes)
+  // Store OTP with a server-generated timestamp (expires in 10 minutes)
   await setDoc(otpRef, { 
     code: otp, 
     createdAt: serverTimestamp(),
@@ -28,6 +28,10 @@ const verifyOtp = async (email: string, otp: string): Promise<boolean> => {
         return false;
     }
     const data = docSnap.data();
+    // Ensure createdAt exists and is a Firestore Timestamp
+    if (!data.createdAt || typeof data.createdAt.toDate !== 'function') {
+        return false;
+    }
     const isExpired = (new Date().getTime() - data.createdAt.toDate().getTime()) > 10 * 60 * 1000; // 10 minutes
     
     if(isExpired) {
