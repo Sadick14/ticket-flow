@@ -35,6 +35,7 @@ interface AppContextType {
   getUserTickets: (email: string) => Ticket[];
   getTicketsByEvent: (eventId: string) => Ticket[];
   // Users
+  updateUser: (uid: string, data: Partial<UserProfile>) => Promise<void>;
   addCollaborator: (eventId: string, email: string) => Promise<{success: boolean, message: string}>;
   removeCollaborator: (eventId: string, userId: string) => Promise<void>;
   getUsersByUids: (uids: string[]) => Promise<UserProfile[]>;
@@ -93,7 +94,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       const usersCollection = collection(db, 'users');
       const userSnapshot = await getDocs(query(usersCollection));
-      const usersList = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile));
+      const usersList = userSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
       setUsers(usersList);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -277,6 +278,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
   };
 
+  const updateUser = async (uid: string, data: Partial<UserProfile>) => {
+    try {
+      const userRef = doc(db, 'users', uid);
+      await updateDoc(userRef, data);
+      await fetchUsers(); // Refresh the local state
+    } catch (error) {
+      console.error("Error updating user:", error);
+      throw error;
+    }
+  };
+
   const addCollaborator = async (eventId: string, email: string): Promise<{success: boolean, message: string}> => {
     const q = query(collection(db, "users"), where("email", "==", email), limit(1));
     const querySnapshot = await getDocs(q);
@@ -390,6 +402,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       getUserTickets,
       getTicketsByEvent,
       getEventStats,
+      updateUser,
       addCollaborator,
       removeCollaborator,
       getUsersByUids,

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -11,7 +12,7 @@ import {
   User as FirebaseUser
 } from 'firebase/auth';
 import { app, db } from '@/lib/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile, SubscriptionPlan } from '@/lib/types';
 
@@ -36,11 +37,12 @@ const getOrCreateUserProfile = async (user: FirebaseUser): Promise<UserProfile> 
     const existingProfile = docSnap.data() as UserProfile;
     // Ensure isAdmin status is correctly set on sign-in
     if (user.email === ADMIN_EMAIL && !existingProfile.isAdmin) {
-      const updatedProfile = { ...existingProfile, isAdmin: true };
-      await setDoc(userRef, updatedProfile);
-      return updatedProfile;
+      await updateDoc(userRef, { isAdmin: true, status: 'active', lastSeen: new Date().toISOString() });
+      return { ...existingProfile, isAdmin: true, status: 'active', lastSeen: new Date().toISOString() };
     }
-    return existingProfile;
+    // Update last seen on sign-in
+    await updateDoc(userRef, { lastSeen: new Date().toISOString() });
+    return { ...existingProfile, lastSeen: new Date().toISOString() };
   }
   
   const newUserProfile: UserProfile = {
@@ -50,6 +52,8 @@ const getOrCreateUserProfile = async (user: FirebaseUser): Promise<UserProfile> 
     photoURL: user.photoURL,
     subscriptionPlan: 'Free',
     isAdmin: user.email === ADMIN_EMAIL,
+    status: 'active',
+    lastSeen: new Date().toISOString(),
   };
   await setDoc(userRef, newUserProfile);
   return newUserProfile;
@@ -65,14 +69,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const userProfile = await getOrCreateUserProfile(firebaseUser);
-        setUser(userProfile);
+        if (userProfile.status === 'deactivated') {
+          await firebaseSignOut(auth);
+          setUser(null);
+          toast({
+            variant: 'destructive',
+            title: "Account Deactivated",
+            description: "Your account has been deactivated by an administrator.",
+          });
+        } else {
+          setUser(userProfile);
+        }
       } else {
         setUser(null);
       }
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [auth]);
+  }, [auth, toast]);
 
   const signInWithGoogle = async () => {
     setLoading(true);
@@ -80,11 +94,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const result = await signInWithPopup(auth, provider);
       const userProfile = await getOrCreateUserProfile(result.user);
-      setUser(userProfile);
-      toast({
-        title: "Signed In",
-        description: "You have successfully signed in.",
-      });
+      if (userProfile.status === 'deactivated') {
+        await firebaseSignOut(auth);
+        setUser(null);
+        toast({
+          variant: 'destructive',
+          title: "Account Deactivated",
+          description: "This account is currently deactivated. Please contact support.",
+        });
+      } else {
+        setUser(userProfile);
+        toast({
+          title: "Signed In",
+          description: "You have successfully signed in.",
+        });
+      }
     } catch (error) {
       console.error("Google Sign-In Error:", error);
       toast({

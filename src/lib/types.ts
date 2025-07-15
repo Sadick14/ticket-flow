@@ -61,6 +61,9 @@ export interface UserProfile {
   photoURL: string | null;
   subscriptionPlan: SubscriptionPlan;
   isAdmin?: boolean;
+  status: 'active' | 'deactivated';
+  lastSeen?: string; // ISO String
+  subscriptionDueDate?: string; // ISO String for next payment
 }
 
 export interface NewsArticle {

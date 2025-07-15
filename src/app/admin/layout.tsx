@@ -6,7 +6,7 @@ import * as React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
-import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users, Archive } from 'lucide-react';
+import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users, Archive, Users2 } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -77,6 +77,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <Link href="/admin">
                     <Home />
                     <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/admin/users')}
+                  tooltip={{ children: 'User Management' }}
+                >
+                  <Link href="/admin/users">
+                    <Users2 />
+                    <span>Users</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -190,6 +202,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <div className="flex-1">
                     <h1 className="text-lg font-semibold">
                       {pathname === '/admin' && 'Admin Dashboard'}
+                      {pathname === '/admin/users' && 'User Management'}
                       {pathname === '/admin/news' && 'News Management'}
                       {pathname === '/admin/subscribers' && 'Launch Subscribers'}
                       {pathname === '/admin/emails' && 'Email Management'}
