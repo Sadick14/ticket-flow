@@ -61,8 +61,12 @@ async function getRecipientEmails(type: string, eventId?: string): Promise<strin
 
 
 export async function POST(request: NextRequest) {
+  console.log('POST /api/send-email called');
+  
   try {
     const body: EmailRequest = await request.json();
+    console.log('Request body:', JSON.stringify(body, null, 2));
+    
     const { 
         type, 
         recipientType, 
@@ -82,11 +86,15 @@ export async function POST(request: NextRequest) {
 
     if (recipientType === 'custom') {
         recipients = customRecipients;
+        console.log('Using custom recipients:', recipients);
     } else {
+        console.log('Fetching recipients for type:', recipientType);
         recipients = await getRecipientEmails(recipientType, eventId);
+        console.log('Found recipients:', recipients.length);
     }
     
     if (recipients.length === 0) {
+      console.log('No recipients found');
       return NextResponse.json({ error: 'No recipients found for the selected group.' }, { status: 400 });
     }
 
@@ -96,18 +104,29 @@ export async function POST(request: NextRequest) {
 
     let emailToSend;
 
+    console.log('Processing email type:', type);
+    
     if (type === 'template' && templateId && templateContent) {
+        console.log('Using template:', templateId, 'with content:', templateContent);
         const template = emailTemplates[templateId];
         if (!template) {
+            console.log('Invalid template ID:', templateId);
             return NextResponse.json({ error: 'Invalid email template' }, { status: 400 });
         }
         emailToSend = renderTemplate(templateId, templateContent);
+        console.log('Generated email from template:', emailToSend.subject);
     } else if (type === 'event-reminder' || type === 'event-update') {
-        if (!eventTitle) return NextResponse.json({ error: 'Event details required' }, { status: 400 });
+        if (!eventTitle) {
+            console.log('Missing event title for event email');
+            return NextResponse.json({ error: 'Event details required' }, { status: 400 });
+        }
+        console.log('Generating event email for:', eventTitle);
         emailToSend = type === 'event-reminder' 
             ? renderTemplate('eventReminder', { eventName: eventTitle, eventDate: eventDate || '', eventLocation: eventLocation || '', optionalMessage: message || '' })
             : renderTemplate('eventUpdate', { eventName: eventTitle, updateMessage: message || ''});
+        console.log('Generated event email:', emailToSend.subject);
     } else {
+        console.log('Invalid email type or missing data:', { type, templateId });
         return NextResponse.json({ error: 'Invalid email type or missing data' }, { status: 400 });
     }
 
@@ -115,8 +134,12 @@ export async function POST(request: NextRequest) {
     let successCount = 0;
     let failureCount = 0;
 
+    console.log(`Starting to send emails to ${recipients.length} recipients in batches of ${batchSize}`);
+
     for (let i = 0; i < recipients.length; i += batchSize) {
       const batch = recipients.slice(i, i + batchSize);
+      console.log(`Processing batch ${Math.floor(i/batchSize) + 1}: ${batch.length} emails`);
+      
       const emailPromises = batch.map(email =>
         sendEmail({
           to: email,
@@ -126,8 +149,13 @@ export async function POST(request: NextRequest) {
         })
       );
       const results = await Promise.all(emailPromises);
-      successCount += results.filter(r => r).length;
-      failureCount += results.filter(r => !r).length;
+      const batchSuccess = results.filter(r => r).length;
+      const batchFailure = results.filter(r => !r).length;
+      
+      successCount += batchSuccess;
+      failureCount += batchFailure;
+      
+      console.log(`Batch completed: ${batchSuccess} successful, ${batchFailure} failed`);
       
       if (i + batchSize < recipients.length) {
         await new Promise(resolve => setTimeout(resolve, 1000));
