@@ -214,7 +214,7 @@ export function generateArticleStructuredData(article: {
       name: 'TicketFlow',
       logo: {
         '@type': 'ImageObject',
-        url: `${baseUrl}/logo.png`,
+        url: `${baseUrl}/tf-logo.png`,
       },
     },
     url: `${baseUrl}/news/${article.id}`,
