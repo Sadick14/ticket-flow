@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Ticket as TicketIcon, Menu, LogOut, LayoutDashboard, Shield, PlusCircle, Home, Newspaper, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -136,6 +136,12 @@ export function Header() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-80 sm:w-96 p-0">
+                 <SheetHeader className="sr-only">
+                  <SheetTitle>Mobile Navigation Menu</SheetTitle>
+                  <SheetDescription>
+                    Main navigation links for TicketFlow, including pages for home, events, news, tickets, and user account management.
+                  </SheetDescription>
+                </SheetHeader>
                 <div className="flex flex-col h-full p-4">
                   <div className="flex justify-between items-center mb-6">
                     <Link href="/home" onClick={closeMobileMenu} className="flex items-center gap-2 text-xl font-bold text-primary font-headline">
