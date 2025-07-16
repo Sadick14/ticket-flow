@@ -5,7 +5,7 @@
 
 @layer base {
   :root {
-    --background: 210 100% 97%;
+    --background: 210 100% 97%; /* Alice Blue: #F0F8FF */
     --foreground: 222.2 84% 4.9%;
 
     --card: 210 100% 100%;
@@ -14,7 +14,7 @@
     --popover: 210 100% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 180 56% 31%;
+    --primary: 180 56% 31%; /* Teal: #237A7A */
     --primary-foreground: 180 100% 95%;
 
     --secondary: 210 40% 96.1%;
@@ -23,7 +23,7 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 180 21% 54%;
+    --accent: 180 21% 54%; /* Lighter Teal: #70A4A4 */
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;

@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from 'next/image';
@@ -41,7 +42,7 @@ export function PageHero({
   const overlayClasses = {
     light: 'bg-gradient-to-br from-white/80 via-white/60 to-white/80',
     dark: 'bg-gradient-to-br from-black/80 via-black/60 to-black/80',
-    gradient: 'bg-gradient-to-br from-black/80 via-purple-900/30 to-black/80'
+    gradient: 'bg-gradient-to-br from-gray-900/80 via-primary/50 to-accent/80'
   };
 
   return (
@@ -83,7 +84,7 @@ export function PageHero({
                   {subtitle}
                 </span>
               )}
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-300">
                 {title}
               </span>
             </h1>
@@ -95,14 +96,14 @@ export function PageHero({
           {(ctaText || secondaryCtaText) && (
             <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
               {ctaText && ctaLink && (
-                <Button asChild size="lg" className="bg-orange-500 hover:bg-orange-600 text-white border-0 px-12 py-6 text-xl font-medium rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-300">
+                <Button asChild size="lg" className="bg-gradient-to-r from-primary to-accent text-white border-0 px-12 py-6 text-xl font-medium rounded-full shadow-lg transform hover:scale-105 transition-all duration-300">
                   <Link href={ctaLink}>
                     {ctaText}
                   </Link>
                 </Button>
               )}
               {secondaryCtaText && secondaryCtaLink && (
-                <Button asChild variant="outline" size="lg" className="border-2 border-white/30 text-white hover:bg-white/10 px-12 py-6 text-xl font-medium rounded-2xl backdrop-blur-sm">
+                <Button asChild variant="outline" size="lg" className="border-2 border-white/30 text-white hover:bg-white/10 px-12 py-6 text-xl font-medium rounded-full backdrop-blur-sm">
                   <Link href={secondaryCtaLink}>
                     {secondaryCtaText}
                   </Link>

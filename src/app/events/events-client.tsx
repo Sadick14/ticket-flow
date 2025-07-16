@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -59,6 +60,7 @@ export default function EventsPageClient() {
           ))}
         </div>
       )
+    }
     
     if (eventList.length > 0) {
       return (
@@ -89,42 +91,40 @@ export default function EventsPageClient() {
         description="From concerts to conferences, find your next unforgettable experience. Browse thousands of events happening near you."
         ctaText="Create Your Event"
         ctaLink="/create"
-        secondaryCtaText="Learn More"
-        secondaryCtaLink="/pricing"
         height="md"
         overlay="gradient"
       />
 
       {/* Events Content */}
-      <div className="bg-gradient-to-br from-slate-50 via-white to-purple-50 py-16">
+      <div className="bg-background py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold tracking-tight text-slate-900 font-headline sm:text-5xl mb-6">
+            <h2 className="text-4xl font-bold tracking-tight text-foreground font-headline sm:text-5xl mb-6">
               <span className="block">Find Your Next</span>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
                 Experience
               </span>
             </h2>
-            <p className="mt-4 max-w-2xl mx-auto text-xl text-slate-600">
-              Find your next experience. Filter by category or search by name.
+            <p className="mt-4 max-w-2xl mx-auto text-xl text-muted-foreground">
+              Filter by category or search by name.
             </p>
           </div>
 
           <div className="mb-8 space-y-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input 
                 placeholder="Search for an event..."
-                className="pl-10 w-full bg-white/80 backdrop-blur-sm border-slate-200 focus:border-orange-500 focus:ring-orange-500"
+                className="pl-10 w-full"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <Tabs defaultValue="upcoming">
               <div className="flex flex-col sm:flex-row justify-between items-center flex-wrap gap-4">
-                  <TabsList className="bg-white/80 backdrop-blur-sm border border-slate-200">
-                      <TabsTrigger value="upcoming" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white">Upcoming</TabsTrigger>
-                      <TabsTrigger value="past" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white">Past</TabsTrigger>
+                  <TabsList>
+                      <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+                      <TabsTrigger value="past">Past</TabsTrigger>
                   </TabsList>
                   <div className="flex flex-wrap justify-center gap-2">
                     {categories.map(category => (
@@ -133,7 +133,6 @@ export default function EventsPageClient() {
                             variant={selectedCategory === category ? 'default' : 'outline'}
                             onClick={() => setSelectedCategory(category)}
                             size="sm"
-                            className={selectedCategory === category ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'border-slate-200 hover:bg-orange-50 hover:border-orange-300'}
                         >
                             {category}
                         </Button>
@@ -152,5 +151,4 @@ export default function EventsPageClient() {
         </div>
     </div>
   );
-}
 }

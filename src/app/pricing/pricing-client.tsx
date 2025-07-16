@@ -4,6 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { PageHero } from '@/components/page-hero';
 import { Check } from 'lucide-react';
+import Link from 'next/link';
 
 const plans = [
   {
@@ -18,7 +19,8 @@ const plans = [
       'SMS Notifications'
     ],
     cta: 'GET STARTED FOR FREE',
-    color: 'orange'
+    ctaLink: '/create',
+    color: 'gray'
   },
   {
     name: 'Essential',
@@ -32,6 +34,7 @@ const plans = [
       'Self service checkout'
     ],
     cta: 'GET STARTED',
+    ctaLink: '/create',
     color: 'blue'
   },
   {
@@ -46,7 +49,8 @@ const plans = [
       'Advanced Event Controls'
     ],
     cta: 'GET STARTED',
-    color: 'purple',
+    ctaLink: '/create',
+    color: 'primary',
     popular: true
   },
   {
@@ -62,7 +66,8 @@ const plans = [
       'No Ticket Limits'
     ],
     cta: 'CONTACT US',
-    color: 'slate'
+    ctaLink: '/contact',
+    color: 'dark'
   }
 ];
 
@@ -71,112 +76,106 @@ export default function PricingClientPage() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <PageHero
-        title="Free event publishing with unbeatable pricing"
+        title="Simple, Transparent Pricing"
         description="Get the most value with powerful features—list your events for free and enjoy the lowest fees in the market, delivering everything you need at the best price point."
         ctaText="GET STARTED FOR FREE"
         ctaLink="/create"
-        secondaryCtaText="View Features"
-        secondaryCtaLink="#pricing"
         height="md"
         overlay="gradient"
       />
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 bg-gradient-to-br from-slate-50 via-white to-purple-50">
+      <section id="pricing" className="py-24 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold text-slate-900 mb-6">
+            <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-6">
               <span className="block">Choose Your Plan</span>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
                 Pay Only When You Earn
               </span>
             </h2>
-            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Select the plan that fits your event needs—pay only when you earn from ticket sales.
             </p>
           </div>
 
-          <div className="grid gap-8 lg:gap-12 grid-cols-1 md:grid-cols-4 mt-16">
-            {plans.map((plan, index) => (
+          <div className="grid gap-8 lg:gap-12 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mt-16 items-stretch">
+            {plans.map((plan) => (
               <div
                 key={plan.name}
-                className={`relative rounded-3xl p-8 shadow-xl transition-all duration-300 transform hover:-translate-y-2 ${
+                className={`relative rounded-2xl p-8 shadow-lg transition-all duration-300 transform hover:-translate-y-2 flex flex-col ${
                   plan.popular
-                    ? 'bg-gradient-to-br from-purple-600 to-pink-600 text-white scale-105 hover:scale-110'
-                    : plan.color === 'slate'
-                    ? 'bg-slate-900 text-white hover:shadow-2xl'
-                    : 'bg-white border border-slate-200 hover:shadow-2xl'
+                    ? 'bg-gradient-to-br from-primary to-accent text-white scale-105'
+                    : plan.color === 'dark'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-card border'
                 }`}
               >
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-orange-400 text-white px-6 py-2 rounded-full text-sm font-bold">
+                    <span className="bg-white text-primary px-4 py-1 rounded-full text-sm font-bold shadow-md">
                       MOST POPULAR
                     </span>
                   </div>
                 )}
                 
-                <div className="text-center">
+                <div className="flex-grow">
                   <h3 className="text-2xl font-bold mb-4">{plan.name}</h3>
                   <div className="mb-6">
-                    <div className={`text-7xl font-bold mb-2 ${
+                    <div className={`text-5xl font-bold mb-2 ${
                       plan.popular ? 'text-white' : 
-                      plan.color === 'orange' ? 'text-orange-500' :
+                      plan.color === 'gray' ? 'text-primary' :
                       plan.color === 'blue' ? 'text-blue-500' :
-                      plan.color === 'slate' ? 'text-orange-400' : 'text-slate-900'
+                      plan.color === 'dark' ? 'text-white' : 'text-primary'
                     }`}>
                       {plan.commission}
                     </div>
                     <div className={`text-sm ${
-                      plan.popular ? 'text-purple-200' :
-                      plan.color === 'slate' ? 'text-slate-400' : 'text-slate-600'
+                      plan.popular || plan.color === 'dark' ? 'text-gray-300' : 'text-muted-foreground'
                     }`}>
-                      {plan.name === 'Custom' ? 'Top-tier features for large events' : 'Commission + payment processing'}
+                      {plan.name === 'Custom' ? 'Top-tier features' : 'Commission + payment processing'}
                     </div>
                   </div>
-                  <p className={`mb-8 ${
-                    plan.popular ? 'text-purple-200' :
-                    plan.color === 'slate' ? 'text-slate-300' : 'text-slate-600'
+                  <p className={`mb-8 h-20 ${
+                    plan.popular || plan.color === 'dark' ? 'text-gray-300' : 'text-muted-foreground'
                   }`}>
                     {plan.description}
                   </p>
                   
                   <ul className="space-y-4 text-left mb-8 text-sm">
                     {plan.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-center">
-                        <Check className={`w-4 h-4 mr-3 flex-shrink-0 ${
-                          plan.popular ? 'text-green-300' :
-                          plan.color === 'slate' ? 'text-green-400' : 'text-green-500'
+                      <li key={featureIndex} className="flex items-start gap-3">
+                        <Check className={`w-5 h-5 mt-0.5 flex-shrink-0 ${
+                          plan.popular ? 'text-green-300' : 'text-primary'
                         }`} />
-                        {feature}
+                        <span>{feature}</span>
                       </li>
                     ))}
                   </ul>
-                  
+                </div>
+                
+                <div className="mt-auto pt-8">
                   <Button 
-                    className={`w-full py-4 rounded-2xl font-medium ${
+                    asChild
+                    className={`w-full py-3 rounded-full font-medium ${
                       plan.popular 
-                        ? 'bg-white text-purple-600 hover:bg-purple-50'
-                        : plan.color === 'orange'
-                        ? 'bg-orange-500 hover:bg-orange-600 text-white'
-                        : plan.color === 'blue'
-                        ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                        : plan.color === 'slate'
-                        ? 'bg-orange-500 hover:bg-orange-600 text-white'
-                        : 'bg-slate-900 hover:bg-slate-800 text-white'
+                        ? 'bg-white text-primary hover:bg-gray-100'
+                        : plan.color === 'dark'
+                        ? 'bg-white text-gray-900 hover:bg-gray-200'
+                        : ''
                     }`}
+                    variant={plan.popular || plan.color === 'dark' ? 'default' : 'outline'}
                   >
-                    {plan.cta}
+                    <Link href={plan.ctaLink}>{plan.cta}</Link>
                   </Button>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Note */}
           <div className="text-center mt-16">
-            <p className="text-slate-600 text-sm">
-              <span className="font-semibold text-red-500">Important:</span> Booking and payment processing fees are separate from plan pricing
+            <p className="text-muted-foreground text-sm">
+              <span className="font-semibold text-destructive">Important:</span> Booking and payment processing fees are separate from plan pricing.
             </p>
           </div>
         </div>
@@ -184,5 +183,3 @@ export default function PricingClientPage() {
     </div>
   );
 }
-
-/* Removed duplicate plans and PricingClientPage definition to fix errors */
