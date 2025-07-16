@@ -336,7 +336,7 @@ export default function HomePage() {
         </section>
 
         {/* Subscription Section */}
-        <section className="py-24 bg-background">
+        <section className="py-24 bg-white">
           <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <Mail className="mx-auto h-12 w-12 text-primary mb-4" />
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
@@ -354,7 +354,7 @@ export default function HomePage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="min-w-0 flex-auto rounded-md border-0 bg-white/5 px-3.5 py-2 text-foreground shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                className="min-w-0 flex-auto rounded-md border-0 bg-white/5 px-3.5 py-2 text-foreground shadow-sm ring-1 ring-inset ring-black/10 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
                 placeholder="Enter your email"
               />
               <Button type="submit" disabled={isSubscribing}>
