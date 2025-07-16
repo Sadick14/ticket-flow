@@ -15,31 +15,39 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { PageHero } from '@/components/page-hero';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CategoryFilters } from '@/components/category-filters';
+
 
 export default function HomePage() {
   const { events, news, loading, addSubscriber, getTicketsByEvent } = useAppContext();
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
   const { toast } = useToast();
+  const [activeCategory, setActiveCategory] = useState('All Events');
 
-  const availableEvents = useMemo(() => {
-    return [...events]
-      .filter(event => {
-        const ticketsSold = getTicketsByEvent(event.id)?.length || 0;
-        const isUpcoming = new Date(event.date) > new Date();
-        const hasCapacity = event.capacity > 0;
-        const isSoldOut = ticketsSold >= event.capacity;
-        return isUpcoming && hasCapacity && !isSoldOut;
-      })
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // Sort by soonest
-      .slice(0, 3);
-  }, [events, getTicketsByEvent]);
+  const filteredEvents = useMemo(() => {
+    return activeCategory === 'All Events'
+      ? events
+      : events.filter(event => event.category === activeCategory);
+  }, [events, activeCategory]);
 
-  const latestEvents = useMemo(() => {
-    return [...events]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 3);
-  }, [events]);
+  const upcomingEvents = useMemo(() => {
+    return [...filteredEvents]
+      .filter(event => new Date(event.date) >= new Date())
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [filteredEvents]);
+
+  const recentEvents = useMemo(() => {
+    return [...filteredEvents]
+      .filter(event => new Date(event.date) < new Date())
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [filteredEvents]);
+  
+  // For demo purposes, we'll use upcoming for staff picks and popular
+  const staffPicks = useMemo(() => upcomingEvents.slice(0, 8), [upcomingEvents]);
+  const popularEvents = useMemo(() => [...upcomingEvents].reverse().slice(0, 8), [upcomingEvents]);
+
 
   const featureCards = [
     {
@@ -80,6 +88,39 @@ export default function HomePage() {
       setIsSubscribing(false);
     }
   };
+  
+  const renderEventGrid = (eventsToShow: any[]) => {
+    if (loading) {
+      return (
+        <div className="grid gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="h-96 w-full" />
+          ))}
+        </div>
+      );
+    }
+
+    if (eventsToShow.length === 0) {
+      return (
+        <div className="text-center py-16 border-2 border-dashed rounded-lg col-span-full">
+          <CalendarX className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h3 className="mt-4 text-lg font-medium text-foreground">No Events Found</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            There are no events matching the selected criteria.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        {eventsToShow.map((event) => (
+          <EventCard key={event.id} event={event} />
+        ))}
+      </div>
+    );
+  };
+
 
   return (
     <>
@@ -124,7 +165,7 @@ export default function HomePage() {
                         Start Creating
                     </Link>
                     </Button>
-                    <Button asChild variant="outline" size="lg" className="border-2 border-white/30 text-primary hover:bg-white/10 backdrop-blur-sm">
+                    <Button asChild variant="outline" size="lg" className="border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm">
                     <Link href="/events">
                         Explore Events
                     </Link>
@@ -196,107 +237,44 @@ export default function HomePage() {
           </div>
         </section>
         
-        {/* Available Tickets Section */}
+        {/* New Event Discovery Section */}
         <section id="events" className="py-24 bg-muted/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-               <div className="inline-block bg-primary/10 text-primary text-sm font-semibold px-4 py-2 rounded-full mb-4">
-                🎟️ Grab Your Tickets
+            <CategoryFilters
+              activeCategory={activeCategory}
+              setActiveCategory={setActiveCategory}
+            />
+            <Tabs defaultValue="staff-picks" className="w-full mt-8">
+              <div className="flex justify-between items-center mb-6">
+                <TabsList>
+                  <TabsTrigger value="staff-picks">Staff Picks</TabsTrigger>
+                  <TabsTrigger value="popular">Popular</TabsTrigger>
+                  <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+                  <TabsTrigger value="recent">Recent</TabsTrigger>
+                </TabsList>
+                <Button variant="link" asChild className="hidden sm:inline-flex">
+                  <Link href="/events">
+                    See More <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
               </div>
-              <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
-                Available Tickets
-              </h2>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                Check out these upcoming events with tickets still available.
-              </p>
-            </div>
-            <div className="mt-16">
-              {loading ? (
-                <div className="grid gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="flex flex-col space-y-3 bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg">
-                      <Skeleton className="h-48 w-full rounded-xl" />
-                      <div className="space-y-2 p-3">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-4 w-1/2" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : availableEvents.length > 0 ? (
-                 <div className="grid gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                    {availableEvents.map((event) => (
-                      <EventCard key={event.id} event={event} />
-                    ))}
-                  </div>
-              ) : (
-                <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-2xl bg-white/50 backdrop-blur-sm">
-                  <CalendarX className="mx-auto h-16 w-16 text-gray-400" />
-                  <h3 className="mt-6 text-xl font-semibold text-gray-900">No Tickets Available</h3>
-                  <p className="mt-2 text-muted-foreground">All upcoming events are currently sold out or free. Check back soon!</p>
-                  <Button asChild size="lg" className="mt-6">
-                    <Link href="/create">Host Your Own Event</Link>
-                  </Button>
-                </div>
-              )}
+
+              <TabsContent value="staff-picks">{renderEventGrid(staffPicks)}</TabsContent>
+              <TabsContent value="popular">{renderEventGrid(popularEvents)}</TabsContent>
+              <TabsContent value="upcoming">{renderEventGrid(upcomingEvents)}</TabsContent>
+              <TabsContent value="recent">{renderEventGrid(recentEvents)}</TabsContent>
+            </Tabs>
+            <div className="mt-12 text-center">
+              <Button asChild size="lg">
+                <Link href="/events">Find More Events</Link>
+              </Button>
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-r from-primary to-accent text-white">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl font-bold mb-4">Ready to Create Something Amazing?</h2>
-            <p className="text-xl text-white/80 mb-8">
-              Join thousands of creators and start building your next successful event with TicketFlow.
-            </p>
-            <div className="flex justify-center gap-4">
-              <Button asChild size="lg" className="bg-white text-primary hover:bg-gray-100">
-                <Link href="/create">Start Creating</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="border-white text-primary hover:bg-white/10">
-                <Link href="/pricing">View Pricing</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-        
-        {/* Latest Events Section */}
-        <section className="py-24 bg-background">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
-                Latest Events
-              </h2>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                Discover the newest additions to our platform.
-              </p>
-            </div>
-            {loading ? (
-              <div className="grid gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-96 w-full" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                {latestEvents.map((event) => (
-                  <EventCard key={event.id} event={event} />
-                ))}
-              </div>
-            )}
-            <div className="mt-16 text-center">
-              <Button asChild size="lg" variant="outline">
-                <Link href="/events">
-                  Explore All Events <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </section>
 
         {/* News Section */}
-        <section className="py-24 bg-muted/30">
+        <section className="py-24 bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <div className="inline-block bg-primary/10 text-primary text-sm font-semibold px-4 py-2 rounded-full mb-4">
@@ -368,12 +346,3 @@ export default function HomePage() {
     </>
   );
 }
-
-// Add this CSS to your globals.css or a style tag if you don't have it already
-const dotPatternStyle = `
-  .bg-dot-pattern {
-    background-image: radial-gradient(circle at 1px 1px, hsla(var(--primary) / 0.2) 1px, transparent 0);
-    background-size: 1rem 1rem;
-  }
-`;
-// Note: You would add the dotPatternStyle content to your globals.css file.

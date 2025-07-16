@@ -42,9 +42,9 @@ export function EventCard({ event }: EventCardProps) {
   };
 
   return (
-    <Card className="group flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2 touch-manipulation bg-card border-border rounded-xl">
+    <Card className="group flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 touch-manipulation bg-card border-border rounded-lg">
       <Link href={`/events/${event.id}`} className="flex flex-col h-full">
-        <div className="relative h-48 w-full overflow-hidden">
+        <div className="relative h-40 w-full overflow-hidden">
           <Image 
             src={event.imageUrl} 
             alt={event.name} 
@@ -53,45 +53,34 @@ export function EventCard({ event }: EventCardProps) {
             data-ai-hint={`${event.category.toLowerCase()}`}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          <div className="absolute top-4 left-4">
-            <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 font-semibold px-3 py-1 rounded-full">
-              {event.category}
-            </Badge>
-          </div>
-           <div className="absolute bottom-4 right-4 text-white font-bold text-lg bg-black/30 p-2 rounded-lg backdrop-blur-sm">
-            {event.price === 0 ? 'Free' : `$${event.price.toFixed(2)}`}
-          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         </div>
-        <CardHeader className="p-4">
-          <CardTitle className="font-bold text-lg line-clamp-2 text-foreground group-hover:text-primary transition-colors duration-300">
-            {event.name}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex-grow space-y-3 p-4 pt-0">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Calendar className="mr-2 h-4 w-4 flex-shrink-0 text-primary" />
-            <span className="truncate">{format(eventDate, 'eee, MMM d, yyyy • h:mm a')}</span>
+        <CardContent className="p-4 flex-grow flex flex-col justify-between">
+          <div>
+            <CardTitle className="font-bold text-base leading-snug line-clamp-2 text-foreground group-hover:text-primary transition-colors duration-300 mb-2">
+              {event.name}
+            </CardTitle>
+            <div className="space-y-1 text-xs text-muted-foreground">
+                <div className="flex items-center">
+                  <Calendar className="mr-1.5 h-3 w-3 flex-shrink-0" />
+                  <span className="truncate">{format(eventDate, 'eee, MMM d, yyyy')}</span>
+                </div>
+                <div className="flex items-center">
+                  {event.venueType === 'online' ? (
+                      <Video className="mr-1.5 h-3 w-3 flex-shrink-0" />
+                  ) : (
+                      <MapPin className="mr-1.5 h-3 w-3 flex-shrink-0" />
+                  )}
+                  <span className="truncate">{event.location}</span>
+                </div>
+            </div>
           </div>
-          <div className="flex items-center text-sm text-muted-foreground">
-            {event.venueType === 'online' ? (
-                <>
-                    <Video className="mr-2 h-4 w-4 flex-shrink-0 text-primary" />
-                    <span>Online Event</span>
-                </>
-            ) : (
-                <>
-                    <MapPin className="mr-2 h-4 w-4 flex-shrink-0 text-primary" />
-                    <span className="truncate">{event.location}</span>
-                </>
-            )}
+          <div className="mt-3">
+              <Badge variant="outline" className="font-mono text-primary border-primary/50">
+                  {event.price === 0 ? 'Free' : `$${event.price.toFixed(2)}`}
+              </Badge>
           </div>
         </CardContent>
-        <CardFooter className="p-4">
-          <Button className="w-full">
-            View Details <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </CardFooter>
       </Link>
     </Card>
   );
