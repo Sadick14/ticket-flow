@@ -12,6 +12,7 @@ import { useMemo } from 'react';
 import { NewsCard } from '@/components/news-card';
 import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { PageHero } from '@/components/page-hero';
 
 export default function HomePage() {
   const { events, news, loading } = useAppContext();
@@ -58,53 +59,17 @@ export default function HomePage() {
   return (
     <>
       <div className="w-full">
-        <section className="relative h-screen min-h-[600px] md:min-h-[800px] flex items-center justify-center text-center text-white overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-primary to-accent -z-5" />
-          <div className="absolute inset-0 bg-dot-pattern opacity-10" />
-          
-          <motion.div 
-            initial={{ scale: 1.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 1, ease: 'easeOut' }}
-            className="absolute -top-20 -left-20 w-64 h-64 bg-primary/20 rounded-full filter blur-3xl" 
-          />
-          <motion.div 
-            initial={{ scale: 1.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
-            className="absolute -bottom-20 -right-20 w-64 h-64 bg-accent/20 rounded-full filter blur-3xl"
-          />
-
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-             <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="space-y-8"
-            >
-              <div className="inline-block bg-white/10 text-white text-sm font-semibold px-4 py-2 rounded-full backdrop-blur-sm border border-white/20">
-                🚀 New Platform Launch!
-              </div>
-              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight">
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">The Future of</span>
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-green-300 via-cyan-300 to-blue-300">
-                  Event Management
-                </span>
-              </h1>
-              <p className="text-lg sm:text-xl text-white/80 max-w-3xl mx-auto leading-relaxed">
-                TicketFlow provides powerful tools for event organizers to create, manage, and promote unforgettable experiences.
-              </p>
-              <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-                <Button asChild size="lg" className="bg-gradient-to-r from-primary to-accent text-white border-0 px-8 py-6 text-lg font-medium rounded-full shadow-lg transform hover:scale-105 transition-all duration-300">
-                  <Link href="/create">Start Creating</Link>
-                </Button>
-                <Button asChild variant="outline" size="lg" className="border-2 border-white/30 text-white hover:bg-white/10 px-8 py-6 text-lg font-medium rounded-full backdrop-blur-sm">
-                  <Link href="/events">Explore Events</Link>
-                </Button>
-              </div>
-            </motion.div>
-          </div>
-        </section>
+        {/* Hero Section with Video Background */}
+        <PageHero
+            title="Event Management"
+            subtitle="The Future of"
+            description="TicketFlow provides powerful tools for event organizers to create, manage, and promote unforgettable experiences."
+            backgroundVideo="https://cdn.coverr.co/videos/coverr-a-crowd-of-people-at-a-concert-4186/1080p.mp4"
+            ctaText="Start Creating"
+            ctaLink="/create"
+            secondaryCtaText="Explore Events"
+            secondaryCtaLink="/events"
+        />
 
         {/* Stats Section */}
         <section className="bg-background py-16">

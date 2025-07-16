@@ -4,6 +4,7 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 interface PageHeroProps {
   title: string;
@@ -63,7 +64,7 @@ export function PageHero({
       )}
       
       {/* Background Image */}
-      {backgroundImage && (
+      {!backgroundVideo && backgroundImage && (
         <Image
           src={backgroundImage}
           alt="Background"
@@ -77,7 +78,12 @@ export function PageHero({
       <div className={`absolute inset-0 ${overlayClasses[overlay]} -z-5`} />
       
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+        className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+      >
         <div className="space-y-8">
           <div className="space-y-6">
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight">
@@ -105,7 +111,7 @@ export function PageHero({
                 </Button>
               )}
               {secondaryCtaText && secondaryCtaLink && (
-                <Button asChild variant="outline" size="lg">
+                <Button asChild variant="outline" size="lg" className="border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm">
                   <Link href={secondaryCtaLink}>
                     {secondaryCtaText}
                   </Link>
@@ -114,7 +120,7 @@ export function PageHero({
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }
