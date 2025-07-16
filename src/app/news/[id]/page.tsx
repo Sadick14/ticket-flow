@@ -13,6 +13,7 @@ import type { NewsArticle } from '@/lib/types';
 import { useParams, notFound } from 'next/navigation';
 import { useAppContext } from '@/context/app-context';
 import { generateArticleStructuredData } from '@/lib/metadata';
+import { PageHero } from '@/components/page-hero';
 
 export default function NewsDetailsPage() {
     const { news, loading } = useAppContext();
@@ -76,31 +77,20 @@ export default function NewsDetailsPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
+      <PageHero
+        title={article.source}
+        description={`Published on ${format(new Date(article.publishedDate), 'MMMM dd, yyyy')}`}
+        backgroundImage={article.imageUrl}
+        height="xl"
+      />
       <div className="bg-muted/40">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
             <div className="space-y-8">
-                <Card className="overflow-hidden">
-                    <div className="relative w-full h-64 sm:h-80 md:h-96">
-                        <Image 
-                        src={article.imageUrl} 
-                        alt={article.title} 
-                        fill
-                        className="object-cover"
-                        data-ai-hint="news article"
-                        priority
-                        />
-                    </div>
-                    <CardContent className="p-6">
-                        <p className="text-primary font-semibold">{article.source.toUpperCase()}</p>
-                        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground font-headline mt-2">
-                            {article.title}
-                        </h1>
-                        <div className="flex items-center text-sm text-muted-foreground mt-4">
-                            <Calendar className="mr-2 h-4 w-4" />
-                            Published on {format(new Date(article.publishedDate), 'MMMM dd, yyyy')}
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="bg-background p-6 rounded-lg shadow-sm">
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground font-headline mt-2">
+                        {article.title}
+                    </h1>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <main className="md:col-span-2">

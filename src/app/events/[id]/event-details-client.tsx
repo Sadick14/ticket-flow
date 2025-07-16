@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { PageHero } from '@/components/page-hero';
 
 interface EventDetailsClientProps {
   eventId: string;
@@ -93,225 +94,221 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
   const availabilityPercentage = totalTicketsAvailable > 0 ? (totalTicketsSold / totalTicketsAvailable) * 100 : 0;
   
   const ticketsAvailableForPurchase = event.price >= 0 && event.capacity > 0;
-  const eventDate = new Date(event.date);
+  const eventDate = new Date(`${event.date}T${event.time}`);
   const isPastEvent = eventDate < new Date();
 
   return (
-    <div className="bg-muted/40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            <Card className="overflow-hidden">
-              <div className="relative h-64 md:h-80 lg:h-96">
-                <Image
-                  src={event.imageUrl || '/placeholder-image.jpg'}
-                  alt={event.name}
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
-            </Card>
+    <>
+      <PageHero
+        title={event.name}
+        description={`Join us on ${format(eventDate, 'PPP')} for an unforgettable experience.`}
+        backgroundImage={event.imageUrl}
+        height="xl"
+      />
+      <div className="bg-muted/40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-8">
 
-            <div className="space-y-4">
-                <h1 className="text-3xl md:text-4xl font-bold font-headline">{event.name}</h1>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
-                    <div className="flex items-center">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        <span>{format(eventDate, 'PPP')}</span>
-                    </div>
-                    <div className="flex items-center">
-                        <Clock className="mr-2 h-4 w-4" />
-                        <span>{event.time}</span>
-                    </div>
-                     {event.venueType === 'online' ? (
-                        <div className="flex items-center">
-                            <Video className="mr-2 h-4 w-4" />
-                            <span>Online Event</span>
-                        </div>
-                    ) : (
-                        <div className="flex items-center">
-                            <MapPin className="mr-2 h-4 w-4" />
-                            <span>{event.location}</span>
-                        </div>
-                    )}
-                </div>
-                 <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={() => handleShare('copy')}><LinkIcon className="mr-2 h-4 w-4" /> Copy Link</Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleShare('twitter')}><Twitter className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleShare('facebook')}><Facebook className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleShare('linkedin')}><Linkedin className="h-4 w-4" /></Button>
-                </div>
+              <div className="space-y-4 bg-background p-6 rounded-lg shadow-sm">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
+                      <div className="flex items-center">
+                          <Calendar className="mr-2 h-4 w-4" />
+                          <span>{format(eventDate, 'PPP')}</span>
+                      </div>
+                      <div className="flex items-center">
+                          <Clock className="mr-2 h-4 w-4" />
+                          <span>{event.time}</span>
+                      </div>
+                      {event.venueType === 'online' ? (
+                          <div className="flex items-center">
+                              <Video className="mr-2 h-4 w-4" />
+                              <span>Online Event</span>
+                          </div>
+                      ) : (
+                          <div className="flex items-center">
+                              <MapPin className="mr-2 h-4 w-4" />
+                              <span>{event.location}</span>
+                          </div>
+                      )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                      <Button variant="outline" onClick={() => handleShare('copy')}><LinkIcon className="mr-2 h-4 w-4" /> Copy Link</Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleShare('twitter')}><Twitter className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleShare('facebook')}><Facebook className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleShare('linkedin')}><Linkedin className="h-4 w-4" /></Button>
+                  </div>
+              </div>
+
+              <Card>
+                  <CardHeader>
+                      <CardTitle>Event Organizer</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                      <div className="flex items-center gap-4">
+                          <Avatar className="h-12 w-12">
+                              <AvatarImage src={event.organizationLogoUrl} alt={event.organizationName} />
+                              <AvatarFallback><Building/></AvatarFallback>
+                          </Avatar>
+                          <div>
+                              <p className="font-bold">{event.organizationName || 'Event Creator'}</p>
+                              <p className="text-sm text-muted-foreground">Event Creator</p>
+                          </div>
+                      </div>
+                  </CardContent>
+              </Card>
+
+              <Card>
+                  <CardHeader>
+                      <CardTitle>About This Event</CardTitle>
+                  </CardHeader>
+                  <CardContent className="prose max-w-none">
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                        {event.description}
+                    </p>
+                  </CardContent>
+              </Card>
+              
+              {event.speakers && event.speakers.length > 0 && (
+                  <Card>
+                      <CardHeader><CardTitle>Speakers</CardTitle></CardHeader>
+                      <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                          {event.speakers.map((speaker, index) => (
+                              <div key={index} className="flex items-center gap-4">
+                                  <Avatar className="h-16 w-16">
+                                      <AvatarImage src={speaker.imageUrl} alt={speaker.name} />
+                                      <AvatarFallback>{speaker.name.charAt(0)}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                      <p className="font-bold">{speaker.name}</p>
+                                      <p className="text-sm text-muted-foreground">{speaker.title}</p>
+                                  </div>
+                              </div>
+                          ))}
+                      </CardContent>
+                  </Card>
+              )}
+
+              {event.activities && event.activities.length > 0 && (
+                  <Card>
+                      <CardHeader><CardTitle>Schedule</CardTitle></CardHeader>
+                      <CardContent className="space-y-4">
+                          {event.activities.map((activity, index) => (
+                              <div key={index} className="flex gap-4 p-3 border-l-4 border-primary bg-muted/50 rounded-r-lg">
+                                  <div className="font-semibold text-primary w-24">{activity.time}</div>
+                                  <div className="flex-1">
+                                      <p className="font-semibold">{activity.name}</p>
+                                      <p className="text-sm text-muted-foreground">{activity.description}</p>
+                                  </div>
+                              </div>
+                          ))}
+                      </CardContent>
+                  </Card>
+              )}
+
+              {event.sponsors && event.sponsors.length > 0 && (
+                  <Card>
+                      <CardHeader><CardTitle>Our Sponsors</CardTitle></CardHeader>
+                      <CardContent className="flex flex-wrap items-center gap-8">
+                          {event.sponsors.map((sponsor, index) => (
+                              <div key={index} className="relative h-12 w-32 grayscale hover:grayscale-0 transition-all">
+                                  <Image src={sponsor.logoUrl} alt={sponsor.name} layout="fill" objectFit="contain" />
+                              </div>
+                          ))}
+                      </CardContent>
+                  </Card>
+              )}
+
             </div>
 
-            <Card>
+            {/* Sidebar */}
+            <div className="space-y-6">
+              <Card className="sticky top-8">
                 <CardHeader>
-                    <CardTitle>Event Organizer</CardTitle>
+                  <CardTitle className="text-xl">Get Your Tickets</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <div className="flex items-center gap-4">
-                        <Avatar className="h-12 w-12">
-                            <AvatarImage src={event.organizationLogoUrl} alt={event.organizationName} />
-                            <AvatarFallback><Building/></AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <p className="font-bold">{event.organizationName || 'Event Creator'}</p>
-                            <p className="text-sm text-muted-foreground">Event Creator</p>
+                <CardContent className="space-y-4">
+                  {ticketsAvailableForPurchase ? (
+                    <>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-gray-900">
+                          {event.price === 0 ? 'Free' : `$${event.price.toFixed(2)}`}
                         </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>About This Event</CardTitle>
-                </CardHeader>
-                <CardContent className="prose max-w-none">
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {event.description}
-                  </p>
-                </CardContent>
-            </Card>
-            
-            {event.speakers && event.speakers.length > 0 && (
-                <Card>
-                    <CardHeader><CardTitle>Speakers</CardTitle></CardHeader>
-                    <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                        {event.speakers.map((speaker, index) => (
-                            <div key={index} className="flex items-center gap-4">
-                                <Avatar className="h-16 w-16">
-                                    <AvatarImage src={speaker.imageUrl} alt={speaker.name} />
-                                    <AvatarFallback>{speaker.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="font-bold">{speaker.name}</p>
-                                    <p className="text-sm text-muted-foreground">{speaker.title}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </CardContent>
-                </Card>
-            )}
-
-            {event.activities && event.activities.length > 0 && (
-                <Card>
-                    <CardHeader><CardTitle>Schedule</CardTitle></CardHeader>
-                    <CardContent className="space-y-4">
-                        {event.activities.map((activity, index) => (
-                            <div key={index} className="flex gap-4 p-3 border-l-4 border-primary bg-muted/50 rounded-r-lg">
-                                <div className="font-semibold text-primary w-24">{activity.time}</div>
-                                <div className="flex-1">
-                                    <p className="font-semibold">{activity.name}</p>
-                                    <p className="text-sm text-muted-foreground">{activity.description}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </CardContent>
-                </Card>
-            )}
-
-            {event.sponsors && event.sponsors.length > 0 && (
-                <Card>
-                    <CardHeader><CardTitle>Our Sponsors</CardTitle></CardHeader>
-                    <CardContent className="flex flex-wrap items-center gap-8">
-                        {event.sponsors.map((sponsor, index) => (
-                            <div key={index} className="relative h-12 w-32 grayscale hover:grayscale-0 transition-all">
-                                <Image src={sponsor.logoUrl} alt={sponsor.name} layout="fill" objectFit="contain" />
-                            </div>
-                        ))}
-                    </CardContent>
-                </Card>
-            )}
-
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <Card className="sticky top-8">
-              <CardHeader>
-                <CardTitle className="text-xl">Get Your Tickets</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {ticketsAvailableForPurchase ? (
-                  <>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-gray-900">
-                        {event.price === 0 ? 'Free' : `$${event.price.toFixed(2)}`}
+                        <p className="text-sm text-gray-600">per ticket</p>
                       </div>
-                      <p className="text-sm text-gray-600">per ticket</p>
-                    </div>
 
-                    {event.capacity > 0 && (
-                      <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                          <span>Tickets Sold</span>
-                          <span>{totalTicketsSold}/{totalTicketsAvailable}</span>
-                          </div>
-                          <Progress value={availabilityPercentage} className="h-2" />
-                          <p className="text-xs text-gray-600">
-                          {totalTicketsAvailable - totalTicketsSold} tickets remaining
-                          </p>
-                      </div>
-                    )}
+                      {event.capacity > 0 && (
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                            <span>Tickets Sold</span>
+                            <span>{totalTicketsSold}/{totalTicketsAvailable}</span>
+                            </div>
+                            <Progress value={availabilityPercentage} className="h-2" />
+                            <p className="text-xs text-gray-600">
+                            {totalTicketsAvailable - totalTicketsSold} tickets remaining
+                            </p>
+                        </div>
+                      )}
 
-                    <Button
-                      className="w-full"
-                      size="lg"
-                      onClick={() => setIsPurchaseModalOpen(true)}
-                      disabled={isPastEvent || (event.capacity > 0 && totalTicketsSold >= totalTicketsAvailable)}
-                    >
-                      {isPastEvent 
-                        ? 'Event Ended' 
-                        : (event.capacity > 0 && totalTicketsSold >= totalTicketsAvailable) 
-                          ? 'Sold Out' 
-                          : event.price === 0 ? 'Get Free Ticket' : 'Buy Tickets'
-                      }
-                    </Button>
-                  </>
-                ) : (
-                  <div className="text-center py-4">
-                    <p className="text-gray-600">No tickets available for this event.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-             <Card>
-                <CardHeader>
-                    <CardTitle>Event Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm">
-                    <div className="flex items-center">
-                        <p className="font-semibold w-24">Date & Time</p>
-                        <span>{format(eventDate, 'PPPp')}</span>
+                      <Button
+                        className="w-full"
+                        size="lg"
+                        onClick={() => setIsPurchaseModalOpen(true)}
+                        disabled={isPastEvent || (event.capacity > 0 && totalTicketsSold >= totalTicketsAvailable)}
+                      >
+                        {isPastEvent 
+                          ? 'Event Ended' 
+                          : (event.capacity > 0 && totalTicketsSold >= totalTicketsAvailable) 
+                            ? 'Sold Out' 
+                            : event.price === 0 ? 'Get Free Ticket' : 'Buy Tickets'
+                        }
+                      </Button>
+                    </>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-gray-600">No tickets available for this event.</p>
                     </div>
-                    <div className="flex items-center">
-                         <p className="font-semibold w-24">Location</p>
-                        {event.venueType === 'online' ? (
-                            <span>Online Event</span>
-                        ) : (
-                            <span>{event.location}</span>
-                        )}
-                    </div>
-                     <div className="flex items-center">
-                        <p className="font-semibold w-24">Category</p>
-                        <span>{event.category}</span>
-                    </div>
+                  )}
                 </CardContent>
-            </Card>
+              </Card>
 
+              <Card>
+                  <CardHeader>
+                      <CardTitle>Event Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                      <div className="flex items-center">
+                          <p className="font-semibold w-24">Date & Time</p>
+                          <span>{format(eventDate, 'PPPp')}</span>
+                      </div>
+                      <div className="flex items-center">
+                          <p className="font-semibold w-24">Location</p>
+                          {event.venueType === 'online' ? (
+                              <span>Online Event</span>
+                          ) : (
+                              <span>{event.location}</span>
+                          )}
+                      </div>
+                      <div className="flex items-center">
+                          <p className="font-semibold w-24">Category</p>
+                          <span>{event.category}</span>
+                      </div>
+                  </CardContent>
+              </Card>
+
+            </div>
           </div>
         </div>
-      </div>
 
-      {ticketsAvailableForPurchase && (
-        <PurchaseTicketDialog
-          isOpen={isPurchaseModalOpen}
-          onOpenChange={setIsPurchaseModalOpen}
-          event={event}
-        />
-      )}
-    </div>
+        {ticketsAvailableForPurchase && (
+          <PurchaseTicketDialog
+            isOpen={isPurchaseModalOpen}
+            onOpenChange={setIsPurchaseModalOpen}
+            event={event}
+          />
+        )}
+      </div>
+    </>
   );
 }
