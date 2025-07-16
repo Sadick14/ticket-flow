@@ -29,14 +29,14 @@ export function PageHero({
   ctaLink,
   secondaryCtaText,
   secondaryCtaLink,
-  height = 'lg',
-  overlay = 'dark'
+  height = 'xl',
+  overlay = 'gradient'
 }: PageHeroProps) {
   const heightClasses = {
     sm: 'h-[400px] min-h-[400px]',
     md: 'h-[500px] min-h-[500px]',
     lg: 'h-[600px] min-h-[600px]',
-    xl: 'h-screen min-h-[800px]'
+    xl: 'h-screen min-h-[600px] md:min-h-[800px]'
   };
 
   const overlayClasses = {
@@ -96,14 +96,14 @@ export function PageHero({
           {(ctaText || secondaryCtaText) && (
             <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
               {ctaText && ctaLink && (
-                <Button asChild size="lg" className="bg-gradient-to-r from-primary to-accent text-white border-0 px-12 py-6 text-xl font-medium rounded-full shadow-lg transform hover:scale-105 transition-all duration-300">
+                <Button asChild size="lg">
                   <Link href={ctaLink}>
                     {ctaText}
                   </Link>
                 </Button>
               )}
               {secondaryCtaText && secondaryCtaLink && (
-                <Button asChild variant="outline" size="lg" className="border-2 border-white/30 text-white hover:bg-white/10 px-12 py-6 text-xl font-medium rounded-full backdrop-blur-sm">
+                <Button asChild variant="outline" size="lg">
                   <Link href={secondaryCtaLink}>
                     {secondaryCtaText}
                   </Link>
