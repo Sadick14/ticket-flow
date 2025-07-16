@@ -123,7 +123,7 @@ export default function HomePage() {
                         Start Creating
                     </Link>
                     </Button>
-                    <Button asChild variant="outline" size="lg" className="border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm">
+                    <Button asChild variant="outline" size="lg" className="border-2 border-white/30 text-primary hover:bg-white/10 backdrop-blur-sm">
                     <Link href="/events">
                         Explore Events
                     </Link>
@@ -253,7 +253,7 @@ export default function HomePage() {
               <Button asChild size="lg" className="bg-white text-primary hover:bg-gray-100">
                 <Link href="/create">Start Creating</Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="border-white text-white hover:bg-white/10">
+              <Button asChild variant="outline" size="lg" className="border-white text-primary hover:bg-white/10">
                 <Link href="/pricing">View Pricing</Link>
               </Button>
             </div>
