@@ -141,6 +141,19 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
     },
   });
 
+  const currentPlan = user?.subscriptionPlan || 'Free';
+  const userEventCount = user ? getEventsByCreator(user.uid).length : 0;
+  const limit = eventLimits[currentPlan];
+  const hasReachedLimit = !isEditMode && userEventCount >= limit;
+  const isFreePlan = currentPlan === 'Free';
+
+  useEffect(() => {
+    if (isFreePlan) {
+      form.setValue('price', 0);
+    }
+  }, [isFreePlan, form]);
+
+
   useEffect(() => {
     if (isEditMode && eventToEdit) {
       const isMultiDay = eventToEdit.date !== eventToEdit.endDate;
@@ -184,11 +197,6 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
 
   const watchEventType = form.watch('eventType');
   const watchVenueType = form.watch('venueType');
-
-  const currentPlan = user?.subscriptionPlan || 'Free';
-  const userEventCount = user ? getEventsByCreator(user.uid).length : 0;
-  const limit = eventLimits[currentPlan];
-  const hasReachedLimit = !isEditMode && userEventCount >= limit;
 
   const handleGenerateDescription = async () => {
     setIsGenerating(true);
@@ -778,8 +786,9 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                       <FormItem>
                         <FormLabel>Ticket Price ($)</FormLabel>
                         <FormControl>
-                          <Input type="number" min="0" step="0.01" {...field} />
+                          <Input type="number" min="0" step="0.01" {...field} disabled={isFreePlan} />
                         </FormControl>
+                        {isFreePlan && <FormDescription>Free plan users can only create free events.</FormDescription>}
                         <FormMessage />
                       </FormItem>
                     )}
