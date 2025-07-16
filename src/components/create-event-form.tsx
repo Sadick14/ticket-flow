@@ -36,6 +36,12 @@ import Link from 'next/link';
 import type { Event, SubscriptionPlan } from '@/lib/types';
 import { ImageUploader } from '@/components/image-uploader';
 import { AiAssistant } from './ai-assistant';
+import dynamic from 'next/dynamic';
+
+const LocationPicker = dynamic(
+  () => import('./location-picker').then(mod => mod.LocationPicker),
+  { ssr: false, loading: () => <Loader2 className="h-5 w-5 animate-spin" /> }
+);
 
 const eventFormSchema = z.object({
   name: z.string().min(3, { message: 'Event name must be at least 3 characters.' }),
@@ -44,6 +50,8 @@ const eventFormSchema = z.object({
   eventType: z.enum(['single', 'multi'], { required_error: 'Please select an event type.' }),
   venueType: z.enum(['in-person', 'online'], { required_error: 'Please select a venue type.' }),
   location: z.string().min(3, { message: 'Location is required.' }),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
   onlineUrl: z.string().url({ message: 'Please enter a valid URL.' }).optional().or(z.literal('')),
   date: z.date({ required_error: 'A date is required.' }),
   dateRange: z.object({ from: z.date().optional(), to: z.date().optional() }).optional(),
@@ -128,6 +136,8 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
       date: new Date(),
       time: '09:00',
       location: '',
+      latitude: 51.505,
+      longitude: -0.09,
       onlineUrl: '',
       description: '',
       price: 0,
@@ -169,6 +179,8 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
         dateRange: isMultiDay && eventToEdit.endDate ? { from: parseISO(eventToEdit.date), to: parseISO(eventToEdit.endDate) } : {from: undefined, to: undefined },
         time: eventToEdit.time,
         location: eventToEdit.location,
+        latitude: eventToEdit.latitude,
+        longitude: eventToEdit.longitude,
         onlineUrl: eventToEdit.onlineUrl || '',
         description: eventToEdit.description,
         price: eventToEdit.price,
@@ -291,6 +303,8 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
       category: data.category,
       venueType: data.venueType,
       location: data.venueType === 'in-person' ? data.location : 'Online',
+      latitude: data.latitude,
+      longitude: data.longitude,
       onlineUrl: data.venueType === 'online' ? data.onlineUrl : '',
       date: format(startDate, 'yyyy-MM-dd'),
       endDate: endDate ? format(endDate, 'yyyy-MM-dd') : format(startDate, 'yyyy-MM-dd'),
@@ -637,14 +651,25 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                 />
 
                 {watchVenueType === 'in-person' && (
-                  <FormField
+                   <FormField
                     control={form.control}
                     name="location"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Location</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g. Central Park, New York" {...field} />
+                          <LocationPicker 
+                            value={{
+                              address: field.value,
+                              lat: form.getValues('latitude'),
+                              lng: form.getValues('longitude'),
+                            }}
+                            onChange={({address, lat, lng}) => {
+                              form.setValue('location', address);
+                              form.setValue('latitude', lat);
+                              form.setValue('longitude', lng);
+                            }}
+                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

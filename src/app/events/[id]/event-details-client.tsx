@@ -17,6 +17,13 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { PageHero } from '@/components/page-hero';
+import dynamic from 'next/dynamic';
+
+const LocationPicker = dynamic(
+  () => import('@/components/location-picker').then(mod => mod.LocationPicker),
+  { ssr: false, loading: () => <Loader2 className="h-5 w-5 animate-spin" /> }
+);
+
 
 interface EventDetailsClientProps {
   eventId: string;
@@ -169,6 +176,26 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
                     </p>
                   </CardContent>
               </Card>
+
+               {event.venueType === 'in-person' && event.latitude && event.longitude && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Location</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-80 w-full rounded-lg overflow-hidden">
+                      <LocationPicker
+                        readOnly
+                        value={{
+                          address: event.location,
+                          lat: event.latitude,
+                          lng: event.longitude,
+                        }}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
               
               {event.speakers && event.speakers.length > 0 && (
                   <Card>

@@ -27,6 +27,8 @@ export interface Event {
   category: string;
   venueType: 'in-person' | 'online';
   location: string; // Physical address or "Online"
+  latitude?: number;
+  longitude?: number;
   onlineUrl?: string; // URL for online events
   // `date` will be the start date. For single day events, endDate will be the same.
   date: string;
