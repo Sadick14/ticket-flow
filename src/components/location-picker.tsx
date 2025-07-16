@@ -31,7 +31,7 @@ const customIcon = new Icon({
 function MapEffect({ position }: { position: LatLngExpression }) {
   const map = useMap();
   useEffect(() => {
-    if (position) {
+    if (position && map) {
       map.flyTo(position, map.getZoom());
     }
   }, [position, map]);
@@ -39,10 +39,10 @@ function MapEffect({ position }: { position: LatLngExpression }) {
 }
 
 // The MapDisplay component is memoized to prevent re-rendering.
-const MapDisplay = memo(function MapDisplay({ position, readOnly, onMarkerMove }: { position: [number, number], readOnly: boolean, onMarkerMove: (lat: number, lng: number) => void }) {
+const MapDisplay = memo(function MapDisplay({ lat, lng, readOnly, onMarkerMove }: { lat: number; lng: number; readOnly: boolean; onMarkerMove: (lat: number, lng: number) => void }) {
     const markerRef = useRef(null);
+    const position: [number, number] = [lat, lng];
     
-    // Using useMemo for eventHandlers to ensure it's stable unless onMarkerMove changes
     const eventHandlers = useMemo(
         () => ({
             dragend() {
@@ -99,7 +99,9 @@ export function LocationPicker({ value, onChange, readOnly = false }: LocationPi
         const newPos: [number, number] = [parseFloat(lat), parseFloat(lon)];
         setPosition(newPos);
         setAddress(display_name);
-        onChange?.({ address: display_name, lat: newPos[0], lng: newPos[1] });
+        if (onChange) {
+            onChange({ address: display_name, lat: newPos[0], lng: newPos[1] });
+        }
       } else {
         toast({
           variant: 'destructive',
@@ -116,11 +118,12 @@ export function LocationPicker({ value, onChange, readOnly = false }: LocationPi
     }
   };
 
-  // useCallback ensures the function reference is stable between renders
   const handleMarkerMove = useCallback((lat: number, lng: number) => {
-    // In a real app, you would reverse geocode here to get the new address.
-    // For simplicity, we'll keep the last searched address.
-    onChange?.({ address: address, lat, lng });
+    if (onChange) {
+      // For simplicity, we keep the last searched address upon manual drag.
+      // A reverse geocoding API call could be added here for more accuracy.
+      onChange({ address: address, lat, lng });
+    }
   }, [onChange, address]);
   
   return (
@@ -139,7 +142,12 @@ export function LocationPicker({ value, onChange, readOnly = false }: LocationPi
         </div>
       )}
       <div className="h-64 w-full rounded-md overflow-hidden border">
-        <MapDisplay position={position} readOnly={readOnly} onMarkerMove={handleMarkerMove} />
+        <MapDisplay 
+            lat={position[0]} 
+            lng={position[1]} 
+            readOnly={readOnly} 
+            onMarkerMove={handleMarkerMove} 
+        />
       </div>
       <p className="text-sm text-muted-foreground">{address}</p>
     </div>
