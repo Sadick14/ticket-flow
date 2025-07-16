@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import { Icon, LatLngExpression } from 'leaflet';
 import { Input } from './ui/input';
@@ -35,16 +35,49 @@ function MapEffect({ position }: { position: LatLngExpression }) {
   return null;
 }
 
+const MapDisplay = memo(function MapDisplay({ position, readOnly, onMarkerMove }: { position: [number, number], readOnly: boolean, onMarkerMove: (lat: number, lng: number) => void }) {
+    const markerRef = useRef(null);
+    const eventHandlers = useMemo(
+        () => ({
+            dragend() {
+                const marker = markerRef.current;
+                if (marker) {
+                    const { lat, lng } = (marker as any).getLatLng();
+                    onMarkerMove(lat, lng);
+                }
+            },
+        }),
+        [onMarkerMove]
+    );
+
+    return (
+        <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={!readOnly} scrollWheelZoom={!readOnly}>
+            <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+            <Marker
+                position={position}
+                icon={customIcon}
+                ref={markerRef}
+                draggable={!readOnly}
+                eventHandlers={eventHandlers}
+            />
+            <MapEffect position={position} />
+        </MapContainer>
+    );
+});
+
+
 export function LocationPicker({ value, onChange, readOnly = false }: LocationPickerProps) {
   const [searchTerm, setSearchTerm] = useState(value.address || '');
   const [position, setPosition] = useState<[number, number]>([value.lat || 51.505, value.lng || -0.09]);
   const [address, setAddress] = useState(value.address || 'London');
   const { toast } = useToast();
-  const markerRef = useRef(null);
 
   useEffect(() => {
     setSearchTerm(value.address);
-    if(value.lat && value.lng) {
+    if (value.lat && value.lng) {
       setPosition([value.lat, value.lng]);
     }
     setAddress(value.address);
@@ -77,6 +110,12 @@ export function LocationPicker({ value, onChange, readOnly = false }: LocationPi
     }
   };
 
+  const handleMarkerMove = (lat: number, lng: number) => {
+    // In a real app, you would reverse geocode here to get the new address.
+    // For simplicity, we'll keep the last searched address.
+    onChange?.({ address: address, lat, lng });
+  };
+  
   return (
     <div className="space-y-4">
       {!readOnly && (
@@ -93,22 +132,7 @@ export function LocationPicker({ value, onChange, readOnly = false }: LocationPi
         </div>
       )}
       <div className="h-64 w-full rounded-md overflow-hidden border">
-        <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={!readOnly} scrollWheelZoom={!readOnly} >
-            <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
-            <Marker position={position} icon={customIcon} ref={markerRef} draggable={!readOnly} eventHandlers={{
-                dragend: () => {
-                if (markerRef.current) {
-                    const { lat, lng } = (markerRef.current as any).getLatLng();
-                    // In a real app, you might want to reverse geocode to get the address
-                    onChange?.({ address: address, lat, lng });
-                }
-                }
-            }} />
-            <MapEffect position={position} />
-        </MapContainer>
+        <MapDisplay position={position} readOnly={readOnly} onMarkerMove={handleMarkerMove} />
       </div>
       <p className="text-sm text-muted-foreground">{address}</p>
     </div>
