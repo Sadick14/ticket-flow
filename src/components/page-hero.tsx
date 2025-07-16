@@ -30,7 +30,7 @@ export function PageHero({
   secondaryCtaText,
   secondaryCtaLink,
   height = 'xl',
-  overlay = 'gradient'
+  overlay = 'dark'
 }: PageHeroProps) {
   const heightClasses = {
     sm: 'h-[400px] min-h-[400px]',
@@ -63,13 +63,15 @@ export function PageHero({
       )}
       
       {/* Background Image */}
-      <Image
-        src={backgroundImage}
-        alt="Background"
-        fill
-        className="absolute inset-0 object-cover -z-10"
-        priority
-      />
+      {backgroundImage && (
+        <Image
+          src={backgroundImage}
+          alt="Background"
+          fill
+          className="absolute inset-0 object-cover -z-10"
+          priority
+        />
+      )}
       
       {/* Overlay */}
       <div className={`absolute inset-0 ${overlayClasses[overlay]} -z-5`} />
