@@ -40,19 +40,16 @@ export default function HomePage() {
       icon: Zap,
       title: "Easy Event Creation",
       description: "Create beautiful event pages in minutes with our AI-powered description generator and intuitive interface.",
-      gradient: "from-green-500 to-cyan-500",
     },
     {
       icon: CreditCard,
       title: "Secure Payments",
       description: "Integrate with Stripe, PayPal, and more to offer secure, multi-gateway payment options for your attendees.",
-      gradient: "from-blue-500 to-indigo-500",
     },
     {
       icon: BarChart,
       title: "Real-time Analytics",
       description: "Track ticket sales, attendee demographics, and marketing performance with our powerful analytics dashboard.",
-      gradient: "from-purple-500 to-pink-500",
     }
   ];
 
@@ -116,15 +113,15 @@ export default function HomePage() {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   viewport={{ once: true }}
                 >
-                  <Card className={`relative overflow-hidden h-full text-white bg-gradient-to-br ${feature.gradient} transition-transform duration-300 hover:-translate-y-2`}>
-                     <CardHeader className="flex flex-row items-center gap-4">
-                      <div className="p-3 bg-white/20 rounded-lg">
-                        <feature.icon className="h-6 w-6 text-white" />
+                  <Card className="h-full text-center transition-transform duration-300 hover:-translate-y-2">
+                     <CardHeader className="flex flex-col items-center gap-4">
+                      <div className="p-3 bg-primary/10 rounded-full">
+                        <feature.icon className="h-6 w-6 text-primary" />
                       </div>
-                      <CardTitle className="text-xl text-white">{feature.title}</CardTitle>
+                      <CardTitle className="text-xl">{feature.title}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-white/80">{feature.description}</p>
+                      <p className="text-muted-foreground">{feature.description}</p>
                     </CardContent>
                   </Card>
                 </motion.div>
