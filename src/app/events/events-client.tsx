@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useAppContext } from '@/context/app-context';
 import { EventCard } from '@/components/event-card';
+import { PageHero } from '@/components/page-hero';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -15,13 +16,13 @@ const categories = ["All", "Music", "Sports", "Food & Drink", "Arts & Theater", 
 
 export default function EventsPageClient() {
   const { events, loading } = useAppContext();
+  const safeEvents = events ?? [];
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-
   const filteredEvents = useMemo(() => {
     const now = new Date();
     
-    const upcoming = events
+    const upcoming = safeEvents
       .filter((event: Event) => {
         const eventDate = parseISO(`${event.date}T${event.time}`);
         const matchesCategory = selectedCategory === 'All' || event.category === selectedCategory;
@@ -30,7 +31,7 @@ export default function EventsPageClient() {
       })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    const past = events
+    const past = safeEvents
       .filter((event: Event) => {
         const eventDate = parseISO(`${event.date}T${event.time}`);
         const matchesCategory = selectedCategory === 'All' || event.category === selectedCategory;
@@ -41,7 +42,7 @@ export default function EventsPageClient() {
 
       return { upcoming, past };
 
-  }, [events, searchTerm, selectedCategory]);
+  }, [safeEvents, searchTerm, selectedCategory]);
 
   const renderEventList = (eventList: Event[]) => {
     if (loading) {
@@ -58,7 +59,6 @@ export default function EventsPageClient() {
           ))}
         </div>
       )
-    }
     
     if (eventList.length > 0) {
       return (
@@ -82,43 +82,62 @@ export default function EventsPageClient() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground font-headline sm:text-5xl">
-          Browse Events
-        </h1>
-        <p className="mt-4 max-w-2xl mx-auto text-xl text-muted-foreground">
-          Find your next experience. Filter by category or search by name.
-        </p>
-      </div>
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <PageHero
+        title="Discover Amazing Events"
+        description="From concerts to conferences, find your next unforgettable experience. Browse thousands of events happening near you."
+        ctaText="Create Your Event"
+        ctaLink="/create"
+        secondaryCtaText="Learn More"
+        secondaryCtaLink="/pricing"
+        height="md"
+        overlay="gradient"
+      />
 
-      <div className="mb-8 space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input 
-            placeholder="Search for an event..."
-            className="pl-10 w-full"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Tabs defaultValue="upcoming">
-          <div className="flex flex-col sm:flex-row justify-between items-center flex-wrap gap-4">
-              <TabsList>
-                  <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-                  <TabsTrigger value="past">Past</TabsTrigger>
-              </TabsList>
-              <div className="flex flex-wrap justify-center gap-2">
-                {categories.map(category => (
-                    <Button 
-                        key={category} 
-                        variant={selectedCategory === category ? 'default' : 'outline'}
-                        onClick={() => setSelectedCategory(category)}
-                        size="sm"
-                    >
-                        {category}
-                    </Button>
-                ))}
+      {/* Events Content */}
+      <div className="bg-gradient-to-br from-slate-50 via-white to-purple-50 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold tracking-tight text-slate-900 font-headline sm:text-5xl mb-6">
+              <span className="block">Find Your Next</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">
+                Experience
+              </span>
+            </h2>
+            <p className="mt-4 max-w-2xl mx-auto text-xl text-slate-600">
+              Find your next experience. Filter by category or search by name.
+            </p>
+          </div>
+
+          <div className="mb-8 space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <Input 
+                placeholder="Search for an event..."
+                className="pl-10 w-full bg-white/80 backdrop-blur-sm border-slate-200 focus:border-orange-500 focus:ring-orange-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Tabs defaultValue="upcoming">
+              <div className="flex flex-col sm:flex-row justify-between items-center flex-wrap gap-4">
+                  <TabsList className="bg-white/80 backdrop-blur-sm border border-slate-200">
+                      <TabsTrigger value="upcoming" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white">Upcoming</TabsTrigger>
+                      <TabsTrigger value="past" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white">Past</TabsTrigger>
+                  </TabsList>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {categories.map(category => (
+                        <Button 
+                            key={category} 
+                            variant={selectedCategory === category ? 'default' : 'outline'}
+                            onClick={() => setSelectedCategory(category)}
+                            size="sm"
+                            className={selectedCategory === category ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'border-slate-200 hover:bg-orange-50 hover:border-orange-300'}
+                        >
+                            {category}
+                        </Button>
+                    ))}
               </div>
           </div>
           <TabsContent value="upcoming" className="mt-8">
@@ -129,6 +148,9 @@ export default function EventsPageClient() {
           </TabsContent>
         </Tabs>
       </div>
+        </div>
+        </div>
     </div>
   );
+}
 }

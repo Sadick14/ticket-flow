@@ -11,5 +11,9 @@ export const metadata: Metadata = generatePageMetadata({
 });
 
 export default function EventsPage() {
-  return <EventsPageClient />;
+  return (
+    <div>
+      <EventsPageClient />
+    </div>
+  ); 
 }

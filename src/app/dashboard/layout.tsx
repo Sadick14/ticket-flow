@@ -58,14 +58,14 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-screen overflow-hidden bg-muted/40">
-        <Sidebar>
-          <SidebarHeader className="p-4">
+      <div className="flex h-screen w-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-purple-50">
+        <Sidebar className="bg-gradient-to-b from-slate-900 via-purple-900 to-slate-900 text-white border-r border-white/10">
+          <SidebarHeader className="p-4 border-b border-white/10">
             <Link
               href="/home"
-              className="flex items-center gap-2 text-xl font-bold text-sidebar-foreground font-headline"
+              className="flex items-center gap-2 text-xl font-bold text-white font-headline hover:text-orange-400 transition-colors"
             >
-              <Ticket className="h-6 w-6" />
+              <Ticket className="h-6 w-6 text-orange-500" />
               <span>TicketFlow</span>
             </Link>
           </SidebarHeader>
@@ -78,6 +78,7 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'My Events',
                   }}
+                  className="text-white hover:bg-white/10 hover:text-orange-400 data-[active=true]:bg-orange-500 data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard">
                     <Home />
@@ -92,6 +93,7 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'Create Event',
                   }}
+                  className="text-white hover:bg-white/10 hover:text-orange-400 data-[active=true]:bg-orange-500 data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard/create">
                     <PlusCircle />
@@ -99,7 +101,7 @@ export default function DashboardLayout({
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <Separator className="my-2" />
+              <Separator className="my-2 bg-white/10" />
                <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -107,6 +109,7 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'Attendees',
                   }}
+                  className="text-white hover:bg-white/10 hover:text-orange-400 data-[active=true]:bg-orange-500 data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard/attendees">
                     <Users />
@@ -121,6 +124,7 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'Ticket Scanner',
                   }}
+                  className="text-white hover:bg-white/10 hover:text-orange-400 data-[active=true]:bg-orange-500 data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard/scanner">
                     <QrCode />
@@ -135,6 +139,7 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'Email Management',
                   }}
+                  className="text-white hover:bg-white/10 hover:text-orange-400 data-[active=true]:bg-orange-500 data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard/emails">
                     <Mail />
@@ -144,7 +149,7 @@ export default function DashboardLayout({
               </SidebarMenuItem>
               {hasStarterPlan && (
                 <>
-                  <Separator className="my-2" />
+                  <Separator className="my-2 bg-white/10" />
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
@@ -152,6 +157,7 @@ export default function DashboardLayout({
                       tooltip={{
                         children: 'Ticket Sales',
                       }}
+                      className="text-white hover:bg-white/10 hover:text-orange-400 data-[active=true]:bg-orange-500 data-[active=true]:text-white transition-colors"
                     >
                       <Link href="/dashboard/sales">
                         <CreditCard />
@@ -166,6 +172,7 @@ export default function DashboardLayout({
                       tooltip={{
                         children: 'Marketing',
                       }}
+                      className="text-white hover:bg-white/10 hover:text-orange-400 data-[active=true]:bg-orange-500 data-[active=true]:text-white transition-colors"
                     >
                       <Link href="/dashboard/marketing">
                         <Megaphone />
@@ -183,6 +190,7 @@ export default function DashboardLayout({
                       tooltip={{
                         children: 'Analytics',
                       }}
+                      className="text-white hover:bg-white/10 hover:text-orange-400 data-[active=true]:bg-orange-500 data-[active=true]:text-white transition-colors"
                     >
                       <Link href="/dashboard/analytics">
                         <LineChart />
@@ -191,7 +199,7 @@ export default function DashboardLayout({
                     </SidebarMenuButton>
                   </SidebarMenuItem>
               )}
-               <Separator className="my-2" />
+               <Separator className="my-2 bg-white/10" />
                <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -199,6 +207,7 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'Settings',
                   }}
+                  className="text-white hover:bg-white/10 hover:text-orange-400 data-[active=true]:bg-orange-500 data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard/settings">
                     <Settings />
@@ -208,22 +217,22 @@ export default function DashboardLayout({
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter className="p-4 border-t border-sidebar-border">
+          <SidebarFooter className="p-4 border-t border-white/10">
             {user && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="w-full justify-start items-center gap-3 px-2 h-auto text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                        <Button variant="ghost" className="w-full justify-start items-center gap-3 px-2 h-auto text-white hover:bg-white/10 hover:text-white transition-colors">
                             <Avatar className="h-9 w-9">
                                 <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
-                                <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                                <AvatarFallback className="bg-orange-500 text-white">{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
                             </Avatar>
                             <div className="flex-1 text-left overflow-hidden">
-                                <p className="text-sm font-medium truncate">{user.displayName}</p>
-                                <Badge variant="secondary" className="mt-1 bg-sidebar-accent text-sidebar-accent-foreground">{user.subscriptionPlan} Plan</Badge>
+                                <p className="text-sm font-medium truncate text-white">{user.displayName}</p>
+                                <Badge variant="secondary" className="mt-1 bg-orange-500 text-white">{user.subscriptionPlan} Plan</Badge>
                             </div>
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56 mb-2" align="start" forceMount>
+                    <DropdownMenuContent className="w-56 mb-2 bg-white/95 backdrop-blur-sm border-white/20" align="start" forceMount>
                         <DropdownMenuLabel className="font-normal">
                         <div className="flex flex-col space-y-1">
                             <p className="text-sm font-medium leading-none">{user.displayName}</p>
@@ -249,12 +258,12 @@ export default function DashboardLayout({
           </SidebarFooter>
         </Sidebar>
         <div className="flex flex-col flex-1 overflow-hidden">
-            <header className="flex h-14 items-center gap-4 border-b bg-background px-6 flex-shrink-0">
+            <header className="flex h-14 items-center gap-4 border-b border-white/10 bg-white/80 backdrop-blur-sm px-6 flex-shrink-0">
                 <div className="md:hidden">
-                    <SidebarTrigger />
+                    <SidebarTrigger className="text-slate-900 hover:bg-slate-100" />
                 </div>
                 <div className="flex-1">
-                    <h1 className="text-lg font-semibold">
+                    <h1 className="text-lg font-semibold text-slate-900">
                       {pathname === '/dashboard' && 'My Events'}
                       {pathname === '/dashboard/create' && 'Create Event'}
                       {pathname === '/dashboard/attendees' && 'Attendees'}

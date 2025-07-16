@@ -52,24 +52,24 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="bg-gradient-to-br from-white to-slate-50 border-slate-200 shadow-lg">
         <CardHeader>
-          <CardTitle>Your Events List</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-slate-900 text-xl font-bold">Your Events List</CardTitle>
+          <CardDescription className="text-slate-600">
             You are managing {allVisibleEvents.length} event(s).
           </CardDescription>
         </CardHeader>
         <CardContent>
           {allVisibleEvents.length > 0 ? (
-            <div className="rounded-md border">
+            <div className="rounded-md border border-slate-200 overflow-hidden">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Event</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Sales</TableHead>
-                    <TableHead>Check-ins</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                <TableHeader className="bg-gradient-to-r from-slate-50 to-slate-100">
+                  <TableRow className="hover:bg-slate-50/80">
+                    <TableHead className="text-slate-700 font-semibold">Event</TableHead>
+                    <TableHead className="text-slate-700 font-semibold">Date</TableHead>
+                    <TableHead className="text-slate-700 font-semibold">Sales</TableHead>
+                    <TableHead className="text-slate-700 font-semibold">Check-ins</TableHead>
+                    <TableHead className="text-right text-slate-700 font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -81,58 +81,58 @@ export default function DashboardPage() {
                     const isCreator = event.creatorId === user.uid;
 
                     return (
-                      <TableRow key={event.id}>
+                      <TableRow key={event.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-100">
                         <TableCell>
-                          <div className="font-medium">{event.name}</div>
-                          <div className="text-sm text-muted-foreground">{event.location}</div>
+                          <div className="font-medium text-slate-900">{event.name}</div>
+                          <div className="text-sm text-slate-600">{event.location}</div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3 text-muted-foreground" />
-                            {format(parseISO(event.date), 'MMM dd, yyyy')}
+                            <Calendar className="h-3 w-3 text-slate-500" />
+                            <span className="text-slate-700">{format(parseISO(event.date), 'MMM dd, yyyy')}</span>
                           </div>
                         </TableCell>
                         <TableCell>
                            <div className="space-y-1">
                             <div className="flex justify-between text-sm">
-                                <span>{ticketsSold} / {event.capacity} sold</span>
-                                <span>{salesRate.toFixed(1)}%</span>
+                                <span className="text-slate-700">{ticketsSold} / {event.capacity} sold</span>
+                                <span className="text-orange-600 font-medium">{salesRate.toFixed(1)}%</span>
                             </div>
-                            <Progress value={salesRate} className="h-2" />
+                            <Progress value={salesRate} className="h-2 bg-slate-200 [&>*]:bg-gradient-to-r [&>*]:from-orange-500 [&>*]:to-orange-600" />
                            </div>
                         </TableCell>
                         <TableCell>
                            <div className="space-y-1">
                             <div className="flex justify-between text-sm">
-                                <span>{checkedInCount} / {ticketsSold} checked in</span>
+                                <span className="text-slate-700">{checkedInCount} / {ticketsSold} checked in</span>
                             </div>
-                            <Progress value={checkInRate} className="h-2" />
+                            <Progress value={checkInRate} className="h-2 bg-slate-200 [&>*]:bg-gradient-to-r [&>*]:from-green-500 [&>*]:to-green-600" />
                            </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" asChild>
+                          <Button variant="ghost" size="icon" asChild className="hover:bg-slate-100 text-slate-600 hover:text-slate-900">
                             <Link href={`/events/${event.id}`}><Eye className="h-4 w-4" /></Link>
                           </Button>
-                          <Button variant="ghost" size="icon" asChild>
+                          <Button variant="ghost" size="icon" asChild className="hover:bg-slate-100 text-slate-600 hover:text-slate-900">
                             <Link href={`/dashboard/edit/${event.id}`}><Edit className="h-4 w-4" /></Link>
                           </Button>
                           {isCreator && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                                <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </AlertDialogTrigger>
-                              <AlertDialogContent>
+                              <AlertDialogContent className="bg-white border-slate-200">
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                  <AlertDialogDescription>
+                                  <AlertDialogTitle className="text-slate-900">Are you absolutely sure?</AlertDialogTitle>
+                                  <AlertDialogDescription className="text-slate-600">
                                     This action cannot be undone. This will permanently delete this event and all related data.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(event.id)}>
+                                  <AlertDialogCancel className="hover:bg-slate-100">Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDelete(event.id)} className="bg-red-600 hover:bg-red-700">
                                     Delete Event
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
@@ -147,12 +147,12 @@ export default function DashboardPage() {
               </Table>
             </div>
           ) : (
-            <div className="text-center py-16 border-2 border-dashed rounded-lg">
-              <CalendarX className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-medium text-foreground">No Events Found</h3>
-              <p className="mt-1 text-sm text-muted-foreground">You haven't created or been added to any events yet.</p>
+            <div className="text-center py-16 border-2 border-dashed border-slate-300 rounded-lg bg-gradient-to-br from-slate-50 to-white">
+              <CalendarX className="mx-auto h-12 w-12 text-slate-400" />
+              <h3 className="mt-4 text-lg font-medium text-slate-900">No Events Found</h3>
+              <p className="mt-1 text-sm text-slate-600">You haven't created or been added to any events yet.</p>
               <div className="mt-6">
-                <Button asChild>
+                <Button asChild className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white">
                   <Link href="/create">Create Your First Event</Link>
                 </Button>
               </div>

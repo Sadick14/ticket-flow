@@ -86,139 +86,209 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
               <h2 className="text-5xl sm:text-6xl font-bold text-slate-900 mb-8">
-                <span className="block">Simple, Transparent</span>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
-                  Pricing
+                <span className="block">Free event publishing with</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">
+                  unbeatable pricing
                 </span>
               </h2>
               <p className="text-2xl text-slate-600 max-w-4xl mx-auto font-light">
-                Choose the perfect plan for your event needs. Start free, upgrade when you grow.
+                Get the most value with powerful features—list your events for free and enjoy the lowest fees in the market, delivering everything you need at the best price point.
               </p>
             </div>
 
-            <div className="grid gap-8 lg:gap-12 grid-cols-1 md:grid-cols-3 mt-20">
+            <div className="grid gap-8 lg:gap-12 grid-cols-1 md:grid-cols-4 mt-20">
               {/* Free Plan */}
               <div className="relative bg-white rounded-3xl p-8 shadow-xl border border-slate-200 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
                 <div className="text-center">
                   <h3 className="text-2xl font-bold text-slate-900 mb-4">Free</h3>
                   <div className="mb-6">
-                    <span className="text-5xl font-bold text-slate-900">$0</span>
-                    <span className="text-slate-600">/month</span>
+                    <div className="text-7xl font-bold text-orange-500 mb-2">0%</div>
+                    <div className="text-sm text-slate-600">Commission on free events</div>
                   </div>
-                  <p className="text-slate-600 mb-8">Perfect for getting started</p>
-                  <ul className="space-y-4 text-left mb-8">
+                  <p className="text-slate-600 mb-8">Create and share events for free. No ticketing fees.</p>
+                  <ul className="space-y-4 text-left mb-8 text-sm">
                     <li className="flex items-center">
-                      <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      Unlimited free events
+                      Event Creation & Management
                     </li>
                     <li className="flex items-center">
-                      <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      Basic event management
+                      Attendee Registration
                     </li>
                     <li className="flex items-center">
-                      <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      Community support
+                      Basic event analytics
+                    </li>
+                    <li className="flex items-center">
+                      <svg className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Export Free Registrations
+                    </li>
+                    <li className="flex items-center">
+                      <svg className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      SMS Notifications
                     </li>
                   </ul>
-                  <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-2xl font-medium">
-                    Get Started
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-2xl font-medium">
+                    GET STARTED FOR FREE
                   </Button>
                 </div>
               </div>
 
               {/* Essential Plan */}
-              <div className="relative bg-gradient-to-br from-purple-600 to-pink-600 rounded-3xl p-8 shadow-2xl transform scale-105 hover:scale-110 transition-all duration-300">
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-orange-400 text-white px-6 py-2 rounded-full text-sm font-bold">MOST POPULAR</span>
-                </div>
-                <div className="text-center text-white">
-                  <h3 className="text-2xl font-bold mb-4">Essential</h3>
+              <div className="relative bg-white rounded-3xl p-8 shadow-xl border border-slate-200 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold text-slate-900 mb-4">Essential</h3>
                   <div className="mb-6">
-                    <span className="text-5xl font-bold">$29</span>
-                    <span className="text-purple-200">/month</span>
+                    <div className="text-7xl font-bold text-blue-500 mb-2">3%</div>
+                    <div className="text-sm text-slate-600">Commission + payment processing</div>
                   </div>
-                  <p className="text-purple-200 mb-8">For growing event organizers</p>
-                  <ul className="space-y-4 text-left mb-8">
+                  <p className="text-slate-600 mb-8">Affordable ticketing for small events with essential tools.</p>
+                  <ul className="space-y-4 text-left mb-8 text-sm">
                     <li className="flex items-center">
-                      <svg className="w-5 h-5 text-green-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      Everything in Free
+                      Paid Ticketing
                     </li>
                     <li className="flex items-center">
-                      <svg className="w-5 h-5 text-green-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      Paid ticket sales (2% fee)
+                      Multiple Ticket Types
                     </li>
                     <li className="flex items-center">
-                      <svg className="w-5 h-5 text-green-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      Advanced analytics
+                      Promotional Codes
                     </li>
                     <li className="flex items-center">
-                      <svg className="w-5 h-5 text-green-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      Priority support
+                      Waitlisted Payment Methods
+                    </li>
+                    <li className="flex items-center">
+                      <svg className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Self service checkout
                     </li>
                   </ul>
-                  <Button className="w-full bg-white text-purple-600 hover:bg-purple-50 py-4 rounded-2xl font-medium">
-                    Start Essential
+                  <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-2xl font-medium">
+                    GET STARTED
                   </Button>
                 </div>
               </div>
 
               {/* Pro Plan */}
-              <div className="relative bg-white rounded-3xl p-8 shadow-xl border border-slate-200 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-                <div className="text-center">
-                  <h3 className="text-2xl font-bold text-slate-900 mb-4">Pro</h3>
+              <div className="relative bg-gradient-to-br from-purple-600 to-pink-600 rounded-3xl p-8 shadow-2xl transform scale-105 hover:scale-110 transition-all duration-300">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-orange-400 text-white px-6 py-2 rounded-full text-sm font-bold">MOST POPULAR</span>
+                </div>
+                <div className="text-center text-white">
+                  <h3 className="text-2xl font-bold mb-4">Pro</h3>
                   <div className="mb-6">
-                    <span className="text-5xl font-bold text-slate-900">$99</span>
-                    <span className="text-slate-600">/month</span>
+                    <div className="text-7xl font-bold text-white mb-2">2%</div>
+                    <div className="text-sm text-purple-200">Commission + payment processing</div>
                   </div>
-                  <p className="text-slate-600 mb-8">For professional organizers</p>
-                  <ul className="space-y-4 text-left mb-8">
+                  <p className="text-purple-200 mb-8">Advanced features to grow your business and manage events effectively.</p>
+                  <ul className="space-y-4 text-left mb-8 text-sm">
                     <li className="flex items-center">
-                      <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-4 h-4 text-green-300 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      Everything in Essential
+                      Advanced ticketing + check-in
                     </li>
                     <li className="flex items-center">
-                      <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-4 h-4 text-green-300 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      Reduced fees (1% only)
+                      Advanced Social Sharing
                     </li>
                     <li className="flex items-center">
-                      <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-4 h-4 text-green-300 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      White-label branding
+                      Embedded Ticket Widget
                     </li>
                     <li className="flex items-center">
-                      <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-4 h-4 text-green-300 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      API access
+                      Multiple Payment Gateways
                     </li>
                     <li className="flex items-center">
-                      <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-4 h-4 text-green-300 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      Dedicated support
+                      Advanced Event Controls
                     </li>
                   </ul>
-                  <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-2xl font-medium">
-                    Start Pro
+                  <Button className="w-full bg-white text-purple-600 hover:bg-purple-50 py-4 rounded-2xl font-medium">
+                    GET STARTED
+                  </Button>
+                </div>
+              </div>
+
+              {/* Custom Plan */}
+              <div className="relative bg-slate-900 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                <div className="text-center text-white">
+                  <h3 className="text-2xl font-bold mb-4">Custom</h3>
+                  <div className="mb-6">
+                    <div className="text-4xl font-bold text-orange-400 mb-2">Contact Us</div>
+                    <div className="text-sm text-slate-400">Top-tier features for large events with priority support.</div>
+                  </div>
+                  <ul className="space-y-4 text-left mb-8 text-sm">
+                    <li className="flex items-center">
+                      <svg className="w-4 h-4 text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Advanced ticketing
+                    </li>
+                    <li className="flex items-center">
+                      <svg className="w-4 h-4 text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Advanced Integration
+                    </li>
+                    <li className="flex items-center">
+                      <svg className="w-4 h-4 text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Developed Support
+                    </li>
+                    <li className="flex items-center">
+                      <svg className="w-4 h-4 text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Personalised onboarding Liaison
+                    </li>
+                    <li className="flex items-center">
+                      <svg className="w-4 h-4 text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      API Access Support
+                    </li>
+                    <li className="flex items-center">
+                      <svg className="w-4 h-4 text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      No Ticket Limits
+                    </li>
+                  </ul>
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-2xl font-medium">
+                    CONTACT US
                   </Button>
                 </div>
               </div>
