@@ -35,6 +35,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Event, SubscriptionPlan } from '@/lib/types';
 import { ImageUploader } from '@/components/image-uploader';
+import { AiAssistant } from './ai-assistant';
 
 const eventFormSchema = z.object({
   name: z.string().min(3, { message: 'Event name must be at least 3 characters.' }),
@@ -195,8 +196,16 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
     name: 'activities',
   });
 
-  const watchEventType = form.watch('eventType');
-  const watchVenueType = form.watch('venueType');
+  const watchAllFields = form.watch();
+  const watchEventType = watchAllFields.eventType;
+  const watchVenueType = watchAllFields.venueType;
+
+  const aiAssistantEventDetails = {
+    name: watchAllFields.name,
+    category: watchAllFields.category,
+    location: watchAllFields.location,
+    capacity: watchAllFields.capacity,
+  };
 
   const handleGenerateDescription = async () => {
     setIsGenerating(true);
@@ -259,6 +268,15 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
         return;
     }
 
+    if (isFreePlan && data.price > 0) {
+        toast({
+            variant: 'destructive',
+            title: 'Upgrade Required',
+            description: 'The Free plan only allows for free events. Please upgrade to create paid events.',
+        });
+        return;
+    }
+
     setIsSubmitting(true);
 
     const startDate = data.eventType === 'multi' && data.dateRange?.from ? data.dateRange.from : data.date;
@@ -314,6 +332,8 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
   }
 
   return (
+    <>
+    <AiAssistant eventDetails={aiAssistantEventDetails} />
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
          {hasReachedLimit && (
@@ -788,7 +808,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                         <FormControl>
                           <Input type="number" min="0" step="0.01" {...field} disabled={isFreePlan} />
                         </FormControl>
-                        {isFreePlan && <FormDescription>Free plan users can only create free events.</FormDescription>}
+                        {isFreePlan && <FormDescription>Free plan users can only create free events. Upgrade to create paid events.</FormDescription>}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -860,5 +880,6 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
         </fieldset>
       </form>
     </Form>
+    </>
   );
 }
