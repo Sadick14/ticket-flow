@@ -92,7 +92,6 @@ export default function EventsPageClient() {
         ctaText="Create Your Event"
         ctaLink="/create"
         height="xl"
-        overlay="gradient"
       />
 
       {/* Events Content */}

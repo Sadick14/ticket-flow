@@ -81,7 +81,6 @@ export default function PricingClientPage() {
         ctaText="GET STARTED FOR FREE"
         ctaLink="/create"
         height="md"
-        overlay="gradient"
       />
 
       {/* Pricing Section */}
