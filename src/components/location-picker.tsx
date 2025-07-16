@@ -30,7 +30,7 @@ const customIcon = new Icon({
 function MapEffect({ position }: { position: LatLngExpression }) {
   const map = useMap();
   useEffect(() => {
-    map.flyTo(position, 13);
+    map.flyTo(position, map.getZoom());
   }, [position, map]);
   return null;
 }
@@ -44,7 +44,9 @@ export function LocationPicker({ value, onChange, readOnly = false }: LocationPi
 
   useEffect(() => {
     setSearchTerm(value.address);
-    setPosition([value.lat || 51.505, value.lng || -0.09]);
+    if(value.lat && value.lng) {
+      setPosition([value.lat, value.lng]);
+    }
     setAddress(value.address);
   }, [value]);
 
@@ -75,25 +77,6 @@ export function LocationPicker({ value, onChange, readOnly = false }: LocationPi
     }
   };
 
-  const MapContent = useMemo(() => (
-    <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={!readOnly} scrollWheelZoom={!readOnly}>
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      />
-      <Marker position={position} icon={customIcon} ref={markerRef} draggable={!readOnly} eventHandlers={{
-        dragend: () => {
-          if (markerRef.current) {
-            const { lat, lng } = (markerRef.current as any).getLatLng();
-            // TODO: Reverse geocode to get address if needed
-             onChange?.({ address: address, lat, lng });
-          }
-        }
-      }} />
-      <MapEffect position={position} />
-    </MapContainer>
-  ), [position, readOnly, address, onChange]);
-
   return (
     <div className="space-y-4">
       {!readOnly && (
@@ -110,7 +93,22 @@ export function LocationPicker({ value, onChange, readOnly = false }: LocationPi
         </div>
       )}
       <div className="h-64 w-full rounded-md overflow-hidden border">
-        {MapContent}
+        <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={!readOnly} scrollWheelZoom={!readOnly} >
+            <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+            <Marker position={position} icon={customIcon} ref={markerRef} draggable={!readOnly} eventHandlers={{
+                dragend: () => {
+                if (markerRef.current) {
+                    const { lat, lng } = (markerRef.current as any).getLatLng();
+                    // In a real app, you might want to reverse geocode to get the address
+                    onChange?.({ address: address, lat, lng });
+                }
+                }
+            }} />
+            <MapEffect position={position} />
+        </MapContainer>
       </div>
       <p className="text-sm text-muted-foreground">{address}</p>
     </div>
