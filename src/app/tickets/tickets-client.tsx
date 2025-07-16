@@ -18,6 +18,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp"
+import { PageHero } from '@/components/page-hero';
 
 
 export default function TicketsPageClient() {
@@ -184,26 +185,28 @@ export default function TicketsPageClient() {
     }
 
     return (
-        <div className="text-center py-16 border-2 border-dashed rounded-lg">
-        <TicketIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-        <h3 className="mt-4 text-lg font-medium text-foreground">No Tickets Found for {attendeeEmail}</h3>
-        <p className="mt-1 text-sm text-muted-foreground">You haven&apos;t purchased any tickets with this email yet.</p>
-        <div className="mt-6">
-            <Button asChild>
-            <Link href="/">Browse Events</Link>
-            </Button>
-        </div>
-        </div>
+        <Card>
+            <CardContent className="py-16 text-center">
+                <TicketIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-medium text-foreground">No Tickets Found for {attendeeEmail}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">You haven&apos;t purchased any tickets with this email yet.</p>
+                <div className="mt-6">
+                    <Button asChild>
+                    <Link href="/events">Browse Events</Link>
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
     );
   }
 
   return (
-    <>
+    <div className="min-h-screen">
+      <PageHero
+        title="My Tickets"
+        description="Here are all the tickets you have purchased. Access your QR codes, event details, and manage your upcoming events."
+      />
       <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="mb-12">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground font-headline">My Tickets</h1>
-          <p className="mt-2 text-lg text-muted-foreground">Here are all the tickets you have purchased.</p>
-        </div>
         {renderContent()}
       </div>
 
@@ -215,6 +218,6 @@ export default function TicketsPageClient() {
           onOpenChange={setIsViewModalOpen}
         />
       )}
-    </>
+    </div>
   );
 }

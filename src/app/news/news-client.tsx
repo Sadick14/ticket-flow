@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Search, Newspaper } from 'lucide-react';
 import type { NewsArticle } from '@/lib/types';
+import { PageHero } from '@/components/page-hero';
 
 export default function NewsPageClient() {
   const { news, loading } = useAppContext();
@@ -62,29 +63,35 @@ export default function NewsPageClient() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground font-headline sm:text-5xl">
-          In The News
-        </h1>
-        <p className="mt-4 max-w-2xl mx-auto text-xl text-muted-foreground">
-          Discover trending events and stories curated by our team.
-        </p>
-      </div>
-
-      <div className="mb-8 space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input
-            placeholder="Search for news, sources, or topics..."
-            className="pl-10 w-full"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+    <div className="min-h-screen">
+      <PageHero
+        title="In The News"
+        description="Stay up-to-date with the latest trends, stories, and announcements from the event world."
+      />
+      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold tracking-tight text-foreground font-headline sm:text-5xl">
+            Trending Stories
+          </h1>
+          <p className="mt-4 max-w-2xl mx-auto text-xl text-muted-foreground">
+            Discover featured events and stories curated by our team.
+          </p>
         </div>
+
+        <div className="mb-8 space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder="Search for news, sources, or topics..."
+              className="pl-10 w-full"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+        
+        {renderNewsList(filteredNews)}
       </div>
-      
-      {renderNewsList(filteredNews)}
     </div>
   );
 }
