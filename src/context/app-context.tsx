@@ -45,6 +45,8 @@ interface AppContextType {
   deleteNewsArticle: (id: string) => Promise<void>;
   // Launch Subscribers
   addLaunchSubscriber: (name: string, email: string) => Promise<void>;
+  // General Subscribers
+  addSubscriber: (email: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -380,6 +382,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const addSubscriber = async (email: string) => {
+     try {
+      const response = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Subscription failed');
+      }
+    } catch (error) {
+      console.error("Error adding subscriber:", error);
+      throw error;
+    }
+  }
+
 
   return (
     <AppContext.Provider value={{ 
@@ -410,6 +429,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       updateNewsArticle,
       deleteNewsArticle,
       addLaunchSubscriber,
+      addSubscriber,
     }}>
       {children}
     </AppContext.Provider>

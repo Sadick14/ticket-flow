@@ -48,8 +48,8 @@ export default function AdminSubscribersPage() {
     <div className="space-y-6">
        <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Launch Subscribers</h1>
-          <p className="text-muted-foreground">Users waiting for the launch notification.</p>
+          <h1 className="text-2xl font-bold">Subscribers</h1>
+          <p className="text-muted-foreground">Users who subscribed to launch and newsletter notifications.</p>
         </div>
         <Button onClick={handleNotify} disabled={launchSubscribers.length === 0 || isNotifying}>
             {isNotifying ? (
@@ -65,7 +65,7 @@ export default function AdminSubscribersPage() {
         <CardHeader>
           <CardTitle>Subscriber List</CardTitle>
           <CardDescription>
-            {launchSubscribers.length} user(s) have subscribed for launch notifications.
+            {launchSubscribers.length} user(s) have subscribed for notifications.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -73,8 +73,8 @@ export default function AdminSubscribersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>User</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Name</TableHead>
                   <TableHead>Subscribed On</TableHead>
                 </TableRow>
               </TableHeader>
@@ -89,15 +89,8 @@ export default function AdminSubscribersPage() {
                 ) : (
                   launchSubscribers.map(sub => (
                     <TableRow key={sub.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                           <Avatar className="h-9 w-9">
-                              <AvatarFallback>{sub.name.charAt(0)}</AvatarFallback>
-                           </Avatar>
-                           <span className="font-medium">{sub.name}</span>
-                        </div>
-                      </TableCell>
                       <TableCell>{sub.email}</TableCell>
+                      <TableCell>{sub.name || 'N/A'}</TableCell>
                       <TableCell>{format(new Date(sub.subscribedAt), 'MMM dd, yyyy')}</TableCell>
                     </TableRow>
                   ))

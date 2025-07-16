@@ -201,7 +201,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       {pathname === '/admin' && 'Admin Dashboard'}
                       {pathname === '/admin/users' && 'User Management'}
                       {pathname === '/admin/news' && 'News Management'}
-                      {pathname === '/admin/subscribers' && 'Launch Subscribers'}
+                      {pathname === '/admin/subscribers' && 'Subscribers'}
                       {pathname === '/admin/emails' && 'Email Management'}
                       {pathname === '/admin/archived-events' && 'Archived Events'}
                       {pathname === '/admin/settings' && 'Admin Settings'}

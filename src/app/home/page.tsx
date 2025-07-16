@@ -7,15 +7,20 @@ import { Button } from '@/components/ui/button';
 import { EventCard } from '@/components/event-card';
 import { useAppContext } from '@/context/app-context';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowRight, Newspaper, CalendarX, Zap, CreditCard, BarChart } from 'lucide-react';
-import { useMemo } from 'react';
+import { ArrowRight, Newspaper, CalendarX, Zap, CreditCard, BarChart, Mail } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { NewsCard } from '@/components/news-card';
 import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { PageHero } from '@/components/page-hero';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 export default function HomePage() {
-  const { events, news, loading } = useAppContext();
+  const { events, news, loading, addSubscriber } = useAppContext();
+  const [email, setEmail] = useState('');
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const { toast } = useToast();
 
   const featuredEvents = useMemo(() => {
     return [...events]
@@ -53,20 +58,80 @@ export default function HomePage() {
     }
   ];
 
+  const handleSubscription = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setIsSubscribing(true);
+    try {
+      await addSubscriber(email);
+      toast({
+        title: "Subscribed!",
+        description: "Thanks for joining our mailing list.",
+      });
+      setEmail('');
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: "Failed to subscribe",
+        description: "Please try again later.",
+      });
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
   return (
     <>
       <div className="w-full">
         {/* Hero Section with Video Background */}
-        <PageHero
-            title="Event Management"
-            subtitle="The Future of"
-            description="TicketFlow provides powerful tools for event organizers to create, manage, and promote unforgettable experiences."
-            backgroundVideo="https://cdn.coverr.co/videos/coverr-a-crowd-of-people-at-a-concert-4186/1080p.mp4"
-            ctaText="Start Creating"
-            ctaLink="/create"
-            secondaryCtaText="Explore Events"
-            secondaryCtaLink="/events"
-        />
+         <section className="relative h-screen min-h-[600px] md:min-h-[800px] flex items-center justify-center text-center text-white overflow-hidden">
+            <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover -z-20"
+                poster="/women-s-panel-discussion.jpg"
+            >
+                <source src="https://cdn.coverr.co/videos/coverr-a-crowd-of-people-at-a-concert-4186/1080p.mp4" type="video/mp4" />
+            </video>
+            <div className="absolute inset-0 bg-black/75 -z-10" />
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+            >
+                <div className="space-y-8">
+                <div className="space-y-6">
+                    <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight">
+                    <span className="block text-white/90 font-light text-3xl sm:text-4xl lg:text-5xl mb-4">
+                        The Future of
+                    </span>
+                    <span className="block text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-300">
+                        Event Management
+                    </span>
+                    </h1>
+                    <p className="text-xl sm:text-2xl lg:text-3xl text-white/80 max-w-4xl mx-auto leading-relaxed font-light">
+                    TicketFlow provides powerful tools for event organizers to create, manage, and promote unforgettable experiences.
+                    </p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
+                    <Button asChild size="lg">
+                    <Link href="/create">
+                        Start Creating
+                    </Link>
+                    </Button>
+                    <Button asChild variant="outline" size="lg" className="border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm">
+                    <Link href="/events">
+                        Explore Events
+                    </Link>
+                    </Button>
+                </div>
+                </div>
+            </motion.div>
+        </section>
 
         {/* Stats Section */}
         <section className="bg-background py-16">
@@ -104,7 +169,7 @@ export default function HomePage() {
                 We provide a comprehensive suite of tools designed to make your events successful and your life easier.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {featureCards.map((feature, index) => (
                 <motion.div
                   key={index}
@@ -267,6 +332,35 @@ export default function HomePage() {
                 </Link>
               </Button>
             </div>
+          </div>
+        </section>
+
+        {/* Subscription Section */}
+        <section className="py-24 bg-background">
+          <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <Mail className="mx-auto h-12 w-12 text-primary mb-4" />
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Stay in the Loop
+            </h2>
+            <p className="mt-4 text-lg leading-8 text-muted-foreground">
+              Subscribe to our newsletter for the latest event updates, new features, and special offers.
+            </p>
+            <form onSubmit={handleSubscription} className="mt-6 flex max-w-md gap-x-4 mx-auto">
+              <Input
+                id="email-address"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="min-w-0 flex-auto rounded-md border-0 bg-white/5 px-3.5 py-2 text-foreground shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                placeholder="Enter your email"
+              />
+              <Button type="submit" disabled={isSubscribing}>
+                {isSubscribing ? 'Subscribing...' : 'Subscribe'}
+              </Button>
+            </form>
           </div>
         </section>
 
