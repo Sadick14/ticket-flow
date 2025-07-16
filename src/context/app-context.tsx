@@ -3,9 +3,9 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission } from '@/lib/types';
+import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission, Message } from '@/lib/types';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy } from 'firebase/firestore';
+import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy, serverTimestamp } from 'firebase/firestore';
 
 interface AppContextType {
   events: Event[];
@@ -50,6 +50,9 @@ interface AppContextType {
   addSubscriber: (email: string) => Promise<void>;
   // Contact Submissions
   replyToSubmission: (submission: ContactSubmission, replyMessage: string) => Promise<void>;
+  // AI Chat
+  getChatHistory: (userId: string) => Promise<Message[]>;
+  saveChatMessage: (userId: string, message: Message) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -434,6 +437,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await fetchContactSubmissions();
   };
 
+  const getChatHistory = async (userId: string): Promise<Message[]> => {
+    try {
+      const historyCollection = collection(db, 'users', userId, 'ai_chat_history');
+      const historySnapshot = await getDocs(query(historyCollection, orderBy('timestamp', 'asc')));
+      return historySnapshot.docs.map(doc => doc.data() as Message);
+    } catch (error) {
+      console.error('Error fetching chat history:', error);
+      return [];
+    }
+  };
+  
+  const saveChatMessage = async (userId: string, message: Message) => {
+    try {
+      const historyCollection = collection(db, 'users', userId, 'ai_chat_history');
+      await addDoc(historyCollection, {
+        ...message,
+        timestamp: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error saving chat message:', error);
+    }
+  };
+
+
   return (
     <AppContext.Provider value={{ 
       events, 
@@ -465,7 +492,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       deleteNewsArticle,
       addLaunchSubscriber,
       addSubscriber,
-      replyToSubmission
+      replyToSubmission,
+      getChatHistory,
+      saveChatMessage
     }}>
       {children}
     </AppContext.Provider>

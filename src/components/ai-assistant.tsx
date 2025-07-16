@@ -3,7 +3,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Send, X, Loader2, Bot } from 'lucide-react';
+import { Sparkles, Send, X, Bot, Paperclip } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Input } from './ui/input';
@@ -11,6 +11,11 @@ import { ScrollArea } from './ui/scroll-area';
 import { assistEventCreator } from '@/ai/flows/assist-event-creator';
 import ReactMarkdown from 'react-markdown';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import { useAuth } from '@/context/auth-context';
+import { useAppContext } from '@/context/app-context';
+import type { Message } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+
 
 interface AiAssistantProps {
   eventDetails: {
@@ -21,17 +26,30 @@ interface AiAssistantProps {
   };
 }
 
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
-
 export function AiAssistant({ eventDetails }: AiAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [attachments, setAttachments] = useState<string[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { getChatHistory, saveChatMessage, loading: contextLoading } = useAppContext();
+
+  useEffect(() => {
+    if (isOpen && user) {
+      const loadHistory = async () => {
+        setIsLoading(true);
+        const history = await getChatHistory(user.uid);
+        setMessages(history);
+        setIsLoading(false);
+      };
+      loadHistory();
+    }
+  }, [isOpen, user, getChatHistory]);
+
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -41,24 +59,53 @@ export function AiAssistant({ eventDetails }: AiAssistantProps) {
             viewport.scrollTop = viewport.scrollHeight;
         }
     }
-  }, [messages]);
+  }, [messages, isLoading]);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast({ variant: 'destructive', title: "File too large", description: "Please upload files smaller than 5MB."});
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAttachments(prev => [...prev, reader.result as string]);
+    };
+    reader.readAsDataURL(file);
+  };
 
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && attachments.length === 0) || isLoading) return;
 
-    const userMessage: Message = { role: 'user', content: input };
+    const userMessageContent = input;
+    const userMessage: Message = { role: 'user', content: userMessageContent, attachments };
     setMessages((prev) => [...prev, userMessage]);
+    if (user) await saveChatMessage(user.uid, userMessage);
+    
     setInput('');
+    setAttachments([]);
     setIsLoading(true);
 
     try {
+      const historyForApi = messages.map(m => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }] // Simplified for this example
+      })) as any[];
+
       const result = await assistEventCreator({
-        query: input,
+        prompt: userMessageContent,
+        attachments,
         eventDetails,
+        history: historyForApi
       });
       const assistantMessage: Message = { role: 'assistant', content: result.response };
       setMessages((prev) => [...prev, assistantMessage]);
+      if (user) await saveChatMessage(user.uid, assistantMessage);
+
     } catch (error) {
       const errorMessage: Message = {
         role: 'assistant',
@@ -125,6 +172,11 @@ export function AiAssistant({ eventDetails }: AiAssistantProps) {
                           <ReactMarkdown className="prose prose-sm break-words prose-p:my-0">
                             {message.content}
                           </ReactMarkdown>
+                           {message.attachments && message.attachments.length > 0 && (
+                            <div className="mt-2 text-xs text-gray-400">
+                              {message.attachments.length} attachment(s)
+                            </div>
+                           )}
                         </div>
                       </div>
                     ))}
@@ -144,8 +196,24 @@ export function AiAssistant({ eventDetails }: AiAssistantProps) {
                     )}
                   </div>
                 </ScrollArea>
+                {attachments.length > 0 && (
+                  <div className="p-2 border-t text-xs text-muted-foreground bg-gray-50">
+                    Attached: {attachments.length} file(s).
+                    <Button variant="link" size="sm" className="h-auto p-0 ml-2" onClick={() => setAttachments([])}>Clear</Button>
+                  </div>
+                )}
                 <div className="p-4 border-t bg-white flex-shrink-0">
                   <div className="flex items-center gap-2">
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleFileChange}
+                      className="hidden" 
+                      accept="image/png, image/jpeg, application/pdf"
+                    />
+                     <Button size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
+                      <Paperclip />
+                    </Button>
                     <Input
                       placeholder="Ask for venues, sponsors..."
                       value={input}
@@ -154,7 +222,7 @@ export function AiAssistant({ eventDetails }: AiAssistantProps) {
                       disabled={isLoading}
                       className="bg-gray-100 focus-visible:ring-orange-500"
                     />
-                    <Button size="icon" onClick={handleSend} disabled={isLoading || !input.trim()} className="bg-orange-500 hover:bg-orange-600 text-white">
+                    <Button size="icon" onClick={handleSend} disabled={isLoading || (!input.trim() && attachments.length === 0)} className="bg-orange-500 hover:bg-orange-600 text-white">
                       <Send />
                     </Button>
                   </div>

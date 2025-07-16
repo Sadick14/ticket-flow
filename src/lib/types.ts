@@ -96,3 +96,10 @@ export interface ContactSubmission {
   repliedAt?: string; // ISO string
   adminReply?: string;
 }
+
+export interface Message {
+    role: 'user' | 'assistant';
+    content: string;
+    attachments?: string[]; // Array of data URIs
+    timestamp?: any;
+}
