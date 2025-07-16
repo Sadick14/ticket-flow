@@ -80,7 +80,7 @@ export default function PricingClientPage() {
         description="Get the most value with powerful features—list your events for free and enjoy the lowest fees in the market, delivering everything you need at the best price point."
         ctaText="GET STARTED FOR FREE"
         ctaLink="/create"
-        height="md"
+        height="xl"
       />
 
       {/* Pricing Section */}
