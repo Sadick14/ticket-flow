@@ -1,15 +1,16 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wand2, Send, X, Loader2, Bot } from 'lucide-react';
+import { Sparkles, Send, X, Loader2, Bot } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Input } from './ui/input';
 import { ScrollArea } from './ui/scroll-area';
 import { assistEventCreator } from '@/ai/flows/assist-event-creator';
 import ReactMarkdown from 'react-markdown';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Avatar, AvatarFallback } from './ui/avatar';
 
 interface AiAssistantProps {
   eventDetails: {
@@ -30,9 +31,21 @@ export function AiAssistant({ eventDetails }: AiAssistantProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+        // Find the viewport element within the ScrollArea
+        const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
+        if (viewport) {
+            viewport.scrollTop = viewport.scrollHeight;
+        }
+    }
+  }, [messages]);
+
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
 
     const userMessage: Message = { role: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
@@ -49,7 +62,7 @@ export function AiAssistant({ eventDetails }: AiAssistantProps) {
     } catch (error) {
       const errorMessage: Message = {
         role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
+        content: "I'm having trouble connecting right now. Please try again in a moment.",
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -62,11 +75,11 @@ export function AiAssistant({ eventDetails }: AiAssistantProps) {
       <div className="fixed bottom-6 right-6 z-50">
         <Button
           size="icon"
-          className="rounded-full h-14 w-14 shadow-lg"
+          className="rounded-full h-14 w-14 shadow-lg bg-gradient-to-br from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 text-white"
           onClick={() => setIsOpen(!isOpen)}
         >
           <AnimatePresence>
-            {isOpen ? <X /> : <Wand2 />}
+            {isOpen ? <X className="h-6 w-6"/> : <Sparkles className="h-6 w-6"/>}
           </AnimatePresence>
         </Button>
       </div>
@@ -80,15 +93,15 @@ export function AiAssistant({ eventDetails }: AiAssistantProps) {
             transition={{ duration: 0.3, ease: 'easeInOut' }}
             className="fixed bottom-24 right-6 z-50"
           >
-            <Card className="w-[350px] h-[500px] flex flex-col shadow-2xl">
-              <CardHeader className="flex-shrink-0">
+            <Card className="w-[350px] h-[500px] flex flex-col shadow-2xl overflow-hidden">
+              <CardHeader className="flex-shrink-0 bg-gradient-to-br from-gray-800 to-gray-900 text-white">
                 <CardTitle className="flex items-center gap-2">
-                  <Bot /> AI Event Assistant
+                  <Sparkles /> AI Event Assistant
                 </CardTitle>
-                <CardDescription>How can I help you plan your event?</CardDescription>
+                <CardDescription className="text-gray-400">How can I help you plan your event?</CardDescription>
               </CardHeader>
-              <CardContent className="flex-grow overflow-hidden flex flex-col p-0">
-                <ScrollArea className="flex-grow p-4">
+              <CardContent className="flex-grow overflow-hidden flex flex-col p-0 bg-white">
+                <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
                   <div className="space-y-4">
                     {messages.map((message, index) => (
                       <div
@@ -98,18 +111,18 @@ export function AiAssistant({ eventDetails }: AiAssistantProps) {
                         }`}
                       >
                         {message.role === 'assistant' && (
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback><Bot /></AvatarFallback>
+                          <Avatar className="h-8 w-8 bg-gray-700 text-white flex items-center justify-center">
+                            <Bot className="h-5 w-5"/>
                           </Avatar>
                         )}
                         <div
-                          className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                          className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                             message.role === 'user'
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted'
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 text-gray-800'
                           }`}
                         >
-                          <ReactMarkdown className="prose prose-sm break-words">
+                          <ReactMarkdown className="prose prose-sm break-words prose-p:my-0">
                             {message.content}
                           </ReactMarkdown>
                         </div>
@@ -117,17 +130,21 @@ export function AiAssistant({ eventDetails }: AiAssistantProps) {
                     ))}
                     {isLoading && (
                       <div className="flex items-start gap-3">
-                         <Avatar className="h-8 w-8">
-                            <AvatarFallback><Bot /></AvatarFallback>
+                         <Avatar className="h-8 w-8 bg-gray-700 text-white flex items-center justify-center">
+                            <Bot className="h-5 w-5"/>
                          </Avatar>
-                         <div className="max-w-[80%] rounded-lg px-4 py-2 bg-muted">
-                            <Loader2 className="h-5 w-5 animate-spin" />
+                         <div className="max-w-[80%] rounded-2xl px-4 py-2 bg-gray-100 text-gray-800">
+                            <div className="flex gap-1.5 items-center">
+                                <span className="h-2 w-2 rounded-full bg-gray-400 animate-bounce [animation-delay:-0.3s]" />
+                                <span className="h-2 w-2 rounded-full bg-gray-400 animate-bounce [animation-delay:-0.15s]" />
+                                <span className="h-2 w-2 rounded-full bg-gray-400 animate-bounce" />
+                            </div>
                          </div>
                       </div>
                     )}
                   </div>
                 </ScrollArea>
-                <div className="p-4 border-t flex-shrink-0">
+                <div className="p-4 border-t bg-white flex-shrink-0">
                   <div className="flex items-center gap-2">
                     <Input
                       placeholder="Ask for venues, sponsors..."
@@ -135,8 +152,9 @@ export function AiAssistant({ eventDetails }: AiAssistantProps) {
                       onChange={(e) => setInput(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                       disabled={isLoading}
+                      className="bg-gray-100 focus-visible:ring-orange-500"
                     />
-                    <Button size="icon" onClick={handleSend} disabled={isLoading}>
+                    <Button size="icon" onClick={handleSend} disabled={isLoading || !input.trim()} className="bg-orange-500 hover:bg-orange-600 text-white">
                       <Send />
                     </Button>
                   </div>
