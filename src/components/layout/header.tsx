@@ -121,10 +121,10 @@ export function Header() {
           {/* Mobile Navigation */}
           <div className="flex lg:hidden items-center gap-2">
             {user && (
-              <Button asChild size="sm" variant="outline" className="p-2 xs:px-2">
+              <Button asChild size="sm" variant="outline" className="px-3">
                 <Link href="/dashboard/create">
                   <PlusCircle className="h-4 w-4" />
-                  <span className="hidden xs:ml-1 xs:inline">Create</span>
+                  <span className="ml-1 inline">Create</span>
                 </Link>
               </Button>
             )}
