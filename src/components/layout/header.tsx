@@ -120,13 +120,15 @@ export function Header() {
           
           {/* Mobile Navigation */}
           <div className="flex lg:hidden items-center gap-2">
-            {user && (
+            {user ? (
               <Button asChild size="sm" variant="outline" className="px-3">
                 <Link href="/dashboard/create">
                   <PlusCircle className="h-4 w-4" />
                   <span className="ml-1 inline">Create</span>
                 </Link>
               </Button>
+            ) : (
+               <Button onClick={signInWithGoogle} size="sm">Sign In</Button>
             )}
             <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>

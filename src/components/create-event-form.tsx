@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
-import { Wand2, Calendar as CalendarIcon, Loader2, Zap, Trash2 } from 'lucide-react';
+import { Wand2, Calendar as CalendarIcon, Loader2, Zap, Trash2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -110,7 +110,7 @@ interface CreateEventFormProps {
 
 export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
   const { addEvent, updateEvent, getEventsByCreator } = useAppContext();
-  const { user } = useAuth();
+  const { user, signInWithGoogle } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -147,6 +147,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
   const limit = eventLimits[currentPlan];
   const hasReachedLimit = !isEditMode && userEventCount >= limit;
   const isFreePlan = currentPlan === 'Free';
+  const isAuthenticated = !!user;
 
   useEffect(() => {
     if (isFreePlan) {
@@ -174,9 +175,9 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
         capacity: eventToEdit.capacity,
         imageUrl: eventToEdit.imageUrl,
         organizationLogoUrl: eventToEdit.organizationLogoUrl || '',
-        speakers: eventToEdit.speakers?.map(s => ({...s, imageUrl: s.imageUrl || ''})) || [],
+        speakers: eventToEdit.speakers?.map(s => ({...s, imageUrl: s.imageUrl || 'https://placehold.co/100x100.png'})) || [],
         activities: eventToEdit.activities?.map(a => ({...a, time: a && a.time ? format(new Date(`1970-01-01T${a.time.replace(/(am|pm)/i, '').trim()}`), 'HH:mm') : '' })) || [],
-        sponsors: eventToEdit.sponsors?.map(s => ({...s, logoUrl: s.logoUrl || ''})) || [],
+        sponsors: eventToEdit.sponsors?.map(s => ({...s, logoUrl: s.logoUrl || 'https://placehold.co/150x75.png'})) || [],
       });
     }
   }, [isEditMode, eventToEdit, form]);
@@ -333,9 +334,21 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
 
   return (
     <>
-    <AiAssistant eventDetails={aiAssistantEventDetails} />
+    {isAuthenticated && <AiAssistant eventDetails={aiAssistantEventDetails} />}
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        {!isAuthenticated && (
+            <Alert className="mb-8 border-yellow-500 text-yellow-700">
+              <Shield className="h-4 w-4" />
+              <AlertTitle className="text-yellow-800 font-bold">Please Sign In</AlertTitle>
+              <AlertDescription>
+                You need to be signed in to create or edit an event.
+              </AlertDescription>
+               <Button size="sm" type="button" className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-white" onClick={signInWithGoogle}>
+                Sign In with Google
+               </Button>
+            </Alert>
+        )}
          {hasReachedLimit && (
             <Alert className="mb-8 border-yellow-500 text-yellow-700">
               <Zap className="h-4 w-4" />
@@ -348,7 +361,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                </Button>
             </Alert>
         )}
-        <fieldset disabled={hasReachedLimit || isSubmitting} className="space-y-8">
+        <fieldset disabled={hasReachedLimit || isSubmitting || !isAuthenticated} className="space-y-8">
           <Card>
             <CardHeader>
               <CardTitle>Core Details</CardTitle>
@@ -872,9 +885,12 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
 
           <div className="flex justify-end space-x-4 mt-8">
              <Button type="button" variant="outline" onClick={() => router.push('/dashboard')}>Cancel</Button>
-             <Button type="submit" disabled={isSubmitting || hasReachedLimit}>
-               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-               {isEditMode ? 'Save Changes' : 'Create Event'}
+             <Button type="submit" disabled={isSubmitting || hasReachedLimit || !isAuthenticated}>
+               {isSubmitting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+               ) : (
+                isAuthenticated ? (isEditMode ? 'Save Changes' : 'Create Event') : 'Sign In to Create'
+               )}
               </Button>
           </div>
         </fieldset>
