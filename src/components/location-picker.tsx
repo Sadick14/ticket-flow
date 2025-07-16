@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useRef, memo } from 'react';
+import { useState, useEffect, useMemo, useRef, memo, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import { Icon, LatLngExpression } from 'leaflet';
 import { Input } from './ui/input';
@@ -27,16 +27,22 @@ const customIcon = new Icon({
   shadowSize: [41, 41],
 });
 
+// This component updates the map view when the position changes.
 function MapEffect({ position }: { position: LatLngExpression }) {
   const map = useMap();
   useEffect(() => {
-    map.flyTo(position, map.getZoom());
+    if (position) {
+      map.flyTo(position, map.getZoom());
+    }
   }, [position, map]);
   return null;
 }
 
+// The MapDisplay component is memoized to prevent re-rendering.
 const MapDisplay = memo(function MapDisplay({ position, readOnly, onMarkerMove }: { position: [number, number], readOnly: boolean, onMarkerMove: (lat: number, lng: number) => void }) {
     const markerRef = useRef(null);
+    
+    // Using useMemo for eventHandlers to ensure it's stable unless onMarkerMove changes
     const eventHandlers = useMemo(
         () => ({
             dragend() {
@@ -77,11 +83,11 @@ export function LocationPicker({ value, onChange, readOnly = false }: LocationPi
 
   useEffect(() => {
     setSearchTerm(value.address);
-    if (value.lat && value.lng) {
+    if (value.lat && value.lng && (value.lat !== position[0] || value.lng !== position[1])) {
       setPosition([value.lat, value.lng]);
     }
     setAddress(value.address);
-  }, [value]);
+  }, [value, position]);
 
   const handleSearch = async () => {
     if (!searchTerm) return;
@@ -110,11 +116,12 @@ export function LocationPicker({ value, onChange, readOnly = false }: LocationPi
     }
   };
 
-  const handleMarkerMove = (lat: number, lng: number) => {
+  // useCallback ensures the function reference is stable between renders
+  const handleMarkerMove = useCallback((lat: number, lng: number) => {
     // In a real app, you would reverse geocode here to get the new address.
     // For simplicity, we'll keep the last searched address.
     onChange?.({ address: address, lat, lng });
-  };
+  }, [onChange, address]);
   
   return (
     <div className="space-y-4">
