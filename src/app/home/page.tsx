@@ -17,28 +17,29 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 
 export default function HomePage() {
-  const { events, news, loading, addSubscriber } = useAppContext();
+  const { events, news, loading, addSubscriber, getTicketsByEvent } = useAppContext();
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
   const { toast } = useToast();
 
-  const featuredEvents = useMemo(() => {
+  const availableEvents = useMemo(() => {
     return [...events]
-      .filter(event => new Date(event.date) > new Date())
-      .sort((a, b) => (b.capacity - (getTicketsByEvent(b.id)?.length || 0)) - (a.capacity - (getTicketsByEvent(a.id)?.length || 0)))
+      .filter(event => {
+        const ticketsSold = getTicketsByEvent(event.id)?.length || 0;
+        const isUpcoming = new Date(event.date) > new Date();
+        const hasCapacity = event.capacity > 0;
+        const isSoldOut = ticketsSold >= event.capacity;
+        return isUpcoming && hasCapacity && !isSoldOut;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // Sort by soonest
       .slice(0, 3);
-  }, [events]);
+  }, [events, getTicketsByEvent]);
 
   const latestEvents = useMemo(() => {
     return [...events]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 3);
   }, [events]);
-
-  const getTicketsByEvent = (eventId: string) => {
-    // This function should be part of your context, here's a placeholder
-    return [];
-  };
 
   const featureCards = [
     {
@@ -195,18 +196,18 @@ export default function HomePage() {
           </div>
         </section>
         
-        {/* Featured Events Section */}
+        {/* Available Tickets Section */}
         <section id="events" className="py-24 bg-muted/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
                <div className="inline-block bg-primary/10 text-primary text-sm font-semibold px-4 py-2 rounded-full mb-4">
-                🔥 Trending Now
+                🎟️ Grab Your Tickets
               </div>
               <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
-                Featured Events
+                Available Tickets
               </h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                Check out the hottest events on our platform. Don't miss out!
+                Check out these upcoming events with tickets still available.
               </p>
             </div>
             <div className="mt-16">
@@ -222,19 +223,19 @@ export default function HomePage() {
                     </div>
                   ))}
                 </div>
-              ) : featuredEvents.length > 0 ? (
+              ) : availableEvents.length > 0 ? (
                  <div className="grid gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                    {featuredEvents.map((event) => (
+                    {availableEvents.map((event) => (
                       <EventCard key={event.id} event={event} />
                     ))}
                   </div>
               ) : (
                 <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-2xl bg-white/50 backdrop-blur-sm">
                   <CalendarX className="mx-auto h-16 w-16 text-gray-400" />
-                  <h3 className="mt-6 text-xl font-semibold text-gray-900">No Featured Events Yet</h3>
-                  <p className="mt-2 text-muted-foreground">Check back soon for new and exciting events!</p>
+                  <h3 className="mt-6 text-xl font-semibold text-gray-900">No Tickets Available</h3>
+                  <p className="mt-2 text-muted-foreground">All upcoming events are currently sold out or free. Check back soon!</p>
                   <Button asChild size="lg" className="mt-6">
-                    <Link href="/create">Create Your First Event</Link>
+                    <Link href="/create">Host Your Own Event</Link>
                   </Button>
                 </div>
               )}
