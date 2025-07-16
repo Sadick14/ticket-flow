@@ -1,4 +1,6 @@
 
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -86,10 +88,8 @@ export function EventCard({ event }: EventCardProps) {
           </div>
         </CardContent>
         <CardFooter className="p-4">
-          <Button className="w-full" asChild>
-            <Link href={`/events/${event.id}`}>
-              View Details <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
+          <Button className="w-full">
+            View Details <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </CardFooter>
       </Link>
