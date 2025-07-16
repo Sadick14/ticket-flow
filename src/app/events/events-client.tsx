@@ -91,7 +91,7 @@ export default function EventsPageClient() {
         description="From concerts to conferences, find your next unforgettable experience. Browse thousands of events happening near you."
         ctaText="Create Your Event"
         ctaLink="/create"
-        height="md"
+        height="xl"
         overlay="gradient"
       />
 
