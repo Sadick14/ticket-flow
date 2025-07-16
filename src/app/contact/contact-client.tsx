@@ -72,25 +72,17 @@ export default function ContactClientPage() {
       icon: Mail,
       title: 'Email Support',
       description: 'Get help via email',
-      contact: 'support@ticketflow.com',
+      contact: 'issakasaddick14@gmail.com',
       response: 'Response within 24 hours',
-      available: true
-    },
-    {
-      icon: MessageCircle,
-      title: 'Live Chat',
-      description: 'Chat with our support team',
-      contact: 'Start Chat',
-      response: 'Available now',
       available: true
     },
     {
       icon: Phone,
       title: 'Phone Support',
       description: 'Call us for urgent issues',
-      contact: '+1 (555) 123-FLOW',
+      contact: '+233 59 747 9994',
       response: 'Mon-Fri, 9AM-6PM PST',
-      available: false
+      available: true
     }
   ];
 
@@ -111,6 +103,7 @@ export default function ContactClientPage() {
         title="Contact Us"
         description="Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible."
         height="xl"
+        overlay="dark"
       />
       <div className="bg-background py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -299,7 +292,7 @@ export default function ContactClientPage() {
                   </p>
                   <div className="flex items-center gap-2 mb-3">
                     <Phone className="h-4 w-4 text-red-500" />
-                    <span className="font-medium text-red-600">+1 (555) 911-FLOW</span>
+                    <span className="font-medium text-red-600">+233 59 747 9994</span>
                   </div>
                   <p className="text-xs text-gray-500">
                     Emergency support is for critical issues affecting live events only.

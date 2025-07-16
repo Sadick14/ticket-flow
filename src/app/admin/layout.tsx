@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
-import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users, Archive, Users2 } from 'lucide-react';
+import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users, Archive, Users2, MessageSquare } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -86,6 +86,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <Link href="/admin/users">
                     <Users2 />
                     <span>Users</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/admin/contact-messages')}
+                  tooltip={{ children: 'Contact Messages' }}
+                >
+                  <Link href="/admin/contact-messages">
+                    <MessageSquare />
+                    <span>Contact Messages</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -200,6 +212,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <h1 className="text-lg font-semibold">
                       {pathname === '/admin' && 'Admin Dashboard'}
                       {pathname === '/admin/users' && 'User Management'}
+                      {pathname === '/admin/contact-messages' && 'Contact Messages'}
                       {pathname === '/admin/news' && 'News Management'}
                       {pathname === '/admin/subscribers' && 'Subscribers'}
                       {pathname === '/admin/emails' && 'Email Management'}

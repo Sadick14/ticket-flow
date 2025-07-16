@@ -3,7 +3,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber } from '@/lib/types';
+import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy } from 'firebase/firestore';
 
@@ -13,6 +13,7 @@ interface AppContextType {
   news: NewsArticle[];
   users: UserProfile[];
   launchSubscribers: LaunchSubscriber[];
+  contactSubmissions: ContactSubmission[];
   loading: boolean;
   // Events
   addEvent: (event: Omit<Event, 'id' | 'collaboratorIds' | 'status'>) => Promise<void>;
@@ -47,6 +48,8 @@ interface AppContextType {
   addLaunchSubscriber: (name: string, email: string) => Promise<void>;
   // General Subscribers
   addSubscriber: (email: string) => Promise<void>;
+  // Contact Submissions
+  replyToSubmission: (submission: ContactSubmission, replyMessage: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -57,6 +60,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [launchSubscribers, setLaunchSubscribers] = useState<LaunchSubscriber[]>([]);
+  const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchEvents = useCallback(async () => {
@@ -114,15 +118,32 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const fetchContactSubmissions = useCallback(async () => {
+    try {
+      const submissionsCollection = collection(db, 'contact_submissions');
+      const snapshot = await getDocs(query(submissionsCollection, orderBy('submittedAt', 'desc')));
+      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ContactSubmission));
+      setContactSubmissions(list);
+    } catch (error) {
+      console.error("Error fetching contact submissions:", error);
+    }
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([fetchEvents(), fetchTickets(), fetchNews(), fetchUsers(), fetchLaunchSubscribers()]);
+      await Promise.all([
+        fetchEvents(), 
+        fetchTickets(), 
+        fetchNews(), 
+        fetchUsers(), 
+        fetchLaunchSubscribers(),
+        fetchContactSubmissions()
+      ]);
       setLoading(false);
     }
     loadData();
-  }, [fetchEvents, fetchTickets, fetchNews, fetchUsers, fetchLaunchSubscribers]);
+  }, [fetchEvents, fetchTickets, fetchNews, fetchUsers, fetchLaunchSubscribers, fetchContactSubmissions]);
 
   const addEvent = async (eventData: Omit<Event, 'id' | 'collaboratorIds' | 'status'>) => {
     try {
@@ -399,6 +420,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  const replyToSubmission = async (submission: ContactSubmission, replyMessage: string) => {
+    // This function will need to be implemented, likely involving another API endpoint
+    console.log("Replying to submission...", submission.id, replyMessage);
+    // 1. Send email to user (submission.email)
+    // 2. Update submission status in Firestore
+    const submissionRef = doc(db, 'contact_submissions', submission.id);
+    await updateDoc(submissionRef, { 
+      status: 'replied',
+      adminReply: replyMessage,
+      repliedAt: new Date().toISOString()
+    });
+    await fetchContactSubmissions();
+  };
 
   return (
     <AppContext.Provider value={{ 
@@ -407,6 +441,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       news,
       users,
       launchSubscribers,
+      contactSubmissions,
       loading, 
       addEvent, 
       updateEvent, 
@@ -430,6 +465,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       deleteNewsArticle,
       addLaunchSubscriber,
       addSubscriber,
+      replyToSubmission
     }}>
       {children}
     </AppContext.Provider>

@@ -83,3 +83,16 @@ export interface LaunchSubscriber {
     email: string;
     subscribedAt: string; // ISO String
 }
+
+export interface ContactSubmission {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  category: string;
+  message: string;
+  status: 'new' | 'read' | 'replied' | 'archived';
+  submittedAt: string; // ISO string
+  repliedAt?: string; // ISO string
+  adminReply?: string;
+}

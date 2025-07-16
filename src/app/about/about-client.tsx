@@ -7,8 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Users, Target, Zap, Heart, Award, Globe, Lightbulb, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { PageHero } from '@/components/page-hero';
+import { useAppContext } from '@/context/app-context';
 
 export default function AboutClientPage() {
+  const { events, tickets, users } = useAppContext();
+  
   const values = [
     {
       icon: Users,
@@ -33,41 +36,41 @@ export default function AboutClientPage() {
   ];
 
   const stats = [
-    { label: 'Events Created', value: '50,000+' },
-    { label: 'Tickets Sold', value: '2M+' },
-    { label: 'Happy Organizers', value: '10,000+' },
+    { label: 'Events Created', value: `${events.length.toLocaleString()}+` },
+    { label: 'Tickets Sold', value: `${tickets.length.toLocaleString()}+` },
+    { label: 'Happy Organizers', value: `${users.length.toLocaleString()}+` },
     { label: 'Countries Served', value: '25+' }
   ];
 
   const team = [
     {
-      name: 'Sarah Johnson',
-      role: 'CEO & Co-Founder',
-      bio: 'Former event director with 10+ years of experience in the industry.',
-      image: 'https://placehold.co/150x150.png',
-      "data-ai-hint": "woman portrait"
-    },
-    {
-      name: 'Mike Chen',
-      role: 'CTO & Co-Founder',
-      bio: 'Software engineer passionate about building scalable solutions.',
+      name: 'Sadick Issaka',
+      role: 'CEO & Founder',
+      bio: 'A passionate developer and entrepreneur dedicated to building tools that empower creators.',
       image: 'https://placehold.co/150x150.png',
       "data-ai-hint": "man portrait"
     },
-    {
-      name: 'Lisa Rodriguez',
-      role: 'Head of Design',
-      bio: 'UX designer focused on creating intuitive and beautiful experiences.',
-      image: 'https://placehold.co/150x150.png',
-      "data-ai-hint": "woman portrait"
-    },
-    {
-      name: 'David Kim',
-      role: 'Head of Customer Success',
-      bio: 'Dedicated to helping our customers succeed with their events.',
-      image: 'https://placehold.co/150x150.png',
-      "data-ai-hint": "man portrait"
-    }
+    // {
+    //   name: 'Mike Chen',
+    //   role: 'CTO & Co-Founder',
+    //   bio: 'Software engineer passionate about building scalable solutions.',
+    //   image: 'https://placehold.co/150x150.png',
+    //   "data-ai-hint": "man portrait"
+    // },
+    // {
+    //   name: 'Lisa Rodriguez',
+    //   role: 'Head of Design',
+    //   bio: 'UX designer focused on creating intuitive and beautiful experiences.',
+    //   image: 'https://placehold.co/150x150.png',
+    //   "data-ai-hint": "woman portrait"
+    // },
+    // {
+    //   name: 'David Kim',
+    //   role: 'Head of Customer Success',
+    //   bio: 'Dedicated to helping our customers succeed with their events.',
+    //   image: 'https://placehold.co/150x150.png',
+    //   "data-ai-hint": "man portrait"
+    // }
   ];
 
   return (
@@ -81,6 +84,7 @@ export default function AboutClientPage() {
         secondaryCtaText="Get in Touch"
         secondaryCtaLink="/contact"
         height="xl"
+        overlay="dark"
       />
 
       <div className="bg-background">
@@ -107,26 +111,16 @@ export default function AboutClientPage() {
               </CardHeader>
               <CardContent className="prose prose-lg max-w-none text-gray-700">
                 <p>
-                  TicketFlow was born from a simple frustration: organizing events shouldn't be complicated. 
-                  Our founders, Sarah and Mike, were organizing a local tech meetup when they realized how 
-                  fragmented and expensive the existing solutions were.
+                  TicketFlow was founded on a simple, yet powerful idea: event management should be accessible, intuitive, and affordable for everyone. 
+                  Our founder, Sadick Issaka, envisioned a platform that would empower creators of all sizes—from local community organizers to large-scale conference planners—to bring their visions to life without the barriers of complex and costly software.
                 </p>
                 
                 <p>
-                  After struggling with multiple platforms for ticketing, promotion, and attendee management, 
-                  they decided to build the solution they wished existed. They wanted a platform that was 
-                  intuitive for organizers, affordable for small events, and delightful for attendees.
+                  The journey began with a commitment to build a tool that wasn't just functional, but truly empowering. The team focused on creating a seamless experience, from crafting a beautiful event page to managing attendees and analyzing sales. The goal was to handle the technical complexities so that organizers could focus on what they do best: creating unforgettable experiences.
                 </p>
                 
                 <p>
-                  Today, TicketFlow powers events of all sizes - from intimate workshops to large conferences. 
-                  We're proud to serve a community of passionate event organizers who are bringing people 
-                  together and creating meaningful connections.
-                </p>
-                
-                <p>
-                  Our journey is just beginning. We continue to innovate and improve our platform based on 
-                  feedback from our amazing community of organizers and attendees.
+                  Today, TicketFlow is a testament to that vision. It stands as a robust, user-friendly platform that serves a growing community of passionate event organizers around the world. We believe that when you give people the right tools, they can create amazing things. Our story is just beginning, and we are excited to continue building the future of event management, one event at a time.
                 </p>
               </CardContent>
             </Card>
@@ -219,7 +213,7 @@ export default function AboutClientPage() {
               <p className="text-xl text-gray-600">The passionate people behind TicketFlow</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 justify-center">
               {team.map((member, index) => (
                 <Card key={index} className="text-center">
                   <CardHeader>
