@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, HelpCircle, MessageCircle, Book, CreditCard, Users, Calendar, Settings } from 'lucide-react';
 import Link from 'next/link';
+import { PageHero } from '@/components/page-hero';
 
 export default function FaqClientPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -110,155 +111,130 @@ export default function FaqClientPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Hero Section */}
-      <div className="py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-6">
-            Frequently Asked Questions
-          </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Find answers to common questions about TicketFlow
-          </p>
-          
-          {/* Search */}
-          <div className="relative max-w-md mx-auto mb-8">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              type="text"
-              placeholder="Search FAQs..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-muted/40">
+      <PageHero
+        title="Frequently Asked Questions"
+        description="Find answers to common questions about TicketFlow. Search for a topic or browse by category."
+        height="xl"
+      />
+      <div className="bg-background py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Category Filter */}
+            <div className="lg:col-span-1">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Categories</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {categories.map((category) => (
+                    <Button
+                      key={category.id}
+                      variant={selectedCategory === category.id ? 'default' : 'ghost'}
+                      className="w-full justify-start"
+                      onClick={() => setSelectedCategory(category.id)}
+                    >
+                      <category.icon className="h-4 w-4 mr-2" />
+                      {category.name}
+                    </Button>
+                  ))}
+                </CardContent>
+              </Card>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Category Filter */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Categories</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {categories.map((category) => (
-                  <Button
-                    key={category.id}
-                    variant={selectedCategory === category.id ? 'default' : 'ghost'}
-                    className="w-full justify-start"
-                    onClick={() => setSelectedCategory(category.id)}
-                  >
-                    <category.icon className="h-4 w-4 mr-2" />
-                    {category.name}
-                  </Button>
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* Contact Support */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <MessageCircle className="h-5 w-5" />
-                  Still Need Help?
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-gray-600">
-                  Can't find what you're looking for?
-                </p>
-                <div className="space-y-2">
-                  <Button asChild className="w-full" size="sm">
-                    <Link href="/contact">Contact Support</Link>
-                  </Button>
-                  <Button asChild variant="outline" className="w-full" size="sm">
-                    <Link href="/help-center">Visit Help Center</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* FAQ Content */}
-          <div className="lg:col-span-3">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900">
-                  {selectedCategory === 'all' ? 'All Questions' : 
-                   categories.find(c => c.id === selectedCategory)?.name}
-                </h2>
-                <p className="text-gray-600 mt-1">
-                  {filteredFAQs.length} question{filteredFAQs.length !== 1 ? 's' : ''} found
-                </p>
-              </div>
-              
-              {selectedCategory !== 'all' && (
-                <Badge variant="secondary">
-                  {categories.find(c => c.id === selectedCategory)?.name}
-                </Badge>
-              )}
+              {/* Contact Support */}
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <MessageCircle className="h-5 w-5" />
+                    Still Need Help?
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-gray-600">
+                    Can't find what you're looking for?
+                  </p>
+                  <div className="space-y-2">
+                    <Button asChild className="w-full" size="sm">
+                      <Link href="/contact">Contact Support</Link>
+                    </Button>
+                    <Button asChild variant="outline" className="w-full" size="sm">
+                      <Link href="/help-center">Visit Help Center</Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
-            {filteredFAQs.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <HelpCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No questions found</h3>
-                  <p className="text-gray-600 mb-4">
-                    Try adjusting your search or browse different categories.
-                  </p>
-                  <Button variant="outline" onClick={() => {
-                    setSearchQuery('');
-                    setSelectedCategory('all');
-                  }}>
-                    Clear Filters
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="p-6">
-                  <Accordion type="single" collapsible className="w-full">
-                    {filteredFAQs.map((faq, index) => (
-                      <AccordionItem key={index} value={`item-${index}`}>
-                        <AccordionTrigger className="text-left">
-                          <div className="flex items-start gap-3">
-                            <HelpCircle className="h-4 w-4 mt-1 text-primary shrink-0" />
-                            <span>{faq.question}</span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="ml-7 text-gray-700">
-                          {faq.answer}
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
-      </div>
+            {/* FAQ Content */}
+            <div className="lg:col-span-3">
+              {/* Search */}
+              <div className="relative max-w-md mb-8">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  type="text"
+                  placeholder="Search FAQs..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
 
-      {/* CTA Section */}
-      <div className="bg-white py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Ready to Get Started?
-          </h2>
-          <p className="text-xl text-gray-600 mb-8">
-            Create your first event in minutes and start selling tickets today.
-          </p>
-          <div className="flex justify-center gap-4">
-            <Button asChild size="lg">
-              <Link href="/create">Create Event</Link>
-            </Button>
-            <Button variant="outline" size="lg" asChild>
-              <Link href="/contact">Get Support</Link>
-            </Button>
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-semibold text-gray-900">
+                    {selectedCategory === 'all' ? 'All Questions' : 
+                    categories.find(c => c.id === selectedCategory)?.name}
+                  </h2>
+                  <p className="text-gray-600 mt-1">
+                    {filteredFAQs.length} question{filteredFAQs.length !== 1 ? 's' : ''} found
+                  </p>
+                </div>
+                
+                {selectedCategory !== 'all' && (
+                  <Badge variant="secondary">
+                    {categories.find(c => c.id === selectedCategory)?.name}
+                  </Badge>
+                )}
+              </div>
+
+              {filteredFAQs.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <HelpCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No questions found</h3>
+                    <p className="text-gray-600 mb-4">
+                      Try adjusting your search or browse different categories.
+                    </p>
+                    <Button variant="outline" onClick={() => {
+                      setSearchQuery('');
+                      setSelectedCategory('all');
+                    }}>
+                      Clear Filters
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent className="p-6">
+                    <Accordion type="single" collapsible className="w-full">
+                      {filteredFAQs.map((faq, index) => (
+                        <AccordionItem key={index} value={`item-${index}`}>
+                          <AccordionTrigger className="text-left">
+                            <div className="flex items-start gap-3">
+                              <HelpCircle className="h-4 w-4 mt-1 text-primary shrink-0" />
+                              <span>{faq.question}</span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="ml-7 text-gray-700">
+                            {faq.answer}
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
         </div>
       </div>

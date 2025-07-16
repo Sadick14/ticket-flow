@@ -363,26 +363,6 @@ export default function HomePage() {
             </form>
           </div>
         </section>
-
-         {/* Final CTA */}
-        <section className="relative py-24 bg-gray-900 text-white overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-primary to-accent opacity-90"></div>
-          <div className="absolute inset-0 bg-dot-pattern opacity-10"></div>
-          <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-             <h2 className="text-4xl font-bold mb-4">Your Next Event Starts Here</h2>
-             <p className="text-xl text-white/80 mb-8">
-               Trusted by thousands of event organizers worldwide. Join the community and start creating today.
-             </p>
-             <div className="flex justify-center gap-4">
-                <Button asChild size="lg" className="bg-white text-primary hover:bg-gray-100">
-                  <Link href="/create">Create Event</Link>
-                </Button>
-                <Button asChild variant="outline" size="lg" className="border-white text-white hover:bg-white/10">
-                  <Link href="/events">Explore Events</Link>
-                </Button>
-              </div>
-          </div>
-        </section>
       </div>
     </>
   );
