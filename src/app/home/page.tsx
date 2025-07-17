@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { EventCard } from '@/components/event-card';
 import { useAppContext } from '@/context/app-context';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowRight, Newspaper, CalendarX, Zap, CreditCard, BarChart, Mail, PenSquare, Ticket, Users as UsersIcon } from 'lucide-react';
+import { ArrowRight, Newspaper, CalendarX, Zap, CreditCard, BarChart, Mail, PenSquare, Ticket, Users as UsersIcon, Search, CheckCircle } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { NewsCard } from '@/components/news-card';
 import { motion } from 'framer-motion';
@@ -67,7 +67,7 @@ export default function HomePage() {
     }
   ];
 
-  const howItWorksSteps = [
+  const organizerSteps = [
     {
       icon: PenSquare,
       step: "Step 1",
@@ -85,6 +85,27 @@ export default function HomePage() {
       step: "Step 3",
       title: "Manage & Engage",
       description: "Track your sales in real-time, check in attendees with our scanner, and send updates to build excitement."
+    }
+  ];
+
+  const attendeeSteps = [
+    {
+      icon: Search,
+      step: "Step 1",
+      title: "Discover Events",
+      description: "Explore a wide variety of events. Use our powerful search and filters to find your next great experience."
+    },
+    {
+      icon: CreditCard,
+      step: "Step 2",
+      title: "Purchase Securely",
+      description: "Buy tickets in just a few clicks with our secure and reliable payment system. Your tickets are delivered instantly."
+    },
+    {
+      icon: CheckCircle,
+      step: "Step 3",
+      title: "Enjoy the Event",
+      description: "Access your tickets easily from your email or our app. Simply show your QR code at the event for seamless entry."
     }
   ];
 
@@ -263,36 +284,74 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
-                Get Started in 3 Easy Steps
+                How TicketFlow Works
               </h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                From idea to live event in minutes. Our platform makes it simple.
+                Simple for organizers, seamless for attendees.
               </p>
             </div>
-            <div className="relative">
-              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-border -translate-y-1/2 hidden md:block" aria-hidden="true"></div>
-              <div className="relative grid grid-cols-1 md:grid-cols-3 gap-12">
-                {howItWorksSteps.map((step, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 50 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.15 }}
-                    viewport={{ once: true }}
-                    className="text-center bg-background p-8 rounded-xl shadow-lg border"
-                  >
-                    <div className="flex items-center justify-center mb-6">
-                        <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary border-2 border-primary/20">
-                          <step.icon className="h-8 w-8" />
-                        </div>
-                    </div>
-                    <p className="font-semibold text-primary mb-2">{step.step}</p>
-                    <h3 className="text-2xl font-bold mb-3">{step.title}</h3>
-                    <p className="text-muted-foreground">{step.description}</p>
-                  </motion.div>
-                ))}
+            
+            <Tabs defaultValue="organizers" className="w-full">
+              <div className="flex justify-center mb-8">
+                <TabsList>
+                  <TabsTrigger value="organizers">For Organizers</TabsTrigger>
+                  <TabsTrigger value="attendees">For Attendees</TabsTrigger>
+                </TabsList>
               </div>
-            </div>
+
+              <TabsContent value="organizers">
+                <div className="relative">
+                  <div className="absolute top-1/2 left-0 w-full h-0.5 bg-border -translate-y-1/2 hidden md:block" aria-hidden="true"></div>
+                  <div className="relative grid grid-cols-1 md:grid-cols-3 gap-12">
+                    {organizerSteps.map((step, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 50 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: index * 0.15 }}
+                        viewport={{ once: true }}
+                        className="text-center bg-background p-8 rounded-xl shadow-lg border"
+                      >
+                        <div className="flex items-center justify-center mb-6">
+                            <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary border-2 border-primary/20">
+                              <step.icon className="h-8 w-8" />
+                            </div>
+                        </div>
+                        <p className="font-semibold text-primary mb-2">{step.step}</p>
+                        <h3 className="text-2xl font-bold mb-3">{step.title}</h3>
+                        <p className="text-muted-foreground">{step.description}</p>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+              <TabsContent value="attendees">
+                 <div className="relative">
+                  <div className="absolute top-1/2 left-0 w-full h-0.5 bg-border -translate-y-1/2 hidden md:block" aria-hidden="true"></div>
+                  <div className="relative grid grid-cols-1 md:grid-cols-3 gap-12">
+                    {attendeeSteps.map((step, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 50 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: index * 0.15 }}
+                        viewport={{ once: true }}
+                        className="text-center bg-background p-8 rounded-xl shadow-lg border"
+                      >
+                        <div className="flex items-center justify-center mb-6">
+                            <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary border-2 border-primary/20">
+                              <step.icon className="h-8 w-8" />
+                            </div>
+                        </div>
+                        <p className="font-semibold text-primary mb-2">{step.step}</p>
+                        <h3 className="text-2xl font-bold mb-3">{step.title}</h3>
+                        <p className="text-muted-foreground">{step.description}</p>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         </section>
         
