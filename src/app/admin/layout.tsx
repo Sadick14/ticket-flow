@@ -16,6 +16,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
+  SidebarInset,
 } from '@/components/ui/sidebar';
 import {
   DropdownMenu,
@@ -52,18 +53,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-screen overflow-hidden bg-muted/40">
-        <Sidebar>
-          <SidebarHeader className="p-4">
+      <Sidebar side="left" collapsible="icon" variant="sidebar">
+          <SidebarHeader>
             <Link
               href="/admin"
               className="flex items-center gap-2 text-xl font-bold text-sidebar-foreground font-headline"
             >
               <Shield className="h-6 w-6" />
-              <span>Admin Panel</span>
+              <span className="group-data-[collapsible=icon]:hidden">Admin Panel</span>
             </Link>
           </SidebarHeader>
-          <SidebarContent className="p-2">
+          <SidebarContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
@@ -163,16 +163,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter className="p-4 border-t border-sidebar-border">
+          <SidebarFooter>
             {user && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="w-full justify-start items-center gap-3 px-2 h-auto text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                            <Avatar className="h-9 w-9">
+                        <Button variant="ghost" className="w-full justify-start items-center gap-3 px-2 h-auto text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:size-8">
+                            <Avatar className="h-8 w-8">
                                 <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
                                 <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
                             </Avatar>
-                            <div className="flex-1 text-left overflow-hidden">
+                            <div className="flex-1 text-left overflow-hidden group-data-[collapsible=icon]:hidden">
                                 <p className="text-sm font-medium truncate">{user.displayName}</p>
                                 <Badge variant="destructive" className="mt-1">Admin</Badge>
                             </div>
@@ -202,30 +202,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </DropdownMenu>
             )}
           </SidebarFooter>
-        </Sidebar>
-        <div className="flex flex-col flex-1 overflow-hidden">
-            <header className="flex h-14 items-center gap-4 border-b bg-background px-6 flex-shrink-0">
-                <div className="md:hidden">
-                    <SidebarTrigger />
-                </div>
-                <div className="flex-1">
-                    <h1 className="text-lg font-semibold">
-                      {pathname === '/admin' && 'Admin Dashboard'}
-                      {pathname === '/admin/users' && 'User Management'}
-                      {pathname === '/admin/contact-messages' && 'Contact Messages'}
-                      {pathname === '/admin/news' && 'News Management'}
-                      {pathname === '/admin/subscribers' && 'Subscribers'}
-                      {pathname === '/admin/emails' && 'Email Management'}
-                      {pathname === '/admin/archived-events' && 'Archived Events'}
-                      {pathname === '/admin/settings' && 'Admin Settings'}
-                    </h1> 
-                </div>
-            </header>
-            <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-                {children}
-            </main>
-        </div>
-      </div>
+      </Sidebar>
+      <SidebarInset>
+        <header className="flex h-14 items-center gap-4 border-b bg-background px-6 flex-shrink-0">
+            <SidebarTrigger className="md:hidden"/>
+            <div className="flex-1">
+                <h1 className="text-lg font-semibold">
+                  {pathname === '/admin' && 'Admin Dashboard'}
+                  {pathname.startsWith('/admin/users') && 'User Management'}
+                  {pathname.startsWith('/admin/contact-messages') && 'Contact Messages'}
+                  {pathname.startsWith('/admin/news') && 'News Management'}
+                  {pathname.startsWith('/admin/subscribers') && 'Subscribers'}
+                  {pathname.startsWith('/admin/emails') && 'Email Management'}
+                  {pathname.startsWith('/admin/archived-events') && 'Archived Events'}
+                  {pathname.startsWith('/admin/settings') && 'Admin Settings'}
+                </h1> 
+            </div>
+        </header>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+            {children}
+        </main>
+      </SidebarInset>
     </SidebarProvider>
   );
 }

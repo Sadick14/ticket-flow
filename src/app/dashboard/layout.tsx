@@ -14,6 +14,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
+  SidebarInset
 } from '@/components/ui/sidebar';
 import {
   LineChart,
@@ -51,24 +52,23 @@ export default function DashboardLayout({
 }) {
   const { user, signOut } = useAuth();
   const pathname = usePathname();
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => pathname === path || (path !== '/dashboard' && pathname.startsWith(path));
   
   const hasAdvancedFeatures = user?.subscriptionPlan === 'Pro';
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-screen overflow-hidden bg-background">
-        <Sidebar className="bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-          <SidebarHeader className="p-4 border-b border-sidebar-border">
+      <Sidebar side="left" collapsible="icon" variant="sidebar">
+          <SidebarHeader>
             <Link
               href="/home"
-              className="flex items-center gap-2 text-xl font-bold text-white font-headline hover:opacity-80 transition-opacity"
+              className="flex items-center gap-2 text-xl font-bold text-sidebar-foreground font-headline hover:opacity-80 transition-opacity"
             >
               <Ticket className="h-6 w-6 text-primary" />
-              <span>TicketFlow</span>
+              <span className="group-data-[collapsible=icon]:hidden">TicketFlow</span>
             </Link>
           </SidebarHeader>
-          <SidebarContent className="p-2">
+          <SidebarContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
@@ -77,7 +77,6 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'My Events',
                   }}
-                  className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard">
                     <Home />
@@ -92,7 +91,6 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'Create Event',
                   }}
-                  className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard/create">
                     <PlusCircle />
@@ -108,7 +106,6 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'Attendees',
                   }}
-                  className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard/attendees">
                     <Users />
@@ -123,7 +120,6 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'Ticket Scanner',
                   }}
-                  className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard/scanner">
                     <QrCode />
@@ -138,7 +134,6 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'Email Management',
                   }}
-                  className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard/emails">
                     <Mail />
@@ -156,7 +151,6 @@ export default function DashboardLayout({
                       tooltip={{
                         children: 'Ticket Sales',
                       }}
-                      className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                     >
                       <Link href="/dashboard/sales">
                         <CreditCard />
@@ -171,7 +165,6 @@ export default function DashboardLayout({
                       tooltip={{
                         children: 'Marketing',
                       }}
-                      className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                     >
                       <Link href="/dashboard/marketing">
                         <Megaphone />
@@ -186,7 +179,6 @@ export default function DashboardLayout({
                       tooltip={{
                         children: 'Analytics',
                       }}
-                      className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                     >
                       <Link href="/dashboard/analytics">
                         <LineChart />
@@ -204,7 +196,6 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'Payments',
                   }}
-                  className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard/payment-settings">
                     <CreditCard />
@@ -219,7 +210,6 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'Settings',
                   }}
-                  className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard/settings">
                     <Settings />
@@ -229,17 +219,17 @@ export default function DashboardLayout({
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter className="p-4 border-t border-sidebar-border">
+          <SidebarFooter>
             {user && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="w-full justify-start items-center gap-3 px-2 h-auto text-white hover:bg-sidebar-accent hover:text-white transition-colors">
-                            <Avatar className="h-9 w-9">
+                        <Button variant="ghost" className="w-full justify-start items-center gap-3 px-2 h-auto text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:size-8">
+                            <Avatar className="h-8 w-8">
                                 <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
-                                <AvatarFallback className="bg-sidebar-accent text-white">{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                                <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground">{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
                             </Avatar>
-                            <div className="flex-1 text-left overflow-hidden">
-                                <p className="text-sm font-medium truncate text-white">{user.displayName}</p>
+                            <div className="flex-1 text-left overflow-hidden group-data-[collapsible=icon]:hidden">
+                                <p className="text-sm font-medium truncate">{user.displayName}</p>
                                 <Badge variant={user.subscriptionPlan === 'Pro' ? 'default' : 'secondary'} className="mt-1">{user.subscriptionPlan} Plan</Badge>
                             </div>
                         </Button>
@@ -268,33 +258,30 @@ export default function DashboardLayout({
                 </DropdownMenu>
             )}
           </SidebarFooter>
-        </Sidebar>
-        <div className="flex flex-col flex-1 overflow-hidden">
-            <header className="flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6 flex-shrink-0">
-                <div className="md:hidden">
-                    <SidebarTrigger className="text-foreground hover:bg-muted" />
-                </div>
-                <div className="flex-1">
-                    <h1 className="text-lg font-semibold text-foreground">
-                      {pathname === '/dashboard' && 'My Events'}
-                      {pathname === '/dashboard/create' && 'Create Event'}
-                      {pathname === '/dashboard/attendees' && 'Attendees'}
-                      {pathname === '/dashboard/scanner' && 'Ticket Scanner'}
-                      {pathname === '/dashboard/emails' && 'Email Management'}
-                      {pathname === '/dashboard/sales' && 'Sales & Revenue'}
-                      {pathname === '/dashboard/analytics' && 'Analytics Dashboard'}
-                      {pathname === '/dashboard/marketing' && 'Marketing Tools'}
-                      {pathname === '/dashboard/payment-settings' && 'Payment Settings'}
-                      {pathname === '/dashboard/settings' && 'Settings'}
-                      {pathname.startsWith('/dashboard/edit/') && 'Edit Event'}
-                    </h1> 
-                </div>
-            </header>
-            <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-                {children}
-            </main>
-        </div>
-      </div>
+      </Sidebar>
+      <SidebarInset>
+        <header className="flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-6 flex-shrink-0">
+            <SidebarTrigger className="md:hidden" />
+            <div className="flex-1">
+                <h1 className="text-lg font-semibold text-foreground">
+                  {pathname === '/dashboard' && 'My Events'}
+                  {pathname === '/dashboard/create' && 'Create Event'}
+                  {pathname === '/dashboard/attendees' && 'Attendees'}
+                  {pathname === '/dashboard/scanner' && 'Ticket Scanner'}
+                  {pathname === '/dashboard/emails' && 'Email Management'}
+                  {pathname === '/dashboard/sales' && 'Sales & Revenue'}
+                  {pathname === '/dashboard/analytics' && 'Analytics Dashboard'}
+                  {pathname === '/dashboard/marketing' && 'Marketing Tools'}
+                  {pathname === '/dashboard/payment-settings' && 'Payment Settings'}
+                  {pathname === '/dashboard/settings' && 'Settings'}
+                  {pathname.startsWith('/dashboard/edit/') && 'Edit Event'}
+                </h1> 
+            </div>
+        </header>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+            {children}
+        </main>
+      </SidebarInset>
     </SidebarProvider>
   );
 }

@@ -207,7 +207,7 @@ export default function HomePage() {
                         Start Creating
                     </Link>
                     </Button>
-                    <Button asChild variant="outline" size="lg" className="border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm">
+                    <Button asChild variant="outline" size="lg" className="border-2 border-white/30 text-primary hover:bg-white/10 backdrop-blur-sm">
                     <Link href="/events">
                         Explore Events
                     </Link>

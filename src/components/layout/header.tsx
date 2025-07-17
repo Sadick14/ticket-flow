@@ -76,6 +76,16 @@ export function Header() {
     )
   };
 
+  const handleSignIn = () => {
+    signInWithGoogle();
+    closeMobileMenu();
+  };
+
+  const handleSignOut = () => {
+    signOut();
+    closeMobileMenu();
+  };
+
   return (
     <header className="fixed top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm safe-area-top">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
@@ -208,7 +218,7 @@ export function Header() {
                         <Button 
                           variant="ghost" 
                           className="w-full justify-start text-left h-12 gap-3"
-                          onClick={() => { signOut(); closeMobileMenu(); }}
+                          onClick={handleSignOut}
                         >
                           <LogOut className="h-5 w-5" />
                           <span>Sign Out</span>
@@ -218,7 +228,7 @@ export function Header() {
                       <div className="mt-auto">
                         <Button 
                           className="w-full" 
-                          onClick={() => { signInWithGoogle(); closeMobileMenu(); }}
+                          onClick={handleSignIn}
                         >
                           Sign In with Google
                         </Button>

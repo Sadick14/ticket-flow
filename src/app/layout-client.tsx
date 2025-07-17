@@ -10,29 +10,25 @@ import { shouldShowCountdown } from '@/lib/launch';
 export default function RootLayoutClient({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isLaunchPage = pathname === '/';
-    const isAdminPage = pathname.startsWith('/admin');
-    const isDashboardPage = pathname.startsWith('/dashboard');
+    const isAdminOrDashboard = pathname.startsWith('/admin') || pathname.startsWith('/dashboard');
 
-    const noHeaderFooterRoutes = ['/admin', '/dashboard'];
-    const showHeaderFooter = !noHeaderFooterRoutes.some(path => pathname.startsWith(path));
-
-    // Show only the page content for admin or dashboard routes
-    if (isAdminPage || isDashboardPage) {
+    // For admin or dashboard, the layout is handled by their own layout files.
+    if (isAdminOrDashboard) {
         return (
-            <div className="flex flex-col min-h-screen">
-                <main className="flex-grow">{children}</main>
+            <>
+                {children}
                 <Toaster />
-            </div>
+            </>
         );
     }
     
     // Show only the launch page content if countdown is active
     if (isLaunchPage && shouldShowCountdown()) {
         return (
-             <div className="flex flex-col min-h-screen">
-                <main className="flex-grow">{children}</main>
+             <>
+                {children}
                 <Toaster />
-            </div>
+            </>
         )
     }
 
