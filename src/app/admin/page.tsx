@@ -3,15 +3,16 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppContext } from '@/context/app-context';
-import { Users, Ticket, Newspaper, DollarSign, Clock, Eye, BarChart, LineChart as LineChartIcon } from 'lucide-react';
+import { Users, Ticket, DollarSign, Eye } from 'lucide-react';
 import { useMemo } from 'react';
-import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
+import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
 import { format, subDays, eachDayOfInterval } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 export default function AdminDashboardPage() {
   const { events, tickets, news, users } = useAppContext();
@@ -55,6 +56,17 @@ export default function AdminDashboardPage() {
     activeUsers: 28,
     sessions: 310,
     avgSessionDuration: '2m 15s',
+  };
+
+  const chartConfig = {
+    revenue: {
+      label: 'Revenue',
+      color: 'hsl(var(--chart-1))',
+    },
+    tickets: {
+      label: 'Tickets',
+      color: 'hsl(var(--chart-2))',
+    },
   };
 
   return (
@@ -112,18 +124,27 @@ export default function AdminDashboardPage() {
                 <CardDescription>Revenue and tickets sold over the last 7 days.</CardDescription>
             </CardHeader>
             <CardContent>
-                 <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={salesLast7Days}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" fontSize={12} />
-                        <YAxis yAxisId="left" stroke="#8884d8" fontSize={12} />
-                        <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" fontSize={12} />
-                        <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}/>
-                        <Legend />
-                        <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="#8884d8" name="Revenue ($)" />
-                        <Line yAxisId="right" type="monotone" dataKey="tickets" stroke="#82ca9d" name="Tickets" />
-                    </LineChart>
-                </ResponsiveContainer>
+                 <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                    <AreaChart accessibilityLayer data={salesLast7Days}>
+                        <CartesianGrid vertical={false} />
+                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
+                        <YAxis yAxisId="revenue" tickLine={false} axisLine={false} tickMargin={8} />
+                        <YAxis yAxisId="tickets" orientation="right" tickLine={false} axisLine={false} tickMargin={8} />
+                        <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+                        <defs>
+                            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="var(--color-revenue)" stopOpacity={0.8} />
+                                <stop offset="95%" stopColor="var(--color-revenue)" stopOpacity={0.1} />
+                            </linearGradient>
+                             <linearGradient id="colorTickets" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="var(--color-tickets)" stopOpacity={0.8} />
+                                <stop offset="95%" stopColor="var(--color-tickets)" stopOpacity={0.1} />
+                            </linearGradient>
+                        </defs>
+                        <Area dataKey="revenue" type="monotone" fill="url(#colorRevenue)" stroke="var(--color-revenue)" stackId="a" yAxisId="revenue" />
+                        <Area dataKey="tickets" type="monotone" fill="url(#colorTickets)" stroke="var(--color-tickets)" stackId="b" yAxisId="tickets"/>
+                    </AreaChart>
+                </ChartContainer>
             </CardContent>
         </Card>
          <Card>
@@ -164,10 +185,12 @@ export default function AdminDashboardPage() {
             <CardHeader>
                 <CardTitle>Website Analytics</CardTitle>
                 <CardDescription>
-                    Summary of user engagement on your website. 
-                    <a href="https://analytics.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline ml-1">
+                    Summary of user engagement.
+                    <Button variant="link" asChild className="p-0 h-auto ml-1">
+                      <a href="https://analytics.google.com/" target="_blank" rel="noopener noreferrer">
                         View on Google Analytics
-                    </a>
+                      </a>
+                    </Button>
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-3 gap-4 text-center">

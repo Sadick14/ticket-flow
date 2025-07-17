@@ -35,6 +35,10 @@
 
     --radius: 0.5rem;
 
+    /* Chart colors */
+    --chart-1: 22 95% 55%;
+    --chart-2: 160 80% 45%;
+
     /* Sidebar Theme */
     --sidebar-background: 222.2 84% 4.9%;
     --sidebar-foreground: 210 40% 98%;
@@ -75,6 +79,10 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 22 95% 65%;
     
+    /* Dark mode chart colors */
+    --chart-1: 22 95% 65%;
+    --chart-2: 160 80% 55%;
+
     /* Dark mode sidebar */
     --sidebar-background: 222.2 84% 4.9%;
     --sidebar-foreground: 210 40% 98%;
