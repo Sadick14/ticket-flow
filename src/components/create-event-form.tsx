@@ -36,12 +36,6 @@ import Link from 'next/link';
 import type { Event, SubscriptionPlan } from '@/lib/types';
 import { ImageUploader } from '@/components/image-uploader';
 import { AiAssistant } from './ai-assistant';
-import dynamic from 'next/dynamic';
-
-const LocationPicker = dynamic(
-  () => import('./location-picker').then(mod => mod.LocationPicker),
-  { ssr: false, loading: () => <Loader2 className="h-5 w-5 animate-spin" /> }
-);
 
 const eventFormSchema = z.object({
   name: z.string().min(3, { message: 'Event name must be at least 3 characters.' }),
@@ -658,18 +652,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                       <FormItem>
                         <FormLabel>Location</FormLabel>
                         <FormControl>
-                          <LocationPicker 
-                            value={{
-                              address: field.value,
-                              lat: form.getValues('latitude'),
-                              lng: form.getValues('longitude'),
-                            }}
-                            onChange={({address, lat, lng}) => {
-                              form.setValue('location', address);
-                              form.setValue('latitude', lat);
-                              form.setValue('longitude', lng);
-                            }}
-                           />
+                          <Input placeholder="e.g. Central Park, New York" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
