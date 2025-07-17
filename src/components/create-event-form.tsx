@@ -105,18 +105,12 @@ type EventFormValues = z.infer<typeof eventFormSchema>;
 
 const categories = ["Nightlife & Parties", "Movies & Cinema", "Arts & Theatre", "Food & Drinks", "Networking", "Travel & Outdoor", "Professional", "Health & Wellness"];
 
-const eventLimits: Record<SubscriptionPlan, number> = {
-    Free: 1,
-    Essential: 10,
-    Pro: 45,
-};
-
 interface CreateEventFormProps {
     eventToEdit?: Event;
 }
 
 export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
-  const { addEvent, updateEvent, getEventsByCreator } = useAppContext();
+  const { addEvent, updateEvent } = useAppContext();
   const { user, signInWithGoogle } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -135,8 +129,8 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
       date: new Date(),
       time: '09:00',
       location: '',
-      latitude: 51.505,
-      longitude: -0.09,
+      latitude: 5.6037, // Accra
+      longitude: -0.1870,
       onlineUrl: '',
       description: '',
       price: 0,
@@ -157,9 +151,6 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
     name: "promoCodes",
   });
 
-  // Since we're moving to a commission model, we no longer need plan-based event limits.
-  // The ability to create a paid event determines access to features.
-  const canCreatePaidEvent = true; // All users can create paid events now.
   const isAuthenticated = !!user;
 
   useEffect(() => {
@@ -800,7 +791,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                     name="price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Ticket Price ($)</FormLabel>
+                        <FormLabel>Ticket Price (GH₵)</FormLabel>
                         <FormControl>
                           <Input type="number" min="0" step="0.01" {...field} />
                         </FormControl>
@@ -852,7 +843,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                                             <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
                                             <SelectContent>
                                                 <SelectItem value="percentage">Percentage (%)</SelectItem>
-                                                <SelectItem value="fixed">Fixed ($)</SelectItem>
+                                                <SelectItem value="fixed">Fixed (GH₵)</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
@@ -937,5 +928,3 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
     </>
   );
 }
-
-    

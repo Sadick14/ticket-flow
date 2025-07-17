@@ -8,21 +8,28 @@ import { Check } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
-import { ComingSoonDialog } from '@/components/coming-soon-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PricingClientPage() {
   const { user } = useAuth();
-  const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleChoosePlan = (planName: string) => {
+    toast({
+      title: 'Plan Upgrade Coming Soon!',
+      description: `The ability to upgrade to the ${planName} plan is in development.`,
+    });
+  };
 
   const freePlan = {
     name: 'Free',
-    price: '$0',
+    price: 'GH₵0',
     priceDescription: 'For all your free events',
     description: 'Perfect for getting started with free community events.',
     features: [
       'Unlimited free events',
       'Attendee Registration',
-      'Basic Event Analytics',
+      '5% commission on paid tickets',
       'Standard Email Support'
     ],
     cta: 'Get Started For Free',
@@ -32,14 +39,15 @@ export default function PricingClientPage() {
   const paidPlans = [
     {
       name: 'Essential',
-      price: '$99',
-      priceDescription: '/ year',
+      price: 'GH₵50',
+      priceDescription: 'one-time upfront fee',
       description: 'For paid events that need the core tools to succeed.',
       features: [
+        'Everything in Free, plus:',
         'Sell Paid Tickets',
+        '3% commission on each ticket sale',
         'Multiple Ticket Types',
         'Promotional Codes',
-        'Featured on Homepage'
       ],
       cta: 'Choose Essential',
       ctaLink: '#',
@@ -47,12 +55,12 @@ export default function PricingClientPage() {
     },
     {
       name: 'Pro',
-      price: '$299',
-      priceDescription: '/ year',
+      price: 'GH₵150',
+      priceDescription: 'one-time upfront fee',
       description: 'For organizers who want to maximize sales and engagement.',
       features: [
         'Everything in Essential, plus:',
-        'Lowest Commission Rate',
+        'Lowest commission rate (1%)',
         'Social Media & Email Marketing Tools',
         'Detailed Attendee Analytics',
         'Embeddable Ticket Widget',
@@ -102,7 +110,7 @@ export default function PricingClientPage() {
                 <span className="block">Choose Your Plan</span>
               </h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                Select the plan that fits your event needs. All paid plans are billed annually.
+                Select the plan that fits your event needs. Paid plans are a one-time fee plus commission.
               </p>
             </div>
 
@@ -190,7 +198,7 @@ export default function PricingClientPage() {
                   
                   <div className="mt-auto pt-8">
                     <Button 
-                      onClick={() => plan.ctaLink === '/contact' ? window.location.href = '/contact' : setIsComingSoonOpen(true)}
+                      onClick={() => plan.name === 'Custom' ? window.location.href = '/contact' : handleChoosePlan(plan.name)}
                       className={`w-full py-3 rounded-full font-medium ${
                         plan.popular 
                           ? 'bg-white text-primary hover:bg-gray-100'
@@ -209,13 +217,12 @@ export default function PricingClientPage() {
 
             <div className="text-center mt-16">
               <p className="text-muted-foreground text-sm">
-                <span className="font-semibold text-destructive">Note:</span> Payment processing fees from Stripe, PayPal, etc. are separate from our annual subscription fees.
+                <span className="font-semibold text-destructive">Note:</span> Payment processing fees from payment gateways are separate from our platform commissions.
               </p>
             </div>
           </div>
         </section>
       </div>
-      <ComingSoonDialog isOpen={isComingSoonOpen} onOpenChange={setIsComingSoonOpen} />
     </>
   );
 }

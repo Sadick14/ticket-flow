@@ -3,8 +3,10 @@ import type {
   PaymentConfiguration, 
   PaymentGateway, 
   PaymentSplit,
-  TicketPaymentInfo 
+  TicketPaymentInfo,
+  SubscriptionPlan
 } from './payment-types';
+import type { UserProfile } from './types';
 
 // Payment gateway configurations
 export const PAYMENT_GATEWAYS: PaymentGateway[] = [
@@ -17,51 +19,17 @@ export const PAYMENT_GATEWAYS: PaymentGateway[] = [
     fixedFee: 0, 
     currencies: ['GHS', 'NGN', 'KES', 'ZAR', 'UGX', 'RWF', 'ZMW']
   },
-  /*
-  {
-    id: 'stripe',
-    name: 'Stripe',
-    enabled: true,
-    supportedCountries: ['US', 'CA', 'GB', 'AU', 'EU', 'NG', 'GH', 'KE', 'ZA'],
-    processingFee: 2.9, // 2.9%
-    fixedFee: 30, // $0.30
-    currencies: ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'NGN', 'GHS', 'KES', 'ZAR']
-  },
-  {
-    id: 'paypal',
-    name: 'PayPal',
-    enabled: true,
-    supportedCountries: ['US', 'CA', 'GB', 'AU', 'EU', 'NG', 'GH', 'KE', 'ZA'],
-    processingFee: 3.49, // 3.49%
-    fixedFee: 49, // $0.49
-    currencies: ['USD', 'EUR', 'GBP', 'CAD', 'AUD']
-  },
-  {
-    id: 'razorpay',
-    name: 'Razorpay',
-    enabled: true,
-    supportedCountries: ['IN', 'MY', 'SG'],
-    processingFee: 2.0, // 2.0%
-    fixedFee: 0,
-    currencies: ['INR', 'MYR', 'SGD']
-  },
-  {
-    id: 'flutterwave',
-    name: 'Flutterwave',
-    enabled: true,
-    supportedCountries: ['NG', 'GH', 'KE', 'UG', 'TZ', 'RW', 'ZM', 'ZA'],
-    processingFee: 1.4, // 1.4%
-    fixedFee: 0,
-    currencies: ['NGN', 'GHS', 'KES', 'UGX', 'TZS', 'RWF', 'ZMW', 'ZAR', 'USD']
-  }
-  */
 ];
 
 // Platform configuration
 export const PAYMENT_CONFIG: PaymentConfiguration = {
-  adminCommissionRate: 0.05, // 5%
+  commissionRates: {
+    Free: 0.05, // 5%
+    Essential: 0.03, // 3%
+    Pro: 0.01, // 1%
+  },
   platformFee: 0.01, // 1% additional platform fee
-  minimumPayout: 1000, // $10.00 minimum payout
+  minimumPayout: 1000, // 10 GHS in lowest denomination
   payoutSchedule: 'weekly',
   supportedGateways: PAYMENT_GATEWAYS,
   defaultGateway: 'mtn-momo'
@@ -69,10 +37,14 @@ export const PAYMENT_CONFIG: PaymentConfiguration = {
 
 // Utility functions for payment calculations
 export class PaymentCalculator {
+  static getCommissionRate(plan: SubscriptionPlan): number {
+    return PAYMENT_CONFIG.commissionRates[plan] || PAYMENT_CONFIG.commissionRates['Free'];
+  }
+
   static calculatePaymentSplit(
     ticketPrice: number,
     gateway: PaymentGateway,
-    passFeeToCustomer: boolean = false
+    creatorPlan: SubscriptionPlan
   ): PaymentSplit {
     const baseAmount = ticketPrice;
     
@@ -82,8 +54,8 @@ export class PaymentCalculator {
       (baseAmount * processingFeePercent) + gateway.fixedFee
     );
     
-    // Calculate platform commission (admin gets 5%)
-    const adminCommission = Math.round(baseAmount * PAYMENT_CONFIG.adminCommissionRate);
+    const commissionRate = this.getCommissionRate(creatorPlan);
+    const adminCommission = Math.round(baseAmount * commissionRate);
     
     // Calculate additional platform fee
     const platformCommission = Math.round(baseAmount * PAYMENT_CONFIG.platformFee);
@@ -123,7 +95,7 @@ export class PaymentCalculator {
       processingFee: passFeeToCustomer ? processingFee : 0,
       platformFee: passFeeToCustomer ? platformFee : 0,
       totalAmount,
-      currency: 'USD', // Default, should be dynamic based on location
+      currency: 'GHS', // Default to GHS
       paymentGateway: gateway.id,
       transactionId: '' // Will be filled after payment
     };
@@ -144,7 +116,6 @@ export class PaymentCalculator {
       return null;
     }
     
-    // Find gateway with lowest total fee for this transaction
     const gatewayWithFees = availableGateways.map(gateway => {
       const fee = (amount * gateway.processingFee / 100) + gateway.fixedFee;
       return { gateway, totalFee: fee };
@@ -155,12 +126,12 @@ export class PaymentCalculator {
   }
   
   static formatCurrency(amount: number, currency: string = 'GHS'): string {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-GH', {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(amount / 100); // assuming amount is in cents
+    }).format(amount / 100); // assuming amount is in lowest denomination (e.g. pesewas)
   }
   
   static validateMinimumPayout(amount: number): boolean {

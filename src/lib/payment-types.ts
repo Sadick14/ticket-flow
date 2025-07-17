@@ -1,18 +1,20 @@
 
+
 // Payment system types and interfaces
+import { SubscriptionPlan } from './types';
 
 export interface PaymentGateway {
-  id: 'mtn-momo'; // | 'stripe' | 'paypal' | 'razorpay' | 'flutterwave';
+  id: 'mtn-momo';
   name: string;
   enabled: boolean;
   supportedCountries: string[];
   processingFee: number; // percentage
-  fixedFee: number; // fixed amount in cents
+  fixedFee: number; // fixed amount in lowest denomination (e.g., pesewas)
   currencies: string[];
 }
 
 export interface PaymentConfiguration {
-  adminCommissionRate: number; // 5% = 0.05
+  commissionRates: Record<SubscriptionPlan, number>;
   platformFee: number; // additional platform fee percentage
   minimumPayout: number; // minimum amount for creator payout
   payoutSchedule: 'daily' | 'weekly' | 'monthly';
@@ -65,15 +67,7 @@ export interface CreatorPaymentProfile {
   preferredGateway: PaymentGateway['id'];
   momoNumber?: string;
   momoNetwork?: string;
-  bankAccountDetails?: {
-    accountNumber: string;
-    routingNumber: string;
-    accountHolderName: string;
-    bankName: string;
-    country: string;
-  };
-  paypalEmail?: string;
-  stripeConnectAccountId?: string;
+  paymentMethod?: 'momo' | 'bank';
   taxInformation?: {
     taxId: string;
     country: string;
@@ -83,6 +77,8 @@ export interface CreatorPaymentProfile {
   payoutSchedule: 'daily' | 'weekly' | 'monthly';
   isVerified: boolean;
   verificationDocuments?: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface RefundRequest {
@@ -115,18 +111,6 @@ export interface PaymentAnalytics {
     transactions: number;
     fees: number;
   }>;
-}
-
-// Update existing Event interface to include payment settings
-export interface EventPaymentSettings {
-  eventId: string;
-  acceptedGateways: PaymentGateway['id'][];
-  refundPolicy: 'no_refunds' | 'full_refund_24h' | 'full_refund_48h' | 'partial_refund' | 'custom';
-  customRefundPolicy?: string;
-  processingFeePassedToCustomer: boolean;
-  minimumTicketPrice: number;
-  maximumTicketPrice: number;
-  currency: string;
 }
 
 // Add to existing Ticket interface

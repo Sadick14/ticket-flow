@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -21,6 +22,7 @@ import {
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, subDays } from 'date-fns';
 import Link from 'next/link';
 import type { Ticket, Event } from '@/lib/types';
+import { PaymentCalculator } from '@/lib/payment-config';
 
 export default function SalesPage() {
   const { user } = useAuth();
@@ -128,7 +130,7 @@ export default function SalesPage() {
         event.name,
         event.date,
         event.totalTicketsSold,
-        `$${event.totalRevenue.toFixed(2)}`,
+        `${PaymentCalculator.formatCurrency(event.totalRevenue * 100, 'GHS')}`,
         event.capacity,
         `${event.salesRate.toFixed(1)}%`
       ].join(','))
@@ -177,7 +179,7 @@ export default function SalesPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${salesStats.totalRevenue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">{PaymentCalculator.formatCurrency(salesStats.totalRevenue * 100, 'GHS')}</div>
             <p className="text-xs text-muted-foreground">
               {salesStats.revenueGrowth >= 0 ? '+' : ''}{salesStats.revenueGrowth.toFixed(1)}% from last period
             </p>
@@ -201,7 +203,7 @@ export default function SalesPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${salesStats.averageTicketPrice.toFixed(2)}</div>
+            <div className="text-2xl font-bold">{PaymentCalculator.formatCurrency(salesStats.averageTicketPrice * 100, 'GHS')}</div>
             <p className="text-xs text-muted-foreground">
               Per ticket average
             </p>
@@ -245,7 +247,7 @@ export default function SalesPage() {
                     <div className="flex-1">
                       <div className="flex justify-between text-sm mb-1">
                         <span>{day.tickets} tickets</span>
-                        <span>${day.revenue.toFixed(2)}</span>
+                        <span>{PaymentCalculator.formatCurrency(day.revenue * 100, 'GHS')}</span>
                       </div>
                       <Progress 
                         value={Math.max((day.revenue / Math.max(...dailySales.map(d => d.revenue), 1)) * 100, 5)} 
@@ -314,7 +316,7 @@ export default function SalesPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="font-mono">
-                          ${event.totalRevenue.toFixed(2)}
+                          {PaymentCalculator.formatCurrency(event.totalRevenue * 100, 'GHS')}
                         </Badge>
                       </TableCell>
                       <TableCell>

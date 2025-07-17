@@ -172,7 +172,7 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
             <div className="p-4 bg-muted rounded-lg text-center">
               <p className="text-sm text-muted-foreground">Total Price</p>
               <p className="text-3xl font-bold">
-                {isFree ? 'FREE' : PaymentCalculator.formatCurrency((event.price * quantity) * 100)}
+                {isFree ? 'FREE' : PaymentCalculator.formatCurrency((event.price * quantity) * 100, 'GHS')}
               </p>
             </div>
 

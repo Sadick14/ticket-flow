@@ -63,12 +63,15 @@ export default function AdminUsersPage() {
                     <CardDescription>{users.length} user(s) on the platform.</CardDescription>
                 </div>
                 <div className="w-full max-w-sm">
-                    <Input 
-                        placeholder="Search by name or email..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full"
-                    />
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                            placeholder="Search by name or email..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-9"
+                        />
+                    </div>
                 </div>
             </div>
         </CardHeader>

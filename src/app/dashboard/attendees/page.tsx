@@ -16,6 +16,7 @@ import { format, parseISO } from 'date-fns';
 import type { Ticket, Event, UserProfile } from '@/lib/types';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { PaymentCalculator } from '@/lib/payment-config';
 
 export default function AttendeesPage() {
   const { user } = useAuth();
@@ -95,7 +96,7 @@ export default function AttendeesPage() {
 
   const exportAttendees = () => {
     const csvContent = [
-      ['Name', 'Email', 'Event', 'Date', 'Location', 'Purchase Date', 'Price', 'Checked In'].join(','),
+      ['Name', 'Email', 'Event', 'Date', 'Location', 'Purchase Date', 'Price (GHS)', 'Checked In'].join(','),
       ...filteredAttendees.map((attendee: any) => [
         attendee.attendeeName,
         attendee.attendeeEmail,
@@ -103,7 +104,7 @@ export default function AttendeesPage() {
         attendee.eventDate,
         attendee.eventLocation,
         format(parseISO(attendee.purchaseDate), 'yyyy-MM-dd'),
-        `$${attendee.price.toFixed(2)}`,
+        `${attendee.price.toFixed(2)}`,
         attendee.checkedIn ? 'Yes' : 'No'
       ].join(','))
     ].join('\n');
@@ -262,7 +263,7 @@ export default function AttendeesPage() {
                         {format(parseISO(attendee.purchaseDate), 'MMM dd, yyyy')}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Badge variant="outline">${attendee.price.toFixed(2)}</Badge>
+                        <Badge variant="outline">{PaymentCalculator.formatCurrency(attendee.price * 100, 'GHS')}</Badge>
                       </TableCell>
                        <TableCell className="text-center">
                         {checkingIn === attendee.id ? (

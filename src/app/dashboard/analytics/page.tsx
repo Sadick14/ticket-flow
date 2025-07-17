@@ -24,6 +24,7 @@ import {
 import { format, parseISO, subDays, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 import Link from 'next/link';
 import type { Ticket } from '@/lib/types';
+import { PaymentCalculator } from '@/lib/payment-config';
 
 export default function AnalyticsPage() {
   const { user } = useAuth();
@@ -132,12 +133,12 @@ export default function AnalyticsPage() {
     const csvContent = [
       ['Metric', 'Value'].join(','),
       ['Total Events', stats.totalEvents],
-      ['Total Revenue', `$${stats.totalRevenue.toFixed(2)}`],
+      ['Total Revenue', `${PaymentCalculator.formatCurrency(stats.totalRevenue * 100, 'GHS')}`],
       ['Total Tickets Sold', stats.totalTicketsSold],
       ['Upcoming Events', stats.upcomingEvents],
       ['Revenue Growth (current period)', `${analyticsData.revenueGrowth.toFixed(1)}%`],
       ['Attendee Growth (current period)', `${analyticsData.attendeeGrowth.toFixed(1)}%`],
-      ['Average Ticket Price (current period)', `$${analyticsData.averageTicketPrice.toFixed(2)}`],
+      ['Average Ticket Price (current period)', `${PaymentCalculator.formatCurrency(analyticsData.averageTicketPrice * 100, 'GHS')}`],
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -183,7 +184,7 @@ export default function AnalyticsPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">{PaymentCalculator.formatCurrency(stats.totalRevenue * 100, 'GHS')}</div>
             <div className="flex items-center text-xs text-muted-foreground">
               {analyticsData.revenueGrowth >= 0 ? (
                 <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
@@ -235,7 +236,7 @@ export default function AnalyticsPage() {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${analyticsData.averageTicketPrice.toFixed(2)}</div>
+            <div className="text-2xl font-bold">{PaymentCalculator.formatCurrency(analyticsData.averageTicketPrice * 100, 'GHS')}</div>
             <p className="text-xs text-muted-foreground">
               Current period average
             </p>
@@ -269,7 +270,7 @@ export default function AnalyticsPage() {
                   <div className="flex-1">
                     <div className="flex justify-between text-sm mb-1">
                       <span>{day.tickets} tickets</span>
-                      <span>${day.revenue.toFixed(2)}</span>
+                      <span>{PaymentCalculator.formatCurrency(day.revenue * 100, 'GHS')}</span>
                     </div>
                     <Progress 
                       value={Math.max((day.revenue / Math.max(...analyticsData.weeklyData.map(d => d.revenue), 1)) * 100, 2)} 
@@ -352,7 +353,7 @@ export default function AnalyticsPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold">${event.revenue.toFixed(2)}</div>
+                      <div className="font-bold">{PaymentCalculator.formatCurrency(event.revenue * 100, 'GHS')}</div>
                       <div className="text-xs text-muted-foreground">revenue</div>
                     </div>
                   </div>
