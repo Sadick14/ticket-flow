@@ -204,7 +204,7 @@ export default function TicketsPageClient() {
     <div className="min-h-screen">
       <PageHero
         title="My Tickets"
-        backgroundImage = "/1.jpg"
+        backgroundImage = "/2.jpg"
         description="Here are all the tickets you have purchased. Access your QR codes, event details, and manage your upcoming events."
       />
       <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">

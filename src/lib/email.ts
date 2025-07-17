@@ -10,7 +10,7 @@ const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER;
 const smtpPass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASS;
 const fromEmail = process.env.FROM_EMAIL || process.env.GMAIL_USER;
 
-const isEmailConfigured = smtpHost && smtpPort && smtpUser && smtpPass && fromEmail;
+const isEmailConfigured = !!(smtpHost && smtpPort && smtpUser && smtpPass && fromEmail);
 
 console.log('Email Configuration Status:', {
   smtpHost: !!smtpHost,

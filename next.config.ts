@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -10,7 +11,10 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   // Moved from experimental to root level
-  serverExternalPackages: [],
+  serverExternalPackages: [
+    '@opentelemetry/exporter-jaeger',
+    'handlebars'
+  ],
   images: {
     remotePatterns: [
       {
