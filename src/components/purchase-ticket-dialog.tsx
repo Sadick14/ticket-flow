@@ -17,10 +17,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import type { Event } from '@/lib/types';
+import type { Event, Ticket } from '@/lib/types';
 import { Loader2, Minus, Plus, Wallet, Phone } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PaymentCalculator } from '@/lib/payment-config';
+import { ViewTicketDialog } from './view-ticket-dialog';
 
 interface PurchaseTicketDialogProps {
   event: Event;
@@ -35,7 +36,6 @@ const purchaseSchema = z.object({
       attendeeEmail: z.string().email({ message: 'Please enter a valid email address.' }),
     })
   ).min(1, 'At least one attendee is required.'),
-  // MoMo number is now optional as it's not needed for free events
   momoNumber: z.string().min(10, 'Please enter a valid phone number.').optional().or(z.literal('')),
 });
 
@@ -46,6 +46,8 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
   const [quantity, setQuantity] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentStep, setPaymentStep] = useState<'details' | 'approval'>('details');
+  const [newlyPurchasedTicket, setNewlyPurchasedTicket] = useState<Ticket | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   const form = useForm<PurchaseFormValues>({
     resolver: zodResolver(purchaseSchema),
@@ -63,7 +65,6 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
   const isFree = event.price === 0;
 
   useEffect(() => {
-    // When the dialog opens, reset form with the correct number of attendees
     if (isOpen) {
         const currentCount = form.getValues('attendees').length;
         if (quantity > currentCount) {
@@ -77,13 +78,28 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
         }
     }
   }, [quantity, isOpen, append, remove, form]);
+
+  const showTicketPopup = (ticketData: any) => {
+    // Assuming the API returns the first ticket created in the batch
+    const firstTicket: Ticket = {
+      id: ticketData.tickets[0].id,
+      eventId: event.id,
+      attendeeName: ticketData.tickets[0].attendeeName,
+      attendeeEmail: ticketData.tickets[0].attendeeEmail,
+      purchaseDate: new Date().toISOString(),
+      checkedIn: false,
+      price: event.price,
+    };
+    setNewlyPurchasedTicket(firstTicket);
+    onOpenChange(false); // Close purchase dialog
+    setIsViewModalOpen(true); // Open view dialog
+  };
   
   const handlePurchase = async (data: PurchaseFormValues) => {
     setIsSubmitting(true);
     
-    // For free events, just add the tickets directly
-    if (isFree) {
-      try {
+    try {
+      if (isFree) {
         const response = await fetch('/api/add-ticket', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -93,77 +109,63 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
               price: 0,
             })
         });
-        if (!response.ok) throw new Error("Registration failed.");
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Registration failed.");
 
         toast({
           title: 'Registration Successful!',
           description: `You've got ${quantity} ticket(s) for ${event.name}.`,
         });
-        onOpenChange(false);
-      } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Registration Failed',
-          description: 'Something went wrong. Please try again.',
+        showTicketPopup(result);
+
+      } else { // Paid event logic
+        if (!data.momoNumber) {
+            toast({variant: 'destructive', title: 'Payment Failed', description: 'Mobile Money number is required.'});
+            setIsSubmitting(false);
+            return;
+        }
+
+        setPaymentStep('approval');
+        const paymentResponse = await fetch('/api/payments/create-intent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+            amount: event.price * quantity,
+            currency: 'GHS',
+            gatewayId: 'mtn-momo',
+            momoNumber: data.momoNumber,
+            metadata: { eventId: event.id, eventName: event.name, quantity },
+            }),
         });
-      } finally {
-        setIsSubmitting(false);
-      }
-      return;
-    }
 
-    // For paid events, call the payment API
-    if (!data.momoNumber) {
-        toast({variant: 'destructive', title: 'Payment Failed', description: 'Mobile Money number is required.'});
-        setIsSubmitting(false);
-        return;
-    }
+        const paymentResult = await paymentResponse.json();
+        if (!paymentResponse.ok) throw new Error(paymentResult.error || 'Payment request failed.');
+        
+        toast({ title: 'Check Your Phone', description: 'Approve the transaction by entering your MoMo PIN.' });
 
-    try {
-      setPaymentStep('approval');
-      const paymentResponse = await fetch('/api/payments/create-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: event.price * quantity,
-          currency: 'GHS',
-          gatewayId: 'mtn-momo',
-          momoNumber: data.momoNumber,
-          metadata: {
+        // This simulates waiting for webhook confirmation. In a real app, you'd handle this differently.
+        const ticketResponse = await fetch('/api/add-ticket', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
             eventId: event.id,
-            eventName: event.name,
-            quantity: quantity,
-          },
-        }),
-      });
+            attendees: data.attendees,
+            price: event.price,
+            transactionId: paymentResult.transactionReference
+            })
+        });
 
-      const paymentResult = await paymentResponse.json();
-      if (!paymentResponse.ok) {
-        throw new Error(paymentResult.error || 'Payment request failed.');
+        const ticketResult = await ticketResponse.json();
+        if (!ticketResponse.ok) throw new Error(ticketResult.error || "Ticket creation failed after payment.");
+
+        toast({ title: 'Payment Successful!', description: `Your ticket(s) for ${event.name} are confirmed.` });
+        showTicketPopup(ticketResult);
       }
-      
-      toast({
-        title: 'Check Your Phone',
-        description: 'Approve the transaction by entering your MoMo PIN.',
-      });
-      
-      const ticketResponse = await fetch('/api/add-ticket', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventId: event.id,
-          attendees: data.attendees,
-          price: event.price
-        })
-      });
-
-      if (!ticketResponse.ok) throw new Error("Ticket creation failed after payment.");
-      
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Payment Failed',
-        description: error.message || 'Could not initiate payment.',
+        title: isFree ? 'Registration Failed' : 'Payment Failed',
+        description: error.message || 'Something went wrong. Please try again.',
       });
       setPaymentStep('details');
     } finally {
@@ -176,96 +178,105 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
     setQuantity(1);
     setPaymentStep('details');
     setIsSubmitting(false);
+    setNewlyPurchasedTicket(null);
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) {
-        resetState();
-      }
-      onOpenChange(open);
-    }}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="font-headline">
-            {isFree ? 'Register for Event' : 'Buy Tickets'}
-          </DialogTitle>
-          <DialogDescription>
-            You are getting {quantity} ticket(s) for {event.name}.
-          </DialogDescription>
-        </DialogHeader>
-        
-        {paymentStep === 'approval' ? (
-          <div className="py-8 text-center space-y-4">
-            <Loader2 className="h-12 w-12 mx-auto animate-spin text-primary" />
-            <h3 className="text-lg font-semibold">Awaiting Approval</h3>
-            <p className="text-muted-foreground">
-              Please check your phone and enter your MoMo PIN to approve the payment of
-              <strong className="text-foreground"> {PaymentCalculator.formatCurrency((event.price * quantity) * 100, 'GHS')}</strong>.
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={form.handleSubmit(handlePurchase)} className="space-y-4">
-              <div className="flex items-center justify-between mt-4">
-                  <Label>Quantity</Label>
-                  <div className="flex items-center gap-2">
-                      <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => Math.max(1, q - 1))} disabled={quantity <= 1}>
-                          <Minus className="h-4 w-4" />
-                      </Button>
-                      <span className="font-bold text-lg w-10 text-center">{quantity}</span>
-                      <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => q + 1)}>
-                          <Plus className="h-4 w-4" />
-                      </Button>
-                  </div>
-              </div>
-
-              <ScrollArea className="h-64 pr-4 mt-4">
-                <div className="space-y-4">
-                  {fields.map((field, index) => (
-                      <div key={field.id} className="p-4 border rounded-lg space-y-4 relative bg-muted/30">
-                          <Label className="font-semibold">Ticket #{index + 1}</Label>
-                          <div className="space-y-2">
-                            <Label htmlFor={`attendees.${index}.attendeeName`}>Attendee Name</Label>
-                            <Input id={`attendees.${index}.attendeeName`} {...form.register(`attendees.${index}.attendeeName`)} />
-                            {form.formState.errors.attendees?.[index]?.attendeeName && <p className="text-sm text-destructive">{form.formState.errors.attendees?.[index]?.attendeeName?.message}</p>}
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor={`attendees.${index}.attendeeEmail`}>Email Address</Label>
-                            <Input id={`attendees.${index}.attendeeEmail`} type="email" {...form.register(`attendees.${index}.attendeeEmail`)} />
-                            {form.formState.errors.attendees?.[index]?.attendeeEmail && <p className="text-sm text-destructive">{form.formState.errors.attendees?.[index]?.attendeeEmail?.message}</p>}
-                          </div>
-                      </div>
-                  ))}
-                </div>
-              </ScrollArea>
-              
-              {!isFree && (
-                <div className="space-y-2">
-                    <Label htmlFor="momoNumber" className="flex items-center gap-2"><Wallet/> Mobile Money Payment</Label>
-                     <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input id="momoNumber" placeholder="Enter MoMo Number" {...form.register('momoNumber')} className="pl-10" required/>
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => {
+        if (!open) resetState();
+        onOpenChange(open);
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-headline">
+              {isFree ? 'Register for Event' : 'Buy Tickets'}
+            </DialogTitle>
+            <DialogDescription>
+              You are getting {quantity} ticket(s) for {event.name}.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {paymentStep === 'approval' ? (
+            <div className="py-8 text-center space-y-4">
+              <Loader2 className="h-12 w-12 mx-auto animate-spin text-primary" />
+              <h3 className="text-lg font-semibold">Awaiting Approval</h3>
+              <p className="text-muted-foreground">
+                Please check your phone and enter your MoMo PIN to approve the payment of
+                <strong className="text-foreground"> {PaymentCalculator.formatCurrency((event.price * quantity) * 100, 'GHS')}</strong>.
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={form.handleSubmit(handlePurchase)} className="space-y-4">
+                <div className="flex items-center justify-between mt-4">
+                    <Label>Quantity</Label>
+                    <div className="flex items-center gap-2">
+                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => Math.max(1, q - 1))} disabled={quantity <= 1}>
+                            <Minus className="h-4 w-4" />
+                        </Button>
+                        <span className="font-bold text-lg w-10 text-center">{quantity}</span>
+                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => q + 1)}>
+                            <Plus className="h-4 w-4" />
+                        </Button>
                     </div>
-                    {form.formState.errors.momoNumber && <p className="text-sm text-destructive">{form.formState.errors.momoNumber.message}</p>}
                 </div>
-              )}
 
-              <div className="p-4 bg-muted rounded-lg text-center">
-                <p className="text-sm text-muted-foreground">Total Price</p>
-                <p className="text-3xl font-bold">
-                  {isFree ? 'FREE' : PaymentCalculator.formatCurrency((event.price * quantity) * 100, 'GHS')}
-                </p>
-              </div>
+                <ScrollArea className="h-64 pr-4 mt-4">
+                  <div className="space-y-4">
+                    {fields.map((field, index) => (
+                        <div key={field.id} className="p-4 border rounded-lg space-y-4 relative bg-muted/30">
+                            <Label className="font-semibold">Ticket #{index + 1}</Label>
+                            <div className="space-y-2">
+                              <Label htmlFor={`attendees.${index}.attendeeName`}>Attendee Name</Label>
+                              <Input id={`attendees.${index}.attendeeName`} {...form.register(`attendees.${index}.attendeeName`)} />
+                              {form.formState.errors.attendees?.[index]?.attendeeName && <p className="text-sm text-destructive">{form.formState.errors.attendees?.[index]?.attendeeName?.message}</p>}
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`attendees.${index}.attendeeEmail`}>Email Address</Label>
+                              <Input id={`attendees.${index}.attendeeEmail`} type="email" {...form.register(`attendees.${index}.attendeeEmail`)} />
+                              {form.formState.errors.attendees?.[index]?.attendeeEmail && <p className="text-sm text-destructive">{form.formState.errors.attendees?.[index]?.attendeeEmail?.message}</p>}
+                            </div>
+                        </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+                
+                {!isFree && (
+                  <div className="space-y-2">
+                      <Label htmlFor="momoNumber" className="flex items-center gap-2"><Wallet/> Mobile Money Payment</Label>
+                       <div className="relative">
+                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input id="momoNumber" placeholder="Enter MoMo Number" {...form.register('momoNumber')} className="pl-10" required/>
+                      </div>
+                      {form.formState.errors.momoNumber && <p className="text-sm text-destructive">{form.formState.errors.momoNumber.message}</p>}
+                  </div>
+                )}
 
-              <DialogFooter className="mt-6">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : isFree ? 'Get Free Ticket' : 'Pay Now'}
-                </Button>
-              </DialogFooter>
-          </form>
-        )}
-      </DialogContent>
-    </Dialog>
+                <div className="p-4 bg-muted rounded-lg text-center">
+                  <p className="text-sm text-muted-foreground">Total Price</p>
+                  <p className="text-3xl font-bold">
+                    {isFree ? 'FREE' : PaymentCalculator.formatCurrency((event.price * quantity) * 100, 'GHS')}
+                  </p>
+                </div>
+
+                <DialogFooter className="mt-6">
+                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="animate-spin" /> : isFree ? 'Get Free Ticket' : 'Pay Now'}
+                  </Button>
+                </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+      {newlyPurchasedTicket && (
+        <ViewTicketDialog
+          ticket={newlyPurchasedTicket}
+          event={event}
+          isOpen={isViewModalOpen}
+          onOpenChange={setIsViewModalOpen}
+        />
+      )}
+    </>
   );
 }
