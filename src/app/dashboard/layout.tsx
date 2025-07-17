@@ -59,13 +59,13 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
       <div className="flex h-screen w-screen overflow-hidden bg-background">
-        <Sidebar className="bg-gradient-to-b from-primary via-primary to-accent text-white border-r border-white/10">
-          <SidebarHeader className="p-4 border-b border-white/10">
+        <Sidebar className="bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
+          <SidebarHeader className="p-4 border-b border-sidebar-border">
             <Link
               href="/home"
               className="flex items-center gap-2 text-xl font-bold text-white font-headline hover:opacity-80 transition-opacity"
             >
-              <Ticket className="h-6 w-6" />
+              <Ticket className="h-6 w-6 text-primary" />
               <span>TicketFlow</span>
             </Link>
           </SidebarHeader>
@@ -78,7 +78,7 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'My Events',
                   }}
-                  className="text-white hover:bg-white/10 hover:text-white data-[active=true]:bg-white/20 data-[active=true]:text-white transition-colors"
+                  className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard">
                     <Home />
@@ -93,7 +93,7 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'Create Event',
                   }}
-                  className="text-white hover:bg-white/10 hover:text-white data-[active=true]:bg-white/20 data-[active=true]:text-white transition-colors"
+                  className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard/create">
                     <PlusCircle />
@@ -101,7 +101,7 @@ export default function DashboardLayout({
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <Separator className="my-2 bg-white/10" />
+              <Separator className="my-2 bg-sidebar-border" />
                <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -109,7 +109,7 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'Attendees',
                   }}
-                  className="text-white hover:bg-white/10 hover:text-white data-[active=true]:bg-white/20 data-[active=true]:text-white transition-colors"
+                  className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard/attendees">
                     <Users />
@@ -124,7 +124,7 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'Ticket Scanner',
                   }}
-                  className="text-white hover:bg-white/10 hover:text-white data-[active=true]:bg-white/20 data-[active=true]:text-white transition-colors"
+                  className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard/scanner">
                     <QrCode />
@@ -139,7 +139,7 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'Email Management',
                   }}
-                  className="text-white hover:bg-white/10 hover:text-white data-[active=true]:bg-white/20 data-[active=true]:text-white transition-colors"
+                  className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard/emails">
                     <Mail />
@@ -149,7 +149,7 @@ export default function DashboardLayout({
               </SidebarMenuItem>
               {hasStarterPlan && (
                 <>
-                  <Separator className="my-2 bg-white/10" />
+                  <Separator className="my-2 bg-sidebar-border" />
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
@@ -157,7 +157,7 @@ export default function DashboardLayout({
                       tooltip={{
                         children: 'Ticket Sales',
                       }}
-                      className="text-white hover:bg-white/10 hover:text-white data-[active=true]:bg-white/20 data-[active=true]:text-white transition-colors"
+                      className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                     >
                       <Link href="/dashboard/sales">
                         <CreditCard />
@@ -172,7 +172,7 @@ export default function DashboardLayout({
                       tooltip={{
                         children: 'Marketing',
                       }}
-                      className="text-white hover:bg-white/10 hover:text-white data-[active=true]:bg-white/20 data-[active=true]:text-white transition-colors"
+                      className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                     >
                       <Link href="/dashboard/marketing">
                         <Megaphone />
@@ -190,7 +190,7 @@ export default function DashboardLayout({
                       tooltip={{
                         children: 'Analytics',
                       }}
-                      className="text-white hover:bg-white/10 hover:text-white data-[active=true]:bg-white/20 data-[active=true]:text-white transition-colors"
+                      className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                     >
                       <Link href="/dashboard/analytics">
                         <LineChart />
@@ -199,7 +199,7 @@ export default function DashboardLayout({
                     </SidebarMenuButton>
                   </SidebarMenuItem>
               )}
-               <Separator className="my-2 bg-white/10" />
+               <Separator className="my-2 bg-sidebar-border" />
                <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -207,7 +207,7 @@ export default function DashboardLayout({
                   tooltip={{
                     children: 'Settings',
                   }}
-                  className="text-white hover:bg-white/10 hover:text-white data-[active=true]:bg-white/20 data-[active=true]:text-white transition-colors"
+                  className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
                 >
                   <Link href="/dashboard/settings">
                     <Settings />
@@ -217,18 +217,18 @@ export default function DashboardLayout({
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter className="p-4 border-t border-white/10">
+          <SidebarFooter className="p-4 border-t border-sidebar-border">
             {user && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="w-full justify-start items-center gap-3 px-2 h-auto text-white hover:bg-white/10 hover:text-white transition-colors">
+                        <Button variant="ghost" className="w-full justify-start items-center gap-3 px-2 h-auto text-white hover:bg-sidebar-accent hover:text-white transition-colors">
                             <Avatar className="h-9 w-9">
                                 <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
-                                <AvatarFallback className="bg-white/20 text-white">{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                                <AvatarFallback className="bg-sidebar-accent text-white">{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
                             </Avatar>
                             <div className="flex-1 text-left overflow-hidden">
                                 <p className="text-sm font-medium truncate text-white">{user.displayName}</p>
-                                <Badge variant="secondary" className="mt-1 bg-white/20 text-white">{user.subscriptionPlan} Plan</Badge>
+                                <Badge variant="secondary" className="mt-1 bg-sidebar-accent text-white">{user.subscriptionPlan} Plan</Badge>
                             </div>
                         </Button>
                     </DropdownMenuTrigger>
