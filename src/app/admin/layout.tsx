@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
-import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users, Archive, Users2, MessageSquare } from 'lucide-react';
+import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users, Archive, Users2, MessageSquare, Calendar, CreditCard } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -74,6 +74,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <Link href="/admin">
                     <Home />
                     <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/admin/events')}
+                  tooltip={{ children: 'Event Management' }}
+                >
+                  <Link href="/admin/events">
+                    <Calendar />
+                    <span>Events</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/admin/payouts')}
+                  tooltip={{ children: 'Payout Management' }}
+                >
+                  <Link href="/admin/payouts">
+                    <CreditCard />
+                    <span>Payouts</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -209,6 +233,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="flex-1">
                 <h1 className="text-lg font-semibold">
                   {pathname === '/admin' && 'Admin Dashboard'}
+                  {pathname.startsWith('/admin/events') && 'Event Management'}
+                  {pathname.startsWith('/admin/payouts') && 'Payout Management'}
                   {pathname.startsWith('/admin/users') && 'User Management'}
                   {pathname.startsWith('/admin/contact-messages') && 'Contact Messages'}
                   {pathname.startsWith('/admin/news') && 'News Management'}
