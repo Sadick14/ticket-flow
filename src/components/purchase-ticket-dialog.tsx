@@ -99,14 +99,13 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
     setIsSubmitting(true);
     
     try {
-      if (isFree) {
         const response = await fetch('/api/add-ticket', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               eventId: event.id,
               attendees: data.attendees,
-              price: 0,
+              price: event.price,
             })
         });
         const result = await response.json();
@@ -114,57 +113,14 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
 
         toast({
           title: 'Registration Successful!',
-          description: `You've got ${quantity} ticket(s) for ${event.name}.`,
+          description: `You've got ${quantity} ticket(s) for ${event.name}. Check your email for confirmation.`,
         });
         showTicketPopup(result);
 
-      } else { // Paid event logic
-        if (!data.momoNumber) {
-            toast({variant: 'destructive', title: 'Payment Failed', description: 'Mobile Money number is required.'});
-            setIsSubmitting(false);
-            return;
-        }
-
-        setPaymentStep('approval');
-        const paymentResponse = await fetch('/api/payments/create-intent', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-            amount: event.price * quantity,
-            currency: 'GHS',
-            gatewayId: 'mtn-momo',
-            momoNumber: data.momoNumber,
-            metadata: { eventId: event.id, eventName: event.name, quantity },
-            }),
-        });
-
-        const paymentResult = await paymentResponse.json();
-        if (!paymentResponse.ok) throw new Error(paymentResult.error || 'Payment request failed.');
-        
-        toast({ title: 'Check Your Phone', description: 'Approve the transaction by entering your MoMo PIN.' });
-
-        // This simulates waiting for webhook confirmation. In a real app, you'd handle this differently.
-        const ticketResponse = await fetch('/api/add-ticket', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-            eventId: event.id,
-            attendees: data.attendees,
-            price: event.price,
-            transactionId: paymentResult.transactionReference
-            })
-        });
-
-        const ticketResult = await ticketResponse.json();
-        if (!ticketResponse.ok) throw new Error(ticketResult.error || "Ticket creation failed after payment.");
-
-        toast({ title: 'Payment Successful!', description: `Your ticket(s) for ${event.name} are confirmed.` });
-        showTicketPopup(ticketResult);
-      }
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: isFree ? 'Registration Failed' : 'Payment Failed',
+        title: 'Registration Failed',
         description: error.message || 'Something went wrong. Please try again.',
       });
       setPaymentStep('details');
