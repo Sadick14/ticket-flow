@@ -79,7 +79,13 @@ export function LocationPicker({ value, onChange, readOnly = false }: LocationPi
   const [searchTerm, setSearchTerm] = useState(value.address || '');
   const [position, setPosition] = useState<[number, number]>([value.lat || 51.505, value.lng || -0.09]);
   const [address, setAddress] = useState(value.address || 'London');
+  const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
+  
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   useEffect(() => {
     setSearchTerm(value.address);
@@ -142,12 +148,16 @@ export function LocationPicker({ value, onChange, readOnly = false }: LocationPi
         </div>
       )}
       <div className="h-64 w-full rounded-md overflow-hidden border">
-        <MapDisplay 
-            lat={position[0]} 
-            lng={position[1]} 
-            readOnly={readOnly} 
-            onMarkerMove={handleMarkerMove} 
-        />
+        {isClient ? (
+            <MapDisplay 
+                lat={position[0]} 
+                lng={position[1]} 
+                readOnly={readOnly} 
+                onMarkerMove={handleMarkerMove} 
+            />
+        ) : (
+            <div className="flex items-center justify-center h-full bg-muted">Loading map...</div>
+        )}
       </div>
       <p className="text-sm text-muted-foreground">{address}</p>
     </div>
