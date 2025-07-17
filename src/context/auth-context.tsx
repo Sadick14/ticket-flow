@@ -15,6 +15,7 @@ import { app, db } from '@/lib/firebase';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile, SubscriptionPlan } from '@/lib/types';
+import { useRouter } from 'next/navigation';
 
 // In a real app, this should not be hardcoded in the client.
 const ADMIN_EMAIL = 'issakasaddick14@gmail.com';
@@ -64,6 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const auth = getAuth(app);
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -129,6 +131,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         title: "Signed Out",
         description: "You have successfully signed out.",
       });
+      router.push('/home');
     } catch (error) {
         console.error("Sign Out Error:", error);
         toast({
