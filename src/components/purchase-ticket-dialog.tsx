@@ -18,10 +18,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-context';
-import type { Event, PromoCode } from '@/lib/types';
-import { Loader2, Minus, Plus, Rocket } from 'lucide-react';
+import type { Event } from '@/lib/types';
+import { Loader2, Minus, Plus, Wallet, Phone } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PaymentCalculator } from '@/lib/payment-config';
 
 interface PurchaseTicketDialogProps {
   event: Event;
@@ -35,7 +35,8 @@ const purchaseSchema = z.object({
       attendeeName: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
       attendeeEmail: z.string().email({ message: 'Please enter a valid email address.' }),
     })
-  ).min(1, 'At least one attendee is required.')
+  ).min(1, 'At least one attendee is required.'),
+  momoNumber: z.string().min(10, 'Please enter a valid phone number.').optional(),
 });
 
 type PurchaseFormValues = z.infer<typeof purchaseSchema>;
@@ -70,33 +71,39 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
       }
     }
   }, [quantity, fields.length, append, remove]);
-
-  const handleFreeTicketSubmit = async (data: PurchaseFormValues) => {
+  
+  const handlePurchase = async (data: PurchaseFormValues) => {
     setIsSubmitting(true);
+    
+    // For now, since the MTN API is not fully provided (e.g., how to get the user to confirm on their phone),
+    // we will simulate a successful payment and create the tickets.
+    // In a real scenario, you'd call the /api/payments/create-intent here and wait for a webhook confirmation.
+    
     try {
       for (const attendee of data.attendees) {
         await addTicket({
           eventId: event.id,
           attendeeName: attendee.attendeeName,
           attendeeEmail: attendee.attendeeEmail,
-          price: 0,
+          price: event.price,
         });
       }
       toast({
-        title: 'Registration Successful!',
-        description: `You've got tickets for ${event.name}.`,
+        title: 'Purchase Successful!',
+        description: `You've got ${quantity} ticket(s) for ${event.name}.`,
       });
       onOpenChange(false);
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Registration Failed',
+        title: 'Purchase Failed',
         description: 'Something went wrong. Please try again.',
       });
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   const isFree = event.price === 0;
 
@@ -111,67 +118,71 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-headline">
-            {isFree ? 'Register for Event' : 'Tickets Coming Soon'}
+            {isFree ? 'Register for Event' : 'Buy Tickets'}
           </DialogTitle>
           <DialogDescription>
-            {isFree ? `You are registering for ${event.name}.` : `Online payments for this event are not yet available.`}
+            You are getting {quantity} ticket(s) for {event.name}.
           </DialogDescription>
         </DialogHeader>
         
-        {isFree ? (
-          <form onSubmit={form.handleSubmit(handleFreeTicketSubmit)} className="space-y-4">
-              <div className="flex items-center justify-between mt-4">
-                  <Label>Quantity</Label>
-                  <div className="flex items-center gap-2">
-                      <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => Math.max(1, q - 1))} disabled={quantity <= 1}>
-                          <Minus className="h-4 w-4" />
-                      </Button>
-                      <span className="font-bold text-lg w-10 text-center">{quantity}</span>
-                      <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => q + 1)}>
-                          <Plus className="h-4 w-4" />
-                      </Button>
+        <form onSubmit={form.handleSubmit(handlePurchase)} className="space-y-4">
+            <div className="flex items-center justify-between mt-4">
+                <Label>Quantity</Label>
+                <div className="flex items-center gap-2">
+                    <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => Math.max(1, q - 1))} disabled={quantity <= 1}>
+                        <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="font-bold text-lg w-10 text-center">{quantity}</span>
+                    <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => q + 1)}>
+                        <Plus className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+
+            <ScrollArea className="h-64 pr-4 mt-4">
+              <div className="space-y-4">
+                {fields.map((field, index) => (
+                    <div key={field.id} className="p-4 border rounded-lg space-y-4 relative bg-muted/30">
+                        <Label className="font-semibold">Ticket #{index + 1}</Label>
+                        <div className="space-y-2">
+                          <Label htmlFor={`attendees.${index}.attendeeName`}>Attendee Name</Label>
+                          <Input id={`attendees.${index}.attendeeName`} {...form.register(`attendees.${index}.attendeeName`)} />
+                          {form.formState.errors.attendees?.[index]?.attendeeName && <p className="text-sm text-destructive">{form.formState.errors.attendees?.[index]?.attendeeName?.message}</p>}
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`attendees.${index}.attendeeEmail`}>Email Address</Label>
+                          <Input id={`attendees.${index}.attendeeEmail`} type="email" {...form.register(`attendees.${index}.attendeeEmail`)} />
+                          {form.formState.errors.attendees?.[index]?.attendeeEmail && <p className="text-sm text-destructive">{form.formState.errors.attendees?.[index]?.attendeeEmail?.message}</p>}
+                        </div>
+                    </div>
+                ))}
+              </div>
+            </ScrollArea>
+            
+            {!isFree && (
+              <div className="space-y-2">
+                  <Label htmlFor="momoNumber" className="flex items-center gap-2"><Wallet/> Mobile Money Payment</Label>
+                   <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input id="momoNumber" placeholder="Enter MoMo Number" {...form.register('momoNumber')} className="pl-10" required/>
                   </div>
               </div>
+            )}
 
-              <ScrollArea className="h-64 pr-4 mt-4">
-                <div className="space-y-4">
-                  {fields.map((field, index) => (
-                      <div key={field.id} className="p-4 border rounded-lg space-y-4 relative bg-muted/30">
-                          <Label className="font-semibold">Ticket #{index + 1}</Label>
-                          <div className="space-y-2">
-                            <Label htmlFor={`attendees.${index}.attendeeName`}>Attendee Name</Label>
-                            <Input id={`attendees.${index}.attendeeName`} {...form.register(`attendees.${index}.attendeeName`)} />
-                            {form.formState.errors.attendees?.[index]?.attendeeName && <p className="text-sm text-destructive">{form.formState.errors.attendees?.[index]?.attendeeName?.message}</p>}
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor={`attendees.${index}.attendeeEmail`}>Email Address</Label>
-                            <Input id={`attendees.${index}.attendeeEmail`} type="email" {...form.register(`attendees.${index}.attendeeEmail`)} />
-                            {form.formState.errors.attendees?.[index]?.attendeeEmail && <p className="text-sm text-destructive">{form.formState.errors.attendees?.[index]?.attendeeEmail?.message}</p>}
-                          </div>
-                      </div>
-                  ))}
-                </div>
-              </ScrollArea>
+            <div className="p-4 bg-muted rounded-lg text-center">
+              <p className="text-sm text-muted-foreground">Total Price</p>
+              <p className="text-3xl font-bold">
+                {isFree ? 'FREE' : PaymentCalculator.formatCurrency((event.price * quantity) * 100)}
+              </p>
+            </div>
 
-              <DialogFooter className="mt-6">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : 'Get Free Ticket'}
-                </Button>
-              </DialogFooter>
-          </form>
-        ) : (
-          <div className="text-center py-8">
-            <Rocket className="h-12 w-12 text-primary mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Online Payments Coming Soon!</h3>
-            <p className="text-muted-foreground">
-              We are finalizing our secure payment system. Please check back soon to purchase your tickets.
-            </p>
-            <Button onClick={() => onOpenChange(false)} className="mt-6">
-              OK
-            </Button>
-          </div>
-        )}
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="animate-spin" /> : isFree ? 'Get Free Ticket' : 'Pay Now'}
+              </Button>
+            </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

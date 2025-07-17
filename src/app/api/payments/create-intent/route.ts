@@ -1,12 +1,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-// Import gateway logic as needed
-// import { MtnGateway } from '@/lib/gateways/mtn'; 
+import { MtnGateway } from '@/lib/gateways/mtn'; 
 
 interface PaymentIntentRequest {
-  amount: number;
+  amount: number; // in cents
   currency?: string;
   gatewayId: 'mtn-momo';
+  momoNumber: string;
   metadata: {
     eventId: string;
     ticketId: string;
@@ -20,10 +20,11 @@ export async function POST(request: NextRequest) {
       amount,
       currency = 'GHS',
       gatewayId,
+      momoNumber,
       metadata,
     }: PaymentIntentRequest = await request.json();
 
-    if (!amount || !gatewayId || !metadata?.eventId) {
+    if (!amount || !gatewayId || !momoNumber || !metadata?.eventId) {
       return NextResponse.json(
         { error: 'Missing required payment data' },
         { status: 400 }
@@ -31,15 +32,21 @@ export async function POST(request: NextRequest) {
     }
 
     if (gatewayId === 'mtn-momo') {
-      // Placeholder for direct MTN MoMo API integration
-      // const paymentIntent = await MtnGateway.createPaymentRequest(amount, currency, metadata);
-      // return NextResponse.json({ clientSecret: paymentIntent.transactionId, ... });
+      const paymentIntent = await MtnGateway.requestToPay(
+        amount,
+        currency,
+        momoNumber,
+        "Ticket Purchase", // Payer message
+        "TicketFlow Event", // Payee note
+        metadata
+      );
       
-      // For now, return a success placeholder as the API is not yet provided
+      // The MTN API is asynchronous, so we return the reference ID
+      // and will confirm the payment via webhook later.
       return NextResponse.json({ 
         success: true, 
-        message: 'MTN MoMo payment initiated (placeholder).',
-        transactionId: `test_momo_${Date.now()}` 
+        message: 'MTN MoMo payment initiated. Please approve the transaction on your phone.',
+        transactionReference: paymentIntent.referenceId 
       });
     }
     
