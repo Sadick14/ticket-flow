@@ -5,8 +5,6 @@ import { createContext, useContext, useState, ReactNode, useEffect, useCallback 
 import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission, Message } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy, serverTimestamp, writeBatch, documentId } from 'firebase/firestore';
-import { initialEvents, initialUsers, initialNews, initialTickets, initialLaunchSubscribers, initialContactSubmissions } from '@/lib/sample-data';
-
 
 interface AppContextType {
   events: Event[];
@@ -57,60 +55,6 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// Function to seed the database if it's empty
-const seedDatabase = async () => {
-    console.log("Checking if database needs seeding...");
-    const eventsSnapshot = await getDocs(query(collection(db, 'events'), limit(1)));
-    if (eventsSnapshot.empty) {
-        console.log("Database is empty. Seeding data...");
-        const batch = writeBatch(db);
-
-        // Seed Users
-        initialUsers.forEach(user => {
-            const userRef = doc(db, 'users', user.uid);
-            batch.set(userRef, user);
-        });
-
-        // Seed Events
-        initialEvents.forEach(event => {
-            const eventRef = doc(collection(db, 'events'));
-            batch.set(eventRef, event);
-        });
-
-        // Seed News
-        initialNews.forEach(article => {
-            const articleRef = doc(collection(db, 'news'));
-            batch.set(articleRef, article);
-        });
-        
-        // Seed Tickets
-         initialTickets.forEach(ticket => {
-            const ticketRef = doc(collection(db, 'tickets'));
-            batch.set(ticketRef, ticket);
-        });
-
-        // Seed Launch Subscribers
-        initialLaunchSubscribers.forEach(sub => {
-            const subRef = doc(collection(db, 'launch_subscribers'));
-            batch.set(subRef, sub);
-        });
-        
-        // Seed Contact Submissions
-        initialContactSubmissions.forEach(sub => {
-            const subRef = doc(collection(db, 'contact_submissions'));
-            batch.set(subRef, sub);
-        });
-
-
-        await batch.commit();
-        console.log("Database seeded successfully.");
-        return true;
-    }
-    console.log("Database already contains data. No seeding needed.");
-    return false;
-};
-
-
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -152,7 +96,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      const seeded = await seedDatabase();
       await fetchAllData();
       setLoading(false);
     }
