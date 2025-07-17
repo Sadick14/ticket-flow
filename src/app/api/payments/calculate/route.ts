@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PaymentCalculator, PAYMENT_GATEWAYS } from '@/lib/payment-config';
-import type { PaymentSplit, Transaction } from '@/lib/payment-types';
+import type { PaymentSplit, TicketPaymentInfo } from '@/lib/payment-types';
 
 export async function POST(request: NextRequest) {
   try {
     const { 
-      ticketPrice, 
+      ticketPrice, // in cents
       gatewayId, 
       passFeeToCustomer = true,
       currency = 'USD'
     } = await request.json();
 
-    // Validate input
     if (!ticketPrice || ticketPrice < 100) { // Minimum $1.00
       return NextResponse.json(
         { error: 'Ticket price must be at least $1.00' },
@@ -27,14 +26,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate payment split
     const paymentSplit = PaymentCalculator.calculatePaymentSplit(
       ticketPrice,
       gateway,
       passFeeToCustomer
     );
 
-    // Calculate customer-facing total
     const customerTotal = PaymentCalculator.calculateTicketTotal(
       ticketPrice,
       gateway,
@@ -67,10 +64,8 @@ export async function GET(request: NextRequest) {
     const country = searchParams.get('country') || 'US';
     const currency = searchParams.get('currency') || 'USD';
 
-    // Get available payment gateways for the country/currency
     const availableGateways = PaymentCalculator.getAvailableGateways(country, currency);
     
-    // Get best gateway recommendation
     const bestGateway = PaymentCalculator.getBestGateway(country, currency, 5000); // $50 average
 
     return NextResponse.json({
@@ -81,11 +76,11 @@ export async function GET(request: NextRequest) {
         fixedFee: gateway.fixedFee,
         currencies: gateway.currencies
       })),
-      recommendedGateway: {
+      recommendedGateway: bestGateway ? {
         id: bestGateway.id,
         name: bestGateway.name,
         reason: 'Lowest fees for your region'
-      },
+      } : null,
       country,
       currency
     });

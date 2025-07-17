@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-// Note: These are examples. You'll need to install the actual SDKs:
-// npm install stripe @paypal/checkout-server-sdk razorpay flutterwave-node-v3
+import { StripeGateway } from '@/lib/gateways/stripe';
+import { PayPalGateway } from '@/lib/gateways/paypal';
+// Other gateway imports can be added here
 
-interface PaymentIntent {
-  id: string;
+interface PaymentIntentRequest {
   amount: number;
-  currency: string;
-  gatewayId: string;
-  clientSecret?: string;
-  redirectUrl?: string;
+  currency?: string;
+  gatewayId: 'stripe' | 'paypal' | 'razorpay' | 'flutterwave';
   metadata: {
     eventId: string;
     ticketId: string;
     creatorId: string;
+    stripeConnectAccountId?: string; // For Stripe Connect
   };
 }
 
@@ -22,10 +21,9 @@ export async function POST(request: NextRequest) {
       amount,
       currency = 'USD',
       gatewayId,
-      metadata
-    } = await request.json();
+      metadata,
+    }: PaymentIntentRequest = await request.json();
 
-    // Validate required fields
     if (!amount || !gatewayId || !metadata?.eventId) {
       return NextResponse.json(
         { error: 'Missing required payment data' },
@@ -33,24 +31,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let paymentIntent: PaymentIntent;
+    let paymentIntent;
 
     switch (gatewayId) {
       case 'stripe':
-        paymentIntent = await createStripePayment(amount, currency, metadata);
-        break;
+        paymentIntent = await StripeGateway.createPaymentIntent(
+          amount,
+          currency,
+          metadata
+        );
+        return NextResponse.json({ clientSecret: paymentIntent.client_secret });
       
       case 'paypal':
-        paymentIntent = await createPayPalPayment(amount, currency, metadata);
-        break;
+        // The PayPal flow is different (order creation, not an intent)
+        const order = await PayPalGateway.createOrder(amount, currency, metadata);
+        return NextResponse.json({ orderId: order.id });
       
-      case 'razorpay':
-        paymentIntent = await createRazorpayPayment(amount, currency, metadata);
-        break;
-      
-      case 'flutterwave':
-        paymentIntent = await createFlutterwavePayment(amount, currency, metadata);
-        break;
+      // Add other gateway cases here
       
       default:
         return NextResponse.json(
@@ -58,105 +55,12 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
     }
-
-    return NextResponse.json({ paymentIntent });
-
   } catch (error) {
     console.error('Payment creation error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown server error';
     return NextResponse.json(
-      { error: 'Failed to create payment' },
+      { error: 'Failed to create payment', details: errorMessage },
       { status: 500 }
     );
   }
-}
-
-// Stripe Payment Intent
-async function createStripePayment(
-  amount: number, 
-  currency: string, 
-  metadata: any
-): Promise<PaymentIntent> {
-  // TODO: Implement actual Stripe integration
-  // const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-  
-  // const paymentIntent = await stripe.paymentIntents.create({
-  //   amount,
-  //   currency: currency.toLowerCase(),
-  //   metadata,
-  //   payment_method_types: ['card'],
-  // });
-
-  // Mock response for now
-  return {
-    id: `pi_stripe_${Date.now()}`,
-    amount,
-    currency,
-    gatewayId: 'stripe',
-    clientSecret: 'pi_stripe_client_secret_mock',
-    metadata
-  };
-}
-
-// PayPal Payment
-async function createPayPalPayment(
-  amount: number, 
-  currency: string, 
-  metadata: any
-): Promise<PaymentIntent> {
-  // TODO: Implement actual PayPal integration
-  // const paypal = require('@paypal/checkout-server-sdk');
-  
-  // Mock response for now
-  return {
-    id: `pp_${Date.now()}`,
-    amount,
-    currency,
-    gatewayId: 'paypal',
-    redirectUrl: 'https://paypal.com/checkout/mock',
-    metadata
-  };
-}
-
-// Razorpay Payment
-async function createRazorpayPayment(
-  amount: number, 
-  currency: string, 
-  metadata: any
-): Promise<PaymentIntent> {
-  // TODO: Implement actual Razorpay integration
-  // const Razorpay = require('razorpay');
-  // const razorpay = new Razorpay({
-  //   key_id: process.env.RAZORPAY_KEY_ID,
-  //   key_secret: process.env.RAZORPAY_KEY_SECRET
-  // });
-
-  // Mock response for now
-  return {
-    id: `rp_${Date.now()}`,
-    amount,
-    currency,
-    gatewayId: 'razorpay',
-    clientSecret: 'razorpay_client_secret_mock',
-    metadata
-  };
-}
-
-// Flutterwave Payment
-async function createFlutterwavePayment(
-  amount: number, 
-  currency: string, 
-  metadata: any
-): Promise<PaymentIntent> {
-  // TODO: Implement actual Flutterwave integration
-  // const Flutterwave = require('flutterwave-node-v3');
-  
-  // Mock response for now
-  return {
-    id: `fw_${Date.now()}`,
-    amount,
-    currency,
-    gatewayId: 'flutterwave',
-    redirectUrl: 'https://checkout.flutterwave.com/mock',
-    metadata
-  };
 }

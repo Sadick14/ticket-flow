@@ -16,13 +16,19 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-context';
 import type { Event, PromoCode } from '@/lib/types';
-import { format } from 'date-fns';
-import { Loader2, Minus, Plus, Trash2, Ticket, Percent } from 'lucide-react';
+import { Loader2, Minus, Plus, Ticket, AlertCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { PaymentCalculator, PAYMENT_ENV } from '@/lib/payment-config';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { FirebasePaymentService } from '@/lib/firebase-payment-service';
+
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+
+const stripePromise = loadStripe(PAYMENT_ENV.stripe.publicKey);
 
 interface PurchaseTicketDialogProps {
   event: Event;
@@ -31,29 +37,93 @@ interface PurchaseTicketDialogProps {
 }
 
 const purchaseSchema = z.object({
-    promoCode: z.string().optional(),
-    attendees: z.array(
-        z.object({
-            attendeeName: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
-            attendeeEmail: z.string().email({ message: 'Please enter a valid email address.' }),
-        })
-    ).min(1, 'At least one attendee is required.')
+  promoCode: z.string().optional(),
+  attendees: z.array(
+    z.object({
+      attendeeName: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
+      attendeeEmail: z.string().email({ message: 'Please enter a valid email address.' }),
+    })
+  ).min(1, 'At least one attendee is required.')
 });
 
 type PurchaseFormValues = z.infer<typeof purchaseSchema>;
 
+function CheckoutForm({ event, quantity, promoCode, onSuccessfulPayment }: { event: Event; quantity: number; promoCode: string | undefined, onSuccessfulPayment: () => void }) {
+    const stripe = useStripe();
+    const elements = useElements();
+    const { addTicket } = useAppContext();
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!stripe || !elements) {
+            return;
+        }
+
+        setIsLoading(true);
+
+        const { error: submitError } = await elements.submit();
+        if (submitError) {
+            setErrorMessage(submitError.message || 'An error occurred during submission.');
+            setIsLoading(false);
+            return;
+        }
+
+        const { clientSecret } = await fetch('/api/payments/create-intent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                amount: PaymentCalculator.calculateTicketTotal(event.price * quantity, {id: 'stripe', processingFee: 2.9, fixedFee: 30} as any).totalAmount,
+                currency: 'USD',
+                gatewayId: 'stripe',
+                metadata: { eventId: event.id }
+            }),
+        }).then(res => res.json());
+
+        const { error } = await stripe.confirmPayment({
+            elements,
+            clientSecret,
+            confirmParams: {
+                return_url: `${window.location.origin}/events/${event.id}?purchase=success`,
+            },
+        });
+
+        if (error) {
+            setErrorMessage(error.message || 'An unexpected error occurred.');
+        } else {
+            // This part is mainly for free tickets or if payment confirmation is handled client-side
+            // But with Stripe, the redirect is the primary confirmation method.
+            onSuccessfulPayment();
+        }
+
+        setIsLoading(false);
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <PaymentElement />
+             {errorMessage && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{errorMessage}</AlertDescription></Alert>}
+            <Button disabled={isLoading || !stripe || !elements} className="w-full" type="submit">
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : `Pay $${(PaymentCalculator.calculateTicketTotal(event.price * quantity, {id: 'stripe', processingFee: 2.9, fixedFee: 30} as any).totalAmount / 100).toFixed(2)}`}
+            </Button>
+        </form>
+    );
+}
+
 export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTicketDialogProps) {
-  const { addTicket } = useAppContext();
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
+  const [step, setStep] = useState(1); // 1 for details, 2 for payment
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   const form = useForm<PurchaseFormValues>({
     resolver: zodResolver(purchaseSchema),
     defaultValues: {
-        attendees: [{ attendeeName: '', attendeeEmail: '' }],
-        promoCode: ''
+      attendees: [{ attendeeName: '', attendeeEmail: '' }],
+      promoCode: ''
     }
   });
 
@@ -67,164 +137,135 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
   useEffect(() => {
     const currentCount = fields.length;
     if (quantity > currentCount) {
-        for (let i = 0; i < quantity - currentCount; i++) {
-            append({ attendeeName: '', attendeeEmail: '' });
-        }
+      for (let i = 0; i < quantity - currentCount; i++) {
+        append({ attendeeName: '', attendeeEmail: '' });
+      }
     } else if (quantity < currentCount) {
-        for (let i = 0; i < currentCount - quantity; i++) {
-            remove(currentCount - 1 - i);
-        }
+      for (let i = 0; i < currentCount - quantity; i++) {
+        remove(currentCount - 1 - i);
+      }
     }
   }, [quantity, fields.length, append, remove]);
 
-  const handleApplyPromo = () => {
-    const promo = event.promoCodes?.find(p => p.code.toLowerCase() === watchPromoCode?.toLowerCase());
-    if (promo) {
-        setAppliedPromo(promo);
-        toast({ title: "Promo Code Applied!", description: `You've received a discount.`});
-    } else {
-        setAppliedPromo(null);
-        toast({ variant: 'destructive', title: "Invalid Code", description: "This promo code is not valid."});
+  const calculateTotal = () => {
+    let total = event.price * quantity;
+    if (appliedPromo) {
+        if (appliedPromo.discountType === 'percentage') {
+            total -= total * (appliedPromo.value / 100);
+        } else {
+            total -= (appliedPromo.value * 100) * quantity;
+        }
     }
-  };
-
-  const calculateDiscount = () => {
-      if (!appliedPromo) return { discountAmount: 0, finalPrice: event.price * quantity };
-      const originalTotal = event.price * quantity;
-
-      if (appliedPromo.discountType === 'percentage') {
-          const discount = originalTotal * (appliedPromo.value / 100);
-          return { discountAmount: discount, finalPrice: originalTotal - discount };
-      }
-      if (appliedPromo.discountType === 'fixed') {
-          const discount = appliedPromo.value * 100 * quantity; // convert dollars to cents
-          return { discountAmount: discount, finalPrice: Math.max(0, originalTotal - discount) };
-      }
-      return { discountAmount: 0, finalPrice: originalTotal };
-  };
-
-  const { discountAmount, finalPrice } = calculateDiscount();
-
-  const onSubmit = async (data: PurchaseFormValues) => {
-    setIsSubmitting(true);
-    try {
-        await Promise.all(data.attendees.map(attendee => 
-            addTicket({
-                eventId: event.id,
-                ...attendee,
-            })
-        ));
-        
-        toast({
-          title: 'Purchase Successful!',
-          description: `You've got ${data.attendees.length} ticket(s) for ${event.name}.`,
-        });
-        form.reset();
-        setQuantity(1);
-        setAppliedPromo(null);
-        onOpenChange(false);
-    } catch(e) {
-         toast({
-            variant: 'destructive',
-            title: 'Purchase Failed',
-            description: `Could not complete your purchase. Please try again.`,
-        });
-    } finally {
-        setIsSubmitting(false);
-    }
+    return Math.max(0, total);
   };
   
-  const eventDate = new Date(`${event.date}T${event.time}`);
+  const finalPrice = calculateTotal();
+
+  const handleProceedToPayment = async (data: PurchaseFormValues) => {
+    if (finalPrice === 0) {
+        // Handle free ticket submission
+        // This part needs implementation to save tickets directly
+        return;
+    }
+    
+    // Create payment intent and get client secret
+    const res = await fetch('/api/payments/create-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            amount: finalPrice,
+            currency: 'USD',
+            gatewayId: 'stripe',
+            metadata: { 
+                eventId: event.id,
+                quantity: quantity,
+                attendees: JSON.stringify(data.attendees)
+            }
+        })
+    });
+    const { clientSecret: secret } = await res.json();
+    setClientSecret(secret);
+    setStep(2);
+  };
+
   const isFree = event.price === 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
-        if (!open) {
-            form.reset();
-            setQuantity(1);
-            setAppliedPromo(null);
-        }
-        onOpenChange(open);
+      if (!open) {
+        form.reset();
+        setQuantity(1);
+        setAppliedPromo(null);
+        setStep(1);
+        setClientSecret(null);
+      }
+      onOpenChange(open);
     }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-headline">Purchase Tickets</DialogTitle>
+          <DialogTitle className="font-headline">{step === 1 ? 'Purchase Tickets' : 'Complete Payment'}</DialogTitle>
           <DialogDescription>
-            You are purchasing tickets for {event.name}.
+            {step === 1 ? `You are purchasing tickets for ${event.name}.` : 'Enter your payment details below.'}
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <fieldset disabled={isSubmitting}>
-            <div className="flex items-center justify-between mt-4">
-                <Label>Quantity</Label>
-                <div className="flex items-center gap-2">
-                    <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => Math.max(1, q-1))} disabled={quantity <= 1}>
-                        <Minus className="h-4 w-4" />
-                    </Button>
-                    <span className="font-bold text-lg w-10 text-center">{quantity}</span>
-                    <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => q+1)}>
-                        <Plus className="h-4 w-4" />
-                    </Button>
+        {step === 1 && (
+            <form onSubmit={form.handleSubmit(handleProceedToPayment)} className="space-y-4">
+                <div className="flex items-center justify-between mt-4">
+                    <Label>Quantity</Label>
+                    <div className="flex items-center gap-2">
+                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => Math.max(1, q-1))} disabled={quantity <= 1}>
+                            <Minus className="h-4 w-4" />
+                        </Button>
+                        <span className="font-bold text-lg w-10 text-center">{quantity}</span>
+                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => q+1)}>
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
-            </div>
 
-            <ScrollArea className="h-64 pr-4 mt-4">
-              <div className="space-y-4">
-                {fields.map((field, index) => (
-                    <div key={field.id} className="p-4 border rounded-lg space-y-4 relative bg-muted/30">
-                         <Label className="font-semibold">Ticket #{index + 1}</Label>
-                        <div className="space-y-2">
-                          <Label htmlFor={`attendees.${index}.attendeeName`}>Attendee Name</Label>
-                          <Input id={`attendees.${index}.attendeeName`} {...form.register(`attendees.${index}.attendeeName`)} />
-                          {form.formState.errors.attendees?.[index]?.attendeeName && <p className="text-sm text-destructive">{form.formState.errors.attendees?.[index]?.attendeeName?.message}</p>}
+                <ScrollArea className="h-64 pr-4 mt-4">
+                  <div className="space-y-4">
+                    {fields.map((field, index) => (
+                        <div key={field.id} className="p-4 border rounded-lg space-y-4 relative bg-muted/30">
+                            <Label className="font-semibold">Ticket #{index + 1}</Label>
+                            <div className="space-y-2">
+                              <Label htmlFor={`attendees.${index}.attendeeName`}>Attendee Name</Label>
+                              <Input id={`attendees.${index}.attendeeName`} {...form.register(`attendees.${index}.attendeeName`)} />
+                              {form.formState.errors.attendees?.[index]?.attendeeName && <p className="text-sm text-destructive">{form.formState.errors.attendees?.[index]?.attendeeName?.message}</p>}
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`attendees.${index}.attendeeEmail`}>Email Address</Label>
+                              <Input id={`attendees.${index}.attendeeEmail`} type="email" {...form.register(`attendees.${index}.attendeeEmail`)} />
+                              {form.formState.errors.attendees?.[index]?.attendeeEmail && <p className="text-sm text-destructive">{form.formState.errors.attendees?.[index]?.attendeeEmail?.message}</p>}
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`attendees.${index}.attendeeEmail`}>Email Address</Label>
-                          <Input id={`attendees.${index}.attendeeEmail`} type="email" {...form.register(`attendees.${index}.attendeeEmail`)} />
-                          {form.formState.errors.attendees?.[index]?.attendeeEmail && <p className="text-sm text-destructive">{form.formState.errors.attendees?.[index]?.attendeeEmail?.message}</p>}
-                        </div>
-                    </div>
-                ))}
-              </div>
-            </ScrollArea>
-           
-            {!isFree && event.promoCodes && event.promoCodes.length > 0 && (
-                <div className="space-y-2 pt-4 border-t">
-                    <Label htmlFor="promoCode">Promotional Code</Label>
-                    <div className="flex gap-2">
-                        <Input id="promoCode" placeholder="Enter code" {...form.register('promoCode')} />
-                        <Button type="button" variant="secondary" onClick={handleApplyPromo}>Apply</Button>
-                    </div>
-                </div>
-            )}
+                    ))}
+                  </div>
+                </ScrollArea>
 
-            <div className="bg-muted/50 px-4 py-3 space-y-2 rounded-md mt-4">
-                 <div className="flex justify-between items-center text-sm">
-                    <p>Subtotal</p>
-                    <p>${(event.price * quantity).toFixed(2)}</p>
-                </div>
-                {appliedPromo && (
-                    <div className="flex justify-between items-center text-sm text-green-600">
-                        <p>Discount ({appliedPromo.code})</p>
-                        <p>-${(discountAmount).toFixed(2)}</p>
-                    </div>
-                )}
-                <div className="flex justify-between items-center text-lg font-bold">
-                    <p>Total Price</p>
-                    <p>{isFree ? 'Free' : `$${(finalPrice).toFixed(2)}`}</p>
-                </div>
-            </div>
+                <DialogFooter className="mt-6">
+                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                  <Button type="submit">
+                    {isFree ? 'Get Free Ticket' : 'Proceed to Payment'}
+                  </Button>
+                </DialogFooter>
+            </form>
+        )}
 
-            <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isFree ? 'Get Free Ticket' : 'Confirm Purchase'}
-              </Button>
-            </DialogFooter>
-          </fieldset>
-        </form>
+        {step === 2 && clientSecret && (
+          <Elements options={{ clientSecret }} stripe={stripePromise}>
+            <CheckoutForm 
+                event={event} 
+                quantity={quantity} 
+                promoCode={watchPromoCode} 
+                onSuccessfulPayment={() => {
+                    // This callback might be used for post-payment actions if not handled by webhooks
+                    onOpenChange(false);
+                }}
+            />
+          </Elements>
+        )}
       </DialogContent>
     </Dialog>
   );
