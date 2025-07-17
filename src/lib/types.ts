@@ -111,3 +111,5 @@ export interface Message {
     attachments?: string[]; // Array of data URIs
     timestamp?: any;
 }
+
+    
