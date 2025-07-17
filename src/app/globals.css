@@ -5,7 +5,7 @@
 
 @layer base {
   :root {
-    --background: 48 96% 94%; /* Light Creamy Yellow */
+    --background: 48 96% 98%; /* Light Creamy */
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -14,8 +14,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 45 93% 47%; /* Golden Yellow */
-    --primary-foreground: 45 100% 98%;
+    --primary: 22 95% 55%; /* Vibrant Orange */
+    --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -23,7 +23,7 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 38 92% 50%; /* Amber */
+    --accent: 22 95% 65%; /* Lighter Orange */
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
@@ -31,18 +31,18 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 45 93% 47%; /* Golden Yellow */
+    --ring: 22 95% 55%; /* Vibrant Orange */
 
     --radius: 0.5rem;
 
-    /* Golden Sidebar Theme */
-    --sidebar-background: 45 93% 47%; /* Primary color */
-    --sidebar-foreground: 45 100% 98%; /* Primary foreground */
-    --sidebar-primary: 0 0% 100%; /* White for active items */
-    --sidebar-primary-foreground: 45 93% 47%; /* Primary for text on active */
-    --sidebar-accent: 45 93% 57%; /* Slightly lighter primary for hover */
-    --sidebar-accent-foreground: 45 100% 98%;
-    --sidebar-border: 45 93% 57%;
+    /* Sidebar Theme */
+    --sidebar-background: 22 95% 55%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 22 95% 55%;
+    --sidebar-accent: 22 95% 65%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 22 95% 65%;
     --sidebar-ring: 0 0% 100%;
   }
 
@@ -56,8 +56,8 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 45 93% 57%; /* Lighter Golden Yellow for dark mode */
-    --primary-foreground: 45 93% 98%;
+    --primary: 22 95% 65%;
+    --primary-foreground: 210 40% 98%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -65,7 +65,7 @@
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 38 92% 50%;
+    --accent: 22 95% 65%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
@@ -73,16 +73,16 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 45 93% 57%;
+    --ring: 22 95% 65%;
     
     /* Dark mode sidebar */
-    --sidebar-background: 45 93% 47%;
-    --sidebar-foreground: 45 100% 98%;
+    --sidebar-background: 22 95% 55%;
+    --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 45 93% 47%;
-    --sidebar-accent: 45 93% 57%;
-    --sidebar-accent-foreground: 45 100% 98%;
-    --sidebar-border: 45 93% 57%;
+    --sidebar-primary-foreground: 22 95% 55%;
+    --sidebar-accent: 22 95% 65%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 22 95% 65%;
     --sidebar-ring: 0 0% 100%;
   }
 }
