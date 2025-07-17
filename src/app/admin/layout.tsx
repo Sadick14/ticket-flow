@@ -238,7 +238,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   {pathname.startsWith('/admin/users') && 'User Management'}
                   {pathname.startsWith('/admin/contact-messages') && 'Contact Messages'}
                   {pathname.startsWith('/admin/news') && 'News Management'}
-                  {pathname.startsWith('/admin/subscribers') && 'Subscribers'}
+                  {pathname.startsWith('/admin/subscribers') && 'Subscriber Management'}
                   {pathname.startsWith('/admin/emails') && 'Email Management'}
                   {pathname.startsWith('/admin/archived-events') && 'Archived Events'}
                   {pathname.startsWith('/admin/settings') && 'Admin Settings'}

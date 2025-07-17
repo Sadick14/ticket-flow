@@ -42,10 +42,11 @@ interface AppContextType {
   addNewsArticle: (article: Omit<NewsArticle, 'id'>) => Promise<void>;
   updateNewsArticle: (id: string, articleData: Partial<Omit<NewsArticle, 'id' | 'publishedDate'>>) => Promise<void>;
   deleteNewsArticle: (id: string) => Promise<void>;
-  // Launch Subscribers
-  addLaunchSubscriber: (name: string, email: string) => Promise<void>;
-  // General Subscribers
-  addSubscriber: (email: string) => Promise<void>;
+  // Subscribers
+  addSubscriber: (email: string, name?: string) => Promise<void>;
+  deleteSubscriber: (id: string) => Promise<void>;
+  bulkAddSubscribers: (subscribers: {email: string, name?: string}[]) => Promise<void>;
+  launchSubscribers: LaunchSubscriber[];
   // Contact Submissions
   replyToSubmission: (submission: ContactSubmission, replyMessage: string) => Promise<void>;
   // AI Chat
@@ -322,38 +323,42 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Launch Subscribers
-  const addLaunchSubscriber = async (name: string, email: string) => {
-    try {
-      const subscriberData = {
-        name,
-        email,
-        subscribedAt: new Date().toISOString(),
-      };
-      await addDoc(collection(db, 'launch_subscribers'), subscriberData);
-      await fetchAllData();
-    } catch (error) {
-      console.error("Error adding launch subscriber:", error);
-      throw error;
-    }
+  // Subscribers
+  const addSubscriber = async (email: string, name?: string) => {
+    if (!email) throw new Error("Email is required.");
+    const existing = launchSubscribers.find(s => s.email === email);
+    if (existing) throw new Error("This email is already subscribed.");
+    
+    await addDoc(collection(db, 'launch_subscribers'), {
+      email,
+      name: name || '',
+      subscribedAt: new Date().toISOString(),
+    });
+    await fetchAllData();
   };
 
-  const addSubscriber = async (email: string) => {
-     try {
-      const response = await fetch('/api/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Subscription failed');
-      }
-    } catch (error) {
-      console.error("Error adding subscriber:", error);
-      throw error;
+  const deleteSubscriber = async (id: string) => {
+    await deleteDoc(doc(db, 'launch_subscribers', id));
+    await fetchAllData();
+  };
+  
+  const bulkAddSubscribers = async (subscribers: { email: string; name?: string }[]) => {
+    const batch = writeBatch(db);
+    const subscribersRef = collection(db, "launch_subscribers");
+
+    for (const sub of subscribers) {
+        // Simple check to avoid duplicates in the same batch, more robust check would query DB first
+        const docRef = doc(subscribersRef, sub.email.toLowerCase()); // Use email as doc id for easy upsert
+        batch.set(docRef, {
+            email: sub.email,
+            name: sub.name || '',
+            subscribedAt: new Date().toISOString()
+        }, { merge: true });
     }
-  }
+    await batch.commit();
+    await fetchAllData();
+  };
+
 
   const replyToSubmission = async (submission: ContactSubmission, replyMessage: string) => {
     const submissionRef = doc(db, 'contact_submissions', submission.id);
@@ -434,8 +439,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addNewsArticle,
       updateNewsArticle,
       deleteNewsArticle,
-      addLaunchSubscriber,
       addSubscriber,
+      deleteSubscriber,
+      bulkAddSubscribers,
       replyToSubmission,
       getChatHistory,
       saveChatMessage
