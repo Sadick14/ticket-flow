@@ -10,12 +10,12 @@ const plans = [
   {
     name: 'Free',
     commission: '0%',
-    description: 'Create and share unlimited free events. No ticketing fees.',
+    description: 'Perfect for getting started with free community events.',
     features: [
       'Unlimited free events',
       'Attendee Registration',
-      'Basic event analytics',
-      'Standard email support'
+      'Basic Event Analytics',
+      'Standard Email Support'
     ],
     cta: 'GET STARTED FOR FREE',
     ctaLink: '/create',
@@ -24,12 +24,12 @@ const plans = [
   {
     name: 'Essential',
     commission: '3%',
-    description: 'Affordable ticketing for paid events with essential tools.',
+    description: 'For paid events that need the core tools to succeed.',
     features: [
-      'Sell paid tickets',
+      'Sell Paid Tickets',
       'Multiple Ticket Types',
       'Promotional Codes',
-      'Featured on homepage'
+      'Featured on Homepage'
     ],
     cta: 'GET STARTED',
     ctaLink: '/create',
@@ -38,11 +38,13 @@ const plans = [
   {
     name: 'Pro',
     commission: '2%',
-    description: 'Advanced features to grow your business and manage events effectively.',
+    description: 'For organizers who want to maximize sales and engagement.',
     features: [
-      'Lowest commission rate',
-      'Advanced Social Sharing',
-      'Embedded Ticket Widget',
+      'Everything in Essential, plus:',
+      'Lowest Commission Rate',
+      'Social Media & Email Marketing Tools',
+      'Detailed Attendee Analytics',
+      'Embeddable Ticket Widget',
       'Priority Support'
     ],
     cta: 'GET STARTED',
@@ -53,12 +55,13 @@ const plans = [
   {
     name: 'Custom',
     commission: 'Contact Us',
-    description: 'Top-tier features for large events with dedicated support.',
+    description: 'For large-scale events with unique requirements.',
     features: [
-      'Custom commission rates',
-      'Advanced Integration',
-      'Developer Support',
-      'API Access'
+      'Everything in Pro, plus:',
+      'Custom Commission Rates',
+      'API Access & Advanced Integration',
+      'Dedicated Account Manager',
+      'Developer Support'
     ],
     cta: 'CONTACT US',
     ctaLink: '/contact',
