@@ -19,9 +19,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-context';
-import type { Event } from '@/lib/types';
+import type { Event, PromoCode } from '@/lib/types';
 import { format } from 'date-fns';
-import { Loader2, Minus, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Minus, Plus, Trash2, Ticket, Percent } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface PurchaseTicketDialogProps {
@@ -31,6 +31,7 @@ interface PurchaseTicketDialogProps {
 }
 
 const purchaseSchema = z.object({
+    promoCode: z.string().optional(),
     attendees: z.array(
         z.object({
             attendeeName: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -46,11 +47,13 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
 
   const form = useForm<PurchaseFormValues>({
     resolver: zodResolver(purchaseSchema),
     defaultValues: {
-        attendees: [{ attendeeName: '', attendeeEmail: '' }]
+        attendees: [{ attendeeName: '', attendeeEmail: '' }],
+        promoCode: ''
     }
   });
 
@@ -58,6 +61,8 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
     control: form.control,
     name: "attendees"
   });
+
+  const watchPromoCode = form.watch('promoCode');
 
   useEffect(() => {
     const currentCount = fields.length;
@@ -72,6 +77,33 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
     }
   }, [quantity, fields.length, append, remove]);
 
+  const handleApplyPromo = () => {
+    const promo = event.promoCodes?.find(p => p.code.toLowerCase() === watchPromoCode?.toLowerCase());
+    if (promo) {
+        setAppliedPromo(promo);
+        toast({ title: "Promo Code Applied!", description: `You've received a discount.`});
+    } else {
+        setAppliedPromo(null);
+        toast({ variant: 'destructive', title: "Invalid Code", description: "This promo code is not valid."});
+    }
+  };
+
+  const calculateDiscount = () => {
+      if (!appliedPromo) return { discountAmount: 0, finalPrice: event.price * quantity };
+      const originalTotal = event.price * quantity;
+
+      if (appliedPromo.discountType === 'percentage') {
+          const discount = originalTotal * (appliedPromo.value / 100);
+          return { discountAmount: discount, finalPrice: originalTotal - discount };
+      }
+      if (appliedPromo.discountType === 'fixed') {
+          const discount = appliedPromo.value * 100 * quantity; // convert dollars to cents
+          return { discountAmount: discount, finalPrice: Math.max(0, originalTotal - discount) };
+      }
+      return { discountAmount: 0, finalPrice: originalTotal };
+  };
+
+  const { discountAmount, finalPrice } = calculateDiscount();
 
   const onSubmit = async (data: PurchaseFormValues) => {
     setIsSubmitting(true);
@@ -89,6 +121,7 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
         });
         form.reset();
         setQuantity(1);
+        setAppliedPromo(null);
         onOpenChange(false);
     } catch(e) {
          toast({
@@ -102,7 +135,6 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
   };
   
   const eventDate = new Date(`${event.date}T${event.time}`);
-  const totalPrice = event.price * quantity;
   const isFree = event.price === 0;
 
   return (
@@ -110,6 +142,7 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
         if (!open) {
             form.reset();
             setQuantity(1);
+            setAppliedPromo(null);
         }
         onOpenChange(open);
     }}>
@@ -156,11 +189,32 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
               </div>
             </ScrollArea>
            
-            <div className="bg-muted/50 px-4 py-3 flex justify-between items-center rounded-md mt-4">
-                <p className="text-sm font-medium text-muted-foreground">Total Price</p>
-                <p className="text-xl font-bold">{isFree ? 'Free' : `$${totalPrice.toFixed(2)}`}</p>
-            </div>
+            {!isFree && event.promoCodes && event.promoCodes.length > 0 && (
+                <div className="space-y-2 pt-4 border-t">
+                    <Label htmlFor="promoCode">Promotional Code</Label>
+                    <div className="flex gap-2">
+                        <Input id="promoCode" placeholder="Enter code" {...form.register('promoCode')} />
+                        <Button type="button" variant="secondary" onClick={handleApplyPromo}>Apply</Button>
+                    </div>
+                </div>
+            )}
 
+            <div className="bg-muted/50 px-4 py-3 space-y-2 rounded-md mt-4">
+                 <div className="flex justify-between items-center text-sm">
+                    <p>Subtotal</p>
+                    <p>${(event.price * quantity).toFixed(2)}</p>
+                </div>
+                {appliedPromo && (
+                    <div className="flex justify-between items-center text-sm text-green-600">
+                        <p>Discount ({appliedPromo.code})</p>
+                        <p>-${(discountAmount).toFixed(2)}</p>
+                    </div>
+                )}
+                <div className="flex justify-between items-center text-lg font-bold">
+                    <p>Total Price</p>
+                    <p>{isFree ? 'Free' : `$${(finalPrice).toFixed(2)}`}</p>
+                </div>
+            </div>
 
             <DialogFooter className="mt-6">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

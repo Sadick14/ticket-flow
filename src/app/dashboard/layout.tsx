@@ -198,6 +198,21 @@ export default function DashboardLayout({
               )}
                <Separator className="my-2 bg-sidebar-border" />
                <SidebarMenuItem>
+                 <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/dashboard/payment-settings')}
+                  tooltip={{
+                    children: 'Payments',
+                  }}
+                  className="text-white hover:bg-sidebar-accent hover:text-white data-[active=true]:bg-sidebar-accent data-[active=true]:text-white transition-colors"
+                >
+                  <Link href="/dashboard/payment-settings">
+                    <CreditCard />
+                    <span>Payments</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
                   isActive={isActive('/dashboard/settings')}
@@ -269,6 +284,7 @@ export default function DashboardLayout({
                       {pathname === '/dashboard/sales' && 'Sales & Revenue'}
                       {pathname === '/dashboard/analytics' && 'Analytics Dashboard'}
                       {pathname === '/dashboard/marketing' && 'Marketing Tools'}
+                      {pathname === '/dashboard/payment-settings' && 'Payment Settings'}
                       {pathname === '/dashboard/settings' && 'Settings'}
                       {pathname.startsWith('/dashboard/edit/') && 'Edit Event'}
                     </h1> 
