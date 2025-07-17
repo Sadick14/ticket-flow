@@ -46,7 +46,6 @@ interface AppContextType {
   addSubscriber: (email: string, name?: string) => Promise<void>;
   deleteSubscriber: (id: string) => Promise<void>;
   bulkAddSubscribers: (subscribers: {email: string, name?: string}[]) => Promise<void>;
-  launchSubscribers: LaunchSubscriber[];
   // Contact Submissions
   replyToSubmission: (submission: ContactSubmission, replyMessage: string) => Promise<void>;
   // AI Chat
@@ -280,6 +279,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const getUsersByUids = async (uids: string[]): Promise<UserProfile[]> => {
     if (!uids || uids.length === 0) return [];
     const usersList: UserProfile[] = [];
+    // Firestore 'in' query supports up to 30 elements
     for (let i = 0; i < uids.length; i += 30) {
       const batchUids = uids.slice(i, i + 30);
       const q = query(collection(db, 'users'), where(documentId(), 'in', batchUids));
@@ -332,7 +332,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await addDoc(collection(db, 'launch_subscribers'), {
       email,
       name: name || '',
-      subscribedAt: new Date().toISOString(),
+      subscribedAt: serverTimestamp(),
     });
     await fetchAllData();
   };
@@ -352,7 +352,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         batch.set(docRef, {
             email: sub.email,
             name: sub.name || '',
-            subscribedAt: new Date().toISOString()
+            subscribedAt: serverTimestamp()
         }, { merge: true });
     }
     await batch.commit();
@@ -365,7 +365,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await updateDoc(submissionRef, { 
       status: 'replied',
       adminReply: replyMessage,
-      repliedAt: new Date().toISOString()
+      repliedAt: serverTimestamp()
     });
     // Send email to user
     await fetch('/api/send-email', {
@@ -391,7 +391,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       const historyCollection = collection(db, 'users', userId, 'ai_chat_history');
       const historySnapshot = await getDocs(query(historyCollection, orderBy('timestamp', 'asc')));
-      return historySnapshot.docs.map(doc => doc.data() as Message);
+      return historySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          timestamp: data.timestamp?.toDate()?.toISOString() || new Date().toISOString()
+        } as Message
+      });
     } catch (error) {
       console.error('Error fetching chat history:', error);
       return [];
