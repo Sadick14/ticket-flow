@@ -6,7 +6,7 @@ import { useAppContext } from '@/context/app-context';
 import { Users, Ticket, DollarSign, Eye, Star, Loader2, AlertCircle, Calendar } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { format, subDays, eachDayOfInterval } from 'date-fns';
+import { format, subDays, eachDayOfInterval, parseISO } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -55,9 +55,19 @@ export default function AdminDashboardPage() {
   const totalSubscriptionRevenue = useMemo(() => {
     return users.reduce((sum, user) => {
       const plan = user.subscriptionPlan || 'Free';
-      return sum + (subscriptionPrices[plan] || 0);
+      return sum + (subscriptionPrices[plan as keyof typeof subscriptionPrices] || 0);
     }, 0);
   }, [users]);
+  
+  const safeParseDate = (date: any): Date | null => {
+    if (!date) return null;
+    if (typeof date === 'string') return parseISO(date);
+    // Handle Firebase Timestamp
+    if (typeof date.toDate === 'function') return date.toDate();
+    // Handle other potential object formats from server
+    if (date.seconds) return new Date(date.seconds * 1000);
+    return null;
+  }
 
   const salesLast7Days = useMemo(() => {
     const last7Days = eachDayOfInterval({
@@ -67,9 +77,10 @@ export default function AdminDashboardPage() {
 
     return last7Days.map(day => {
       const dayString = format(day, 'yyyy-MM-dd');
-      const dayTickets = tickets.filter(
-        ticket => format(new Date(ticket.purchaseDate), 'yyyy-MM-dd') === dayString
-      );
+      const dayTickets = tickets.filter(ticket => {
+        const purchaseDate = safeParseDate(ticket.purchaseDate);
+        return purchaseDate ? format(purchaseDate, 'yyyy-MM-dd') === dayString : false;
+      });
       return {
         date: format(day, 'MMM d'),
         revenue: dayTickets.reduce((sum, ticket) => sum + (ticket.price || 0), 0),
@@ -80,12 +91,16 @@ export default function AdminDashboardPage() {
 
   const recentSales = useMemo(() => {
     return [...tickets]
-      .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime())
+      .sort((a, b) => {
+        const dateA = safeParseDate(a.purchaseDate);
+        const dateB = safeParseDate(b.purchaseDate);
+        if (!dateA || !dateB) return 0;
+        return dateB.getTime() - dateA.getTime();
+      })
       .slice(0, 5);
   }, [tickets]);
 
   const recentUsers = useMemo(() => {
-    // Assuming users are sorted by join date from context, otherwise we'd need a join date field
     return [...users].reverse().slice(0, 5);
   }, [users]);
 
