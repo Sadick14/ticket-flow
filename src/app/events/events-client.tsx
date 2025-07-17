@@ -4,54 +4,153 @@
 import { useState, useMemo } from 'react';
 import { useAppContext } from '@/context/app-context';
 import { EventCard } from '@/components/event-card';
-import { PageHero } from '@/components/page-hero';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Search, CalendarX } from 'lucide-react';
+import { Search, CalendarX, Sparkles, Pin, Video, CalendarDays, Music, Utensils, Heart } from 'lucide-react';
 import type { Event } from '@/lib/types';
-import { isPast, parseISO } from 'date-fns';
+import { isSameDay, isThisWeekend, parseISO, startOfToday } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { PageHero } from '@/components/page-hero';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
-const categories = ["All", "Music", "Sports", "Food & Drink", "Arts & Theater", "Technology", "Business", "Other"];
+
+const categories = ["All", "For You", "Online", "Today", "This Weekend", "Music", "Food & Drink", "Charity"];
+
+function EventCarousel({ title, events, loading, icon }: { title: string, events: Event[], loading: boolean, icon: React.ReactNode }) {
+    if (loading) {
+        return (
+            <div className="space-y-4">
+                <Skeleton className="h-8 w-48" />
+                <div className="flex space-x-4">
+                    <Skeleton className="h-96 w-72" />
+                    <Skeleton className="h-96 w-72" />
+                    <Skeleton className="h-96 w-72" />
+                </div>
+            </div>
+        )
+    }
+
+    if (events.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="space-y-4">
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+                {icon}
+                {title}
+            </h2>
+            <Carousel opts={{
+                align: "start",
+                dragFree: true,
+            }}
+            className="w-full">
+                <CarouselContent className="-ml-4">
+                    {events.map((event) => (
+                        <CarouselItem key={event.id} className="basis-auto pl-4">
+                            <div className="w-72">
+                                <EventCard event={event} />
+                            </div>
+                        </CarouselItem>
+                    ))}
+                </CarouselContent>
+                <CarouselPrevious className="ml-12" />
+                <CarouselNext className="mr-12" />
+            </Carousel>
+        </div>
+    )
+}
 
 export default function EventsPageClient() {
   const { events, loading } = useAppContext();
   const safeEvents = events ?? [];
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  
+  const upcomingEvents = useMemo(() => {
+    return safeEvents
+        .filter((event: Event) => !isPast(parseISO(`${event.date}T${event.time}`)))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [safeEvents]);
+
   const filteredEvents = useMemo(() => {
-    const now = new Date();
-    
-    const upcoming = safeEvents
-      .filter((event: Event) => {
+    return upcomingEvents.filter((event: Event) => {
+        const matchesSearch = event.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                              event.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              event.category.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        const today = startOfToday();
         const eventDate = parseISO(`${event.date}T${event.time}`);
-        const matchesCategory = selectedCategory === 'All' || event.category === selectedCategory;
-        const matchesSearch = event.name.toLowerCase().includes(searchTerm.toLowerCase());
-        return !isPast(eventDate) && matchesCategory && matchesSearch;
-      })
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    const past = safeEvents
-      .filter((event: Event) => {
-        const eventDate = parseISO(`${event.date}T${event.time}`);
-        const matchesCategory = selectedCategory === 'All' || event.category === selectedCategory;
-        const matchesSearch = event.name.toLowerCase().includes(searchTerm.toLowerCase());
-        return isPast(eventDate) && matchesCategory && matchesSearch;
-      })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        let matchesCategory = false;
+        switch (selectedCategory) {
+            case 'All':
+                matchesCategory = true;
+                break;
+            case 'For You':
+                // For demo purposes, "For You" just shows all events.
+                // A real implementation would use user preferences.
+                matchesCategory = true;
+                break;
+            case 'Online':
+                matchesCategory = event.venueType === 'online';
+                break;
+            case 'Today':
+                matchesCategory = isSameDay(eventDate, today);
+                break;
+            case 'This Weekend':
+                matchesCategory = isThisWeekend(eventDate);
+                break;
+            case 'Music':
+            case 'Food & Drink':
+                matchesCategory = event.category === selectedCategory;
+                break;
+            case 'Charity':
+                 matchesCategory = event.category === 'Business'; // Remapping for demo data
+                 break;
+            default:
+                matchesCategory = true;
+        }
 
-      return { upcoming, past };
+        return matchesSearch && matchesCategory;
+    });
+  }, [upcomingEvents, searchTerm, selectedCategory]);
 
-  }, [safeEvents, searchTerm, selectedCategory]);
+  const sections = {
+    "In your city": {
+        icon: <Pin className="text-primary"/>,
+        events: upcomingEvents.filter(e => e.venueType === 'in-person' && e.category !== 'Business').slice(0, 10)
+    },
+    "Online events": {
+        icon: <Video className="text-primary"/>,
+        events: upcomingEvents.filter(e => e.venueType === 'online').slice(0, 10)
+    },
+    "This weekend": {
+        icon: <CalendarDays className="text-primary"/>,
+        events: upcomingEvents.filter(e => isThisWeekend(parseISO(`${e.date}T${e.time}`))).slice(0, 10)
+    },
+    "Music": {
+        icon: <Music className="text-primary"/>,
+        events: upcomingEvents.filter(e => e.category === 'Music').slice(0, 10)
+    },
+    "Food & Drink": {
+        icon: <Utensils className="text-primary"/>,
+        events: upcomingEvents.filter(e => e.category === 'Food & Drink').slice(0, 10)
+    },
+    "Charity events": {
+        icon: <Heart className="text-primary"/>,
+        events: upcomingEvents.filter(e => e.category === 'Business').slice(0, 10) // Remap for demo
+    }
+  };
 
-  const renderEventList = (eventList: Event[]) => {
+  const renderContent = () => {
     if (loading) {
       return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-6">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="flex flex-col space-y-3">
-              <Skeleton className="h-[160px] sm:h-[200px] w-full rounded-xl" />
+              <Skeleton className="h-[200px] w-full rounded-xl" />
               <div className="space-y-2 p-2 sm:p-0">
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
@@ -61,93 +160,77 @@ export default function EventsPageClient() {
         </div>
       )
     }
-    
-    if (eventList.length > 0) {
-      return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-6">
-          {eventList.map((event) => (
-            <EventCard key={event.id} event={event} />
-          ))}
-        </div>
-      )
-    }
 
+    if (searchTerm || selectedCategory !== 'All') {
+         if (filteredEvents.length === 0) {
+             return (
+                 <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                    <CalendarX className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-medium text-foreground">No Events Found</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Try adjusting your search or category filters.
+                    </p>
+                 </div>
+             )
+         }
+        return (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-8">
+              {filteredEvents.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+        )
+    }
+    
     return (
-       <div className="text-center py-16 border-2 border-dashed rounded-lg">
-          <CalendarX className="mx-auto h-12 w-12 text-muted-foreground" />
-          <h3 className="mt-4 text-lg font-medium text-foreground">No Events Found</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Try adjusting your search or category filters.
-          </p>
+        <div className="space-y-12">
+            {Object.entries(sections).map(([title, {icon, events}]) => (
+                <EventCarousel key={title} title={title} events={events} loading={loading} icon={icon}/>
+            ))}
         </div>
     )
   }
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
       <PageHero
-        title="Discover Amazing Events"
-        description="From concerts to conferences, find your next unforgettable experience. Browse thousands of events happening near you."
-        ctaText="Create Your Event"
-        ctaLink="/create"
-        height="xl"
+        title="Events for you"
+        description="Discover thousands of live events from all over the world."
+        height="md"
       />
-
-      {/* Events Content */}
       <div className="bg-background py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold tracking-tight text-foreground font-headline sm:text-5xl mb-6">
-              <span className="block">Find Your Next</span>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
-                Experience
-              </span>
-            </h2>
-            <p className="mt-4 max-w-2xl mx-auto text-xl text-muted-foreground">
-              Filter by category or search by name.
-            </p>
-          </div>
-
-          <div className="mb-8 space-y-4">
-            <div className="relative">
+          
+           <div className="mb-12 space-y-6">
+            <div className="relative max-w-xl mx-auto">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input 
-                placeholder="Search for an event..."
-                className="pl-10 w-full"
+                placeholder="Search events, locations, or categories..."
+                className="pl-10 w-full h-12 rounded-full shadow-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Tabs defaultValue="upcoming">
-              <div className="flex flex-col sm:flex-row justify-between items-center flex-wrap gap-4">
-                  <TabsList>
-                      <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-                      <TabsTrigger value="past">Past</TabsTrigger>
-                  </TabsList>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {categories.map(category => (
-                        <Button 
-                            key={category} 
-                            variant={selectedCategory === category ? 'default' : 'outline'}
-                            onClick={() => setSelectedCategory(category)}
-                            size="sm"
-                        >
-                            {category}
-                        </Button>
-                    ))}
-              </div>
+            <div className="flex flex-wrap justify-center gap-2">
+                {categories.map(category => (
+                    <Button 
+                        key={category} 
+                        variant={selectedCategory === category ? 'default' : 'outline'}
+                        onClick={() => setSelectedCategory(category)}
+                        size="sm"
+                        className="rounded-full"
+                    >
+                        {category}
+                    </Button>
+                ))}
           </div>
-          <TabsContent value="upcoming" className="mt-8">
-            {renderEventList(filteredEvents.upcoming)}
-          </TabsContent>
-          <TabsContent value="past" className="mt-8">
-            {renderEventList(filteredEvents.past)}
-          </TabsContent>
-        </Tabs>
-      </div>
+          </div>
+          
+          {renderContent()}
+
         </div>
         </div>
     </div>
   );
 }
+
