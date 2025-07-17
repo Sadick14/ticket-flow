@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { EventCard } from '@/components/event-card';
 import { useAppContext } from '@/context/app-context';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowRight, Newspaper, CalendarX, Zap, CreditCard, BarChart, Mail } from 'lucide-react';
+import { ArrowRight, Newspaper, CalendarX, Zap, CreditCard, BarChart, Mail, PenSquare, Ticket, Users as UsersIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { NewsCard } from '@/components/news-card';
 import { motion } from 'framer-motion';
@@ -64,6 +64,27 @@ export default function HomePage() {
       icon: BarChart,
       title: "Real-time Analytics",
       description: "Track ticket sales, attendee demographics, and marketing performance with our powerful analytics dashboard.",
+    }
+  ];
+
+  const howItWorksSteps = [
+    {
+      icon: PenSquare,
+      step: "Step 1",
+      title: "Create Your Event",
+      description: "Use our simple form to create a stunning event page in minutes. Add all the details, from speakers to schedules."
+    },
+    {
+      icon: Ticket,
+      step: "Step 2",
+      title: "Sell Tickets",
+      description: "Set your ticket prices, manage capacity, and start selling immediately with our secure, integrated payment system."
+    },
+    {
+      icon: UsersIcon,
+      step: "Step 3",
+      title: "Manage & Engage",
+      description: "Track your sales in real-time, check in attendees with our scanner, and send updates to build excitement."
     }
   ];
 
@@ -236,9 +257,47 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* How It Works Section */}
+        <section className="py-24 bg-muted/40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
+                Get Started in 3 Easy Steps
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+                From idea to live event in minutes. Our platform makes it simple.
+              </p>
+            </div>
+            <div className="relative">
+              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-border -translate-y-1/2 hidden md:block" aria-hidden="true"></div>
+              <div className="relative grid grid-cols-1 md:grid-cols-3 gap-12">
+                {howItWorksSteps.map((step, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 50 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.15 }}
+                    viewport={{ once: true }}
+                    className="text-center bg-background p-8 rounded-xl shadow-lg border"
+                  >
+                    <div className="flex items-center justify-center mb-6">
+                        <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary border-2 border-primary/20">
+                          <step.icon className="h-8 w-8" />
+                        </div>
+                    </div>
+                    <p className="font-semibold text-primary mb-2">{step.step}</p>
+                    <h3 className="text-2xl font-bold mb-3">{step.title}</h3>
+                    <p className="text-muted-foreground">{step.description}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
         
         {/* New Event Discovery Section */}
-        <section id="events" className="py-24 bg-muted/30">
+        <section id="events" className="py-24 bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
              <div className="text-center mb-16">
               <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
@@ -282,7 +341,7 @@ export default function HomePage() {
 
 
         {/* News Section */}
-        <section className="py-24 bg-background">
+        <section className="py-24 bg-muted/40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <div className="inline-block bg-primary/10 text-primary text-sm font-semibold px-4 py-2 rounded-full mb-4">
@@ -323,7 +382,7 @@ export default function HomePage() {
         </section>
 
         {/* Subscription Section */}
-        <section className="py-24 bg-white">
+        <section className="py-24 bg-background">
           <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <Mail className="mx-auto h-12 w-12 text-primary mb-4" />
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">

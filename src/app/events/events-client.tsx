@@ -125,11 +125,6 @@ export default function EventsPageClient() {
         
         {renderContent()}
 
-        <div className="mt-12 text-center">
-            <Button size="lg" className="rounded-full bg-black text-white hover:bg-gray-800">
-                VIEW MORE EVENTS
-            </Button>
-        </div>
       </div>
     </div>
   );
