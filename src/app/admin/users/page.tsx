@@ -127,7 +127,7 @@ export default function AdminUsersPage() {
                             <DropdownMenuLabel>Manage User</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleSubscriptionChange(user.uid, 'Free')}>Set to Free</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleSubscriptionChange(user.uid, 'Starter')}>Set to Starter</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleSubscriptionChange(user.uid, 'Essential')}>Set to Essential</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleSubscriptionChange(user.uid, 'Pro')}>Set to Pro</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleStatusChange(user)}>

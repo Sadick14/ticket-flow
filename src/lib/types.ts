@@ -1,5 +1,7 @@
 
 
+export type SubscriptionPlan = 'Free' | 'Essential' | 'Pro';
+
 export interface Speaker {
   name: string;
   title: string;
@@ -68,6 +70,7 @@ export interface UserProfile {
   photoURL: string | null;
   isAdmin?: boolean;
   status: 'active' | 'deactivated';
+  subscriptionPlan: SubscriptionPlan;
   lastSeen?: string; // ISO String
 }
 

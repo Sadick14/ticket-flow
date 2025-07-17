@@ -52,6 +52,7 @@ const getOrCreateUserProfile = async (user: FirebaseUser): Promise<UserProfile> 
     photoURL: user.photoURL,
     isAdmin: user.email === ADMIN_EMAIL,
     status: 'active',
+    subscriptionPlan: 'Free',
     lastSeen: new Date().toISOString(),
   };
   await setDoc(userRef, newUserProfile);

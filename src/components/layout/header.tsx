@@ -52,14 +52,18 @@ export function Header() {
             </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-            <LayoutDashboard className="mr-2 h-4 w-4" />
-            <Link href="/dashboard">Dashboard</Link>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard">
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                <span>Dashboard</span>
+              </Link>
             </DropdownMenuItem>
             {user.isAdmin && (
-            <DropdownMenuItem>
-                <Shield className="mr-2 h-4 w-4" />
-                <Link href="/admin">Admin</Link>
+            <DropdownMenuItem asChild>
+                <Link href="/admin">
+                  <Shield className="mr-2 h-4 w-4" />
+                  <span>Admin</span>
+                </Link>
             </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />

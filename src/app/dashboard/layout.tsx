@@ -53,9 +53,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const isActive = (path: string) => pathname === path;
   
-  // For now, we will assume all users have access to all features
-  // until a more granular permission system is built.
-  const hasAdvancedFeatures = true;
+  const hasAdvancedFeatures = user?.subscriptionPlan === 'Pro';
 
   return (
     <SidebarProvider>
@@ -227,6 +225,7 @@ export default function DashboardLayout({
                             </Avatar>
                             <div className="flex-1 text-left overflow-hidden">
                                 <p className="text-sm font-medium truncate text-white">{user.displayName}</p>
+                                <Badge variant={user.subscriptionPlan === 'Pro' ? 'default' : 'secondary'} className="mt-1">{user.subscriptionPlan} Plan</Badge>
                             </div>
                         </Button>
                     </DropdownMenuTrigger>
