@@ -17,7 +17,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useAppContext } from '@/context/app-context';
 import type { Event } from '@/lib/types';
 import { Loader2, Minus, Plus, Wallet, Phone } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -42,7 +41,6 @@ const purchaseSchema = z.object({
 type PurchaseFormValues = z.infer<typeof purchaseSchema>;
 
 export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTicketDialogProps) {
-  const { addTicket } = useAppContext();
   const { toast } = useToast();
   const [quantity, setQuantity] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,6 +50,7 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
     resolver: zodResolver(purchaseSchema),
     defaultValues: {
       attendees: [{ attendeeName: '', attendeeEmail: '' }],
+      momoNumber: '',
     }
   });
 
@@ -79,14 +78,17 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
     // For free events, just add the tickets directly
     if (event.price === 0) {
       try {
-        for (const attendee of data.attendees) {
-          await addTicket({
-            eventId: event.id,
-            attendeeName: attendee.attendeeName,
-            attendeeEmail: attendee.attendeeEmail,
-            price: 0,
-          });
-        }
+        const response = await fetch('/api/add-ticket', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              eventId: event.id,
+              attendees: data.attendees,
+              price: 0,
+            })
+        });
+        if (!response.ok) throw new Error("Registration failed.");
+
         toast({
           title: 'Registration Successful!',
           description: `You've got ${quantity} ticket(s) for ${event.name}.`,
@@ -133,14 +135,23 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
         description: 'Approve the transaction by entering your MoMo PIN.',
       });
       
-      // In a real production application, a webhook from MTN would confirm
-      // the payment on the backend, which would then create the ticket.
-      // The client would poll for the ticket status or get an update via WebSocket.
-      // For this demo, we'll assume the webhook will handle ticket creation
-      // and we just inform the user.
+      // For this demo, we'll assume the webhook would confirm payment instantly.
+      // In a real app, you would wait for a webhook from MTN before creating the ticket.
+      const ticketResponse = await fetch('/api/add-ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId: event.id,
+          attendees: data.attendees,
+          price: event.price
+        })
+      });
+
+      if (!ticketResponse.ok) throw new Error("Ticket creation failed after payment.");
       
-      // The dialog will remain open showing the "Awaiting Approval" message
-      // until the user closes it or the webhook provides a success/fail update.
+      // Since the dialog might close before webhook, we don't show a success message here,
+      // as the email confirmation serves that purpose. The "awaiting approval" state is sufficient.
+      // The user can close the dialog.
 
     } catch (error: any) {
       toast({

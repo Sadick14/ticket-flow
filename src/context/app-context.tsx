@@ -30,7 +30,6 @@ interface AppContextType {
     upcomingEvents: number;
   };
   // Tickets
-  addTicket: (ticket: Omit<Ticket, 'id' | 'purchaseDate' | 'checkedIn'>) => Promise<void>;
   checkInTicket: (ticketId: string, eventId: string, currentUserId: string) => Promise<void>;
   manualCheckInTicket: (ticketId: string, eventId: string, currentUserId: string, checkInStatus: boolean) => Promise<void>;
   getTicketById: (id: string) => Promise<Ticket | undefined>;
@@ -193,31 +192,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Error archiving event:", error);
       throw error;
-    }
-  };
-
-  const addTicket = async (ticketData: Omit<Ticket, 'id' | 'purchaseDate' | 'checkedIn'>) => {
-    const newTicket = {
-      ...ticketData,
-      purchaseDate: new Date().toISOString(),
-      checkedIn: false,
-    };
-    try {
-      await addDoc(collection(db, 'tickets'), newTicket);
-      await fetchAllData();
-      // Send confirmation email via API route
-      await fetch('/api/send-confirmation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventId: ticketData.eventId,
-          attendeeName: ticketData.attendeeName,
-          attendeeEmail: ticketData.attendeeEmail,
-        }),
-      });
-    } catch (error) {
-       console.error("Error adding ticket:", error);
-       throw error;
     }
   };
 
@@ -495,7 +469,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addEvent, 
       updateEvent, 
       deleteEvent,
-      addTicket, 
       checkInTicket,
       manualCheckInTicket,
       getTicketById,
