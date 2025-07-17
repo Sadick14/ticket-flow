@@ -75,7 +75,7 @@ export default function EventsPageClient() {
   }, [safeEvents]);
 
   const filteredEvents = useMemo(() => {
-    return upcomingEvents.filter((event: Event) => {
+    return safeEvents.filter((event: Event) => {
         const matchesSearch = event.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                               event.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
                               event.category.toLowerCase().includes(searchTerm.toLowerCase());
@@ -86,11 +86,7 @@ export default function EventsPageClient() {
         let matchesCategory = false;
         switch (selectedCategory) {
             case 'All':
-                matchesCategory = true;
-                break;
             case 'For You':
-                // For demo purposes, "For You" just shows all events.
-                // A real implementation would use user preferences.
                 matchesCategory = true;
                 break;
             case 'Online':
@@ -115,7 +111,7 @@ export default function EventsPageClient() {
 
         return matchesSearch && matchesCategory;
     });
-  }, [upcomingEvents, searchTerm, selectedCategory]);
+  }, [safeEvents, searchTerm, selectedCategory]);
 
   const sections = {
     "In your city": {
@@ -140,7 +136,7 @@ export default function EventsPageClient() {
     },
     "Charity events": {
         icon: <Heart className="text-primary"/>,
-        events: upcomingEvents.filter(e => e.category === 'Business').slice(0, 10) // Remap for demo
+        events: safeEvents.filter(e => e.category === 'Business').slice(0, 10) // Use safeEvents to include past events
     }
   };
 
@@ -233,4 +229,3 @@ export default function EventsPageClient() {
     </div>
   );
 }
-
