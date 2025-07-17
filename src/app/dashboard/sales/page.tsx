@@ -53,10 +53,19 @@ export default function SalesPage() {
     }
   };
 
+  const safeParseDate = (date: any): Date | null => {
+    if (!date) return null;
+    if (typeof date === 'string') return parseISO(date);
+    if (typeof date.toDate === 'function') return date.toDate(); // Firestore Timestamp
+    if (date.seconds) return new Date(date.seconds * 1000); // Another Timestamp format
+    return null;
+  }
+
   const dateRange = getDateRange();
   
   const filteredTickets = useMemo(() => allUserTickets.filter(ticket => {
-    const purchaseDate = parseISO(ticket.purchaseDate);
+    const purchaseDate = safeParseDate(ticket.purchaseDate);
+    if (!purchaseDate) return false;
     return purchaseDate >= dateRange.start && purchaseDate <= dateRange.end;
   }), [allUserTickets, dateRange]);
 
@@ -70,7 +79,8 @@ export default function SalesPage() {
     const periodLength = Math.abs(dateRange.end.getTime() - dateRange.start.getTime());
     const previousStart = new Date(dateRange.start.getTime() - periodLength);
     const previousTickets = allUserTickets.filter(ticket => {
-      const purchaseDate = parseISO(ticket.purchaseDate);
+      const purchaseDate = safeParseDate(ticket.purchaseDate);
+      if (!purchaseDate) return false;
       return purchaseDate >= previousStart && purchaseDate < dateRange.start;
     });
     
@@ -109,7 +119,8 @@ export default function SalesPage() {
     const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
     const data = days.map(day => {
       const dayTickets = filteredTickets.filter(ticket => {
-        const purchaseDate = parseISO(ticket.purchaseDate);
+        const purchaseDate = safeParseDate(ticket.purchaseDate);
+        if (!purchaseDate) return false;
         return format(purchaseDate, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd');
       });
       
