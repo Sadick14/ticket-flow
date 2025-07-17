@@ -4,25 +4,55 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PageHero } from '@/components/page-hero';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { useAppContext } from '@/context/app-context';
+import type { SubscriptionPlan } from '@/lib/types';
 
 export default function PricingClientPage() {
   const { user } = useAuth();
+  const { updateUser } = useAppContext();
   const { toast } = useToast();
+  const [isUpgrading, setIsUpgrading] = useState<SubscriptionPlan | null>(null);
 
-  const handleChoosePlan = (planName: string) => {
-    toast({
-      title: 'Plan Upgrade Coming Soon!',
-      description: `The ability to upgrade to the ${planName} plan is in development.`,
-    });
+  const handleChoosePlan = async (plan: SubscriptionPlan, price: number) => {
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Please sign in',
+        description: 'You need to be logged in to upgrade your plan.',
+      });
+      return;
+    }
+    
+    setIsUpgrading(plan);
+    
+    // In a real app, this would trigger a payment flow for the plan price.
+    // For now, we simulate success and update the user's plan.
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
+      await updateUser(user.uid, { subscriptionPlan: plan });
+      toast({
+        title: 'Upgrade Successful!',
+        description: `You are now on the ${plan} plan.`,
+      });
+    } catch {
+      toast({
+        variant: 'destructive',
+        title: 'Upgrade Failed',
+        description: 'Could not update your plan. Please try again.',
+      });
+    } finally {
+      setIsUpgrading(null);
+    }
   };
 
+
   const freePlan = {
-    name: 'Free',
+    name: 'Free' as SubscriptionPlan,
     price: 'GH₵0',
     priceDescription: 'For all your free events',
     description: 'Perfect for getting started with free community events.',
@@ -38,9 +68,10 @@ export default function PricingClientPage() {
 
   const paidPlans = [
     {
-      name: 'Essential',
+      name: 'Essential' as SubscriptionPlan,
+      priceGHS: 50,
       price: 'GH₵50',
-      priceDescription: 'one-time upfront fee',
+      priceDescription: 'per month',
       description: 'For paid events that need the core tools to succeed.',
       features: [
         'Everything in Free, plus:',
@@ -54,9 +85,10 @@ export default function PricingClientPage() {
       color: 'blue'
     },
     {
-      name: 'Pro',
+      name: 'Pro' as SubscriptionPlan,
+      priceGHS: 150,
       price: 'GH₵150',
-      priceDescription: 'one-time upfront fee',
+      priceDescription: 'per month',
       description: 'For organizers who want to maximize sales and engagement.',
       features: [
         'Everything in Essential, plus:',
@@ -72,8 +104,9 @@ export default function PricingClientPage() {
       popular: true
     },
     {
-      name: 'Custom',
+      name: 'Custom' as SubscriptionPlan,
       price: 'Contact Us',
+      priceGHS: -1,
       priceDescription: 'For a tailored solution',
       description: 'For large-scale events with unique requirements.',
       features: [
@@ -110,7 +143,7 @@ export default function PricingClientPage() {
                 <span className="block">Choose Your Plan</span>
               </h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                Select the plan that fits your event needs. Paid plans are a one-time fee plus commission.
+                Select the plan that fits your event needs. Paid plans are a monthly fee plus commission.
               </p>
             </div>
 
@@ -198,7 +231,8 @@ export default function PricingClientPage() {
                   
                   <div className="mt-auto pt-8">
                     <Button 
-                      onClick={() => plan.name === 'Custom' ? window.location.href = '/contact' : handleChoosePlan(plan.name)}
+                      onClick={() => plan.name === 'Custom' ? window.location.href = '/contact' : handleChoosePlan(plan.name, plan.priceGHS)}
+                      disabled={isUpgrading === plan.name}
                       className={`w-full py-3 rounded-full font-medium ${
                         plan.popular 
                           ? 'bg-white text-primary hover:bg-gray-100'
@@ -208,7 +242,7 @@ export default function PricingClientPage() {
                       }`}
                       variant={plan.popular || plan.color === 'dark' ? 'default' : 'outline'}
                     >
-                      {plan.cta}
+                      {isUpgrading === plan.name ? <Loader2 className="animate-spin" /> : plan.cta}
                     </Button>
                   </div>
                 </div>

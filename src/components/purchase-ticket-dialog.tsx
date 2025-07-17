@@ -36,7 +36,7 @@ const purchaseSchema = z.object({
       attendeeEmail: z.string().email({ message: 'Please enter a valid email address.' }),
     })
   ).min(1, 'At least one attendee is required.'),
-  momoNumber: z.string().min(10, 'Please enter a valid phone number.').optional(),
+  momoNumber: z.string().min(10, 'Please enter a valid phone number.'),
 });
 
 type PurchaseFormValues = z.infer<typeof purchaseSchema>;
@@ -75,35 +75,91 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
   const handlePurchase = async (data: PurchaseFormValues) => {
     setIsSubmitting(true);
     
-    // For now, since the MTN API is not fully provided (e.g., how to get the user to confirm on their phone),
-    // we will simulate a successful payment and create the tickets.
-    // In a real scenario, you'd call the /api/payments/create-intent here and wait for a webhook confirmation.
-    
-    try {
-      for (const attendee of data.attendees) {
-        await addTicket({
-          eventId: event.id,
-          attendeeName: attendee.attendeeName,
-          attendeeEmail: attendee.attendeeEmail,
-          price: event.price,
+    // For free events, just add the tickets directly
+    if (event.price === 0) {
+      try {
+        for (const attendee of data.attendees) {
+          await addTicket({
+            eventId: event.id,
+            attendeeName: attendee.attendeeName,
+            attendeeEmail: attendee.attendeeEmail,
+            price: 0,
+          });
+        }
+        toast({
+          title: 'Registration Successful!',
+          description: `You've got ${quantity} ticket(s) for ${event.name}.`,
         });
+        onOpenChange(false);
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Registration Failed',
+          description: 'Something went wrong. Please try again.',
+        });
+      } finally {
+        setIsSubmitting(false);
       }
-      toast({
-        title: 'Purchase Successful!',
-        description: `You've got ${quantity} ticket(s) for ${event.name}.`,
+      return;
+    }
+
+    // For paid events, call the payment API
+    try {
+      const paymentResponse = await fetch('/api/payments/create-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: event.price * quantity,
+          currency: 'GHS',
+          gatewayId: 'mtn-momo',
+          momoNumber: data.momoNumber,
+          metadata: {
+            eventId: event.id,
+            eventName: event.name,
+            quantity: quantity,
+          },
+        }),
       });
-      onOpenChange(false);
-    } catch (error) {
+
+      const paymentResult = await paymentResponse.json();
+      if (!paymentResponse.ok) {
+        throw new Error(paymentResult.error || 'Payment request failed.');
+      }
+      
+      toast({
+        title: 'Payment Initiated',
+        description: 'Please approve the transaction on your phone.',
+      });
+
+      // Here you would typically wait for a webhook confirmation before creating tickets.
+      // For this implementation, we will assume payment is successful after a short delay
+      // to demonstrate the flow.
+      setTimeout(async () => {
+        for (const attendee of data.attendees) {
+          await addTicket({
+            eventId: event.id,
+            attendeeName: attendee.attendeeName,
+            attendeeEmail: attendee.attendeeEmail,
+            price: event.price,
+          });
+        }
+        toast({
+          title: 'Purchase Successful!',
+          description: `You've got ${quantity} ticket(s) for ${event.name}.`,
+        });
+        onOpenChange(false);
+        setIsSubmitting(false);
+      }, 15000); // Wait 15 seconds to simulate user approval
+
+    } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Purchase Failed',
-        description: 'Something went wrong. Please try again.',
+        title: 'Payment Failed',
+        description: error.message || 'Could not initiate payment.',
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
-
 
   const isFree = event.price === 0;
 
