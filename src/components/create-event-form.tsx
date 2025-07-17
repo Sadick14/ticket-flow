@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
-import { Wand2, Calendar as CalendarIcon, Loader2, Zap, Trash2, Shield } from 'lucide-react';
+import { Wand2, Calendar as CalendarIcon, Loader2, Zap, Trash2, Shield, Ticket, Percent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -78,6 +78,11 @@ const eventFormSchema = z.object({
       { message: 'Please enter a valid URL or upload an image.' }
     ).optional(),
   })).optional(),
+  promoCodes: z.array(z.object({
+    code: z.string().min(3, 'Code must be at least 3 characters.'),
+    discountType: z.enum(['percentage', 'fixed']),
+    value: z.coerce.number().min(0.01, 'Discount value must be positive.'),
+  })).optional(),
 }).refine(data => {
     if (data.venueType === 'online') {
         return !!data.onlineUrl;
@@ -102,7 +107,7 @@ const categories = ["Nightlife & Parties", "Movies & Cinema", "Arts & Theatre", 
 
 const eventLimits: Record<SubscriptionPlan, number> = {
     Free: 1,
-    Starter: 10,
+    Essential: 10,
     Pro: 45,
 };
 
@@ -141,24 +146,21 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
       speakers: [],
       activities: [],
       sponsors: [],
+      promoCodes: [],
       category: undefined,
       dateRange: { from: undefined, to: undefined },
     },
   });
 
-  const currentPlan = user?.subscriptionPlan || 'Free';
-  const userEventCount = user ? getEventsByCreator(user.uid).length : 0;
-  const limit = eventLimits[currentPlan];
-  const hasReachedLimit = !isEditMode && userEventCount >= limit;
-  const isFreePlan = currentPlan === 'Free';
+  const { fields: promoCodeFields, append: appendPromoCode, remove: removePromoCode } = useFieldArray({
+    control: form.control,
+    name: "promoCodes",
+  });
+
+  // Since we're moving to a commission model, we no longer need plan-based event limits.
+  // The ability to create a paid event determines access to features.
+  const canCreatePaidEvent = true; // All users can create paid events now.
   const isAuthenticated = !!user;
-
-  useEffect(() => {
-    if (isFreePlan) {
-      form.setValue('price', 0);
-    }
-  }, [isFreePlan, form]);
-
 
   useEffect(() => {
     if (isEditMode && eventToEdit) {
@@ -184,6 +186,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
         speakers: eventToEdit.speakers?.map(s => ({...s, imageUrl: s.imageUrl || 'https://placehold.co/100x100.png'})) || [],
         activities: eventToEdit.activities?.map(a => ({...a, time: a && a.time ? format(new Date(`1970-01-01T${a.time.replace(/(am|pm)/i, '').trim()}`), 'HH:mm') : '' })) || [],
         sponsors: eventToEdit.sponsors?.map(s => ({...s, logoUrl: s.logoUrl || 'https://placehold.co/150x75.png'})) || [],
+        promoCodes: eventToEdit.promoCodes || [],
       });
     }
   }, [isEditMode, eventToEdit, form]);
@@ -206,6 +209,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
   const watchAllFields = form.watch();
   const watchEventType = watchAllFields.eventType;
   const watchVenueType = watchAllFields.venueType;
+  const watchPrice = watchAllFields.price;
 
   const aiAssistantEventDetails = {
     name: watchAllFields.name,
@@ -266,24 +270,6 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
         return;
     }
 
-    if (hasReachedLimit) {
-        toast({
-            variant: 'destructive',
-            title: 'Upgrade Required',
-            description: `You have reached the event limit for the ${currentPlan} plan.`,
-        });
-        return;
-    }
-
-    if (isFreePlan && data.price > 0) {
-        toast({
-            variant: 'destructive',
-            title: 'Upgrade Required',
-            description: 'The Free plan only allows for free events. Please upgrade to create paid events.',
-        });
-        return;
-    }
-
     setIsSubmitting(true);
 
     const startDate = data.eventType === 'multi' && data.dateRange?.from ? data.dateRange.from : data.date;
@@ -310,6 +296,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
       speakers: data.speakers?.filter(s => s && s.name && s.title).map(s => ({...s, imageUrl: s.imageUrl || 'https://placehold.co/100x100.png'})) || [],
       activities: data.activities?.map(a => ({...a, time: a && a.time ? format(new Date(`1970-01-01T${a.time}`), 'hh:mm a') : ''})).filter(a => a && a.name && a.description) || [],
       sponsors: data.sponsors?.filter(s => s && s.name).map(s => ({...s, logoUrl: s.logoUrl || 'https://placehold.co/150x75.png'})) || [],
+      promoCodes: data.promoCodes?.filter(p => p.code && p.value > 0) || [],
     };
 
     try {
@@ -357,19 +344,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                </Button>
             </Alert>
         )}
-         {hasReachedLimit && (
-            <Alert className="mb-8 border-yellow-500 text-yellow-700">
-              <Zap className="h-4 w-4" />
-              <AlertTitle className="text-yellow-800 font-bold">You've Reached Your Limit!</AlertTitle>
-              <AlertDescription>
-                You have created {userEventCount} of {limit} events included in the {currentPlan} plan. Please upgrade to create more events.
-              </AlertDescription>
-               <Button size="sm" className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-white" asChild>
-                <Link href="/pricing">Upgrade Plan</Link>
-               </Button>
-            </Alert>
-        )}
-        <fieldset disabled={hasReachedLimit || isSubmitting || !isAuthenticated} className="space-y-8">
+        <fieldset disabled={isSubmitting || !isAuthenticated} className="space-y-8">
           <Card>
             <CardHeader>
               <CardTitle>Core Details</CardTitle>
@@ -815,8 +790,8 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
           
           <Card>
             <CardHeader>
-                <CardTitle>Tickets &amp; Sponsors</CardTitle>
-                <CardDescription>Set your ticket details and acknowledge your sponsors.</CardDescription>
+                <CardTitle>Tickets &amp; More</CardTitle>
+                <CardDescription>Set your ticket details and offer discounts.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -827,9 +802,9 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                       <FormItem>
                         <FormLabel>Ticket Price ($)</FormLabel>
                         <FormControl>
-                          <Input type="number" min="0" step="0.01" {...field} disabled={isFreePlan} />
+                          <Input type="number" min="0" step="0.01" {...field} />
                         </FormControl>
-                        {isFreePlan && <FormDescription>Free plan users can only create free events. Upgrade to create paid events.</FormDescription>}
+                        {watchPrice === 0 && <FormDescription>This is a free event.</FormDescription>}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -848,6 +823,61 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                     )}
                   />
                 </div>
+                {/* Promotional Codes Section */}
+                {watchPrice > 0 && (
+                <div>
+                    <FormLabel>Promotional Codes</FormLabel>
+                    <FormDescription>Offer discounts for your paid event.</FormDescription>
+                    <div className="space-y-4 mt-4">
+                        {promoCodeFields.map((field, index) => (
+                            <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end p-4 border rounded-lg">
+                                <FormField
+                                    control={form.control}
+                                    name={`promoCodes.${index}.code`}
+                                    render={({ field }) => (
+                                    <FormItem className="lg:col-span-1">
+                                        <FormLabel>Code</FormLabel>
+                                        <FormControl><Input placeholder="EARLYBIRD" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name={`promoCodes.${index}.discountType`}
+                                    render={({ field }) => (
+                                    <FormItem className="lg:col-span-1">
+                                        <FormLabel>Type</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="percentage">Percentage (%)</SelectItem>
+                                                <SelectItem value="fixed">Fixed ($)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name={`promoCodes.${index}.value`}
+                                    render={({ field }) => (
+                                    <FormItem className="lg:col-span-1">
+                                        <FormLabel>Value</FormLabel>
+                                        <FormControl><Input type="number" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                <Button type="button" variant="destructive" size="icon" onClick={() => removePromoCode(index)} className="lg:col-span-1"><Trash2 className="h-4 w-4" /></Button>
+                            </div>
+                        ))}
+                    </div>
+                    <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendPromoCode({ code: '', discountType: 'percentage', value: 10 })}>Add Promo Code</Button>
+                </div>
+                )}
+
                  <div>
                     <FormLabel>Sponsors</FormLabel>
                     <FormDescription>Add sponsors for your event. (Optional)</FormDescription>
@@ -893,7 +923,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
 
           <div className="flex justify-end space-x-4 mt-8">
              <Button type="button" variant="outline" onClick={() => router.push('/dashboard')}>Cancel</Button>
-             <Button type="submit" disabled={isSubmitting || hasReachedLimit || !isAuthenticated}>
+             <Button type="submit" disabled={isSubmitting || !isAuthenticated}>
                {isSubmitting ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                ) : (

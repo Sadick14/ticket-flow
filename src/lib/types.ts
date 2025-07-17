@@ -17,6 +17,12 @@ export interface Sponsor {
   logoUrl: string;
 }
 
+export interface PromoCode {
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  value: number;
+}
+
 export interface Event {
   id: string;
   creatorId: string;
@@ -41,6 +47,7 @@ export interface Event {
   speakers?: Speaker[];
   activities?: Activity[];
   sponsors?: Sponsor[];
+  promoCodes?: PromoCode[];
   collaboratorIds?: string[];
 }
 

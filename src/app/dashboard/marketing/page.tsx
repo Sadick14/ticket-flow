@@ -27,7 +27,8 @@ import {
   TrendingUp,
   Eye,
   MousePointerClick,
-  Calendar
+  Calendar,
+  Code
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -87,6 +88,12 @@ export default function MarketingPage() {
       title: 'Copied!',
       description: 'Link copied to clipboard',
     });
+  };
+
+  const generateEmbedCode = (eventId: string) => {
+    if (typeof window === 'undefined') return '';
+    const iframeSrc = `${window.location.origin}/embed/tickets/${eventId}`;
+    return `<iframe src="${iframeSrc}" width="100%" height="600" style="border:none;"></iframe>`;
   };
 
   const generateEmailTemplate = (event: any) => {
@@ -288,11 +295,12 @@ Get your tickets now: ${generateShareUrl(event.id)}
 
           {/* Marketing Tools */}
           <Tabs defaultValue="share" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="share">Share & Promote</TabsTrigger>
               <TabsTrigger value="email">Email Marketing</TabsTrigger>
               <TabsTrigger value="social">Social Media</TabsTrigger>
               <TabsTrigger value="qr">QR Codes</TabsTrigger>
+              <TabsTrigger value="embed">Embeddable Widget</TabsTrigger>
             </TabsList>
 
             <TabsContent value="share" className="space-y-4">
@@ -524,6 +532,41 @@ Get your tickets now: ${generateShareUrl(event.id)}
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="embed" className="space-y-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Code/> Embeddable Widget</CardTitle>
+                        <CardDescription>Sell tickets directly from your own website.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div>
+                            <Label>Embed Code</Label>
+                            <Textarea
+                                readOnly
+                                value={generateEmbedCode(selectedEventData.id)}
+                                className="mt-1 font-mono text-xs h-32"
+                            />
+                        </div>
+                        <Button onClick={() => copyToClipboard(generateEmbedCode(selectedEventData.id))}>
+                            <Copy className="mr-2 h-4 w-4"/>
+                            Copy Code
+                        </Button>
+                        <div className="pt-4">
+                            <h4 className="font-semibold">Preview:</h4>
+                             <div className="mt-2 border rounded-lg p-4 h-96 overflow-auto">
+                                <iframe 
+                                    src={`/embed/tickets/${selectedEventData.id}`} 
+                                    width="100%" 
+                                    height="100%"
+                                    style={{ border: 'none' }}
+                                    title="Ticket Embed Preview"
+                                />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </TabsContent>
           </Tabs>
         </>
