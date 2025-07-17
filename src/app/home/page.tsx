@@ -12,7 +12,6 @@ import { useMemo, useState } from 'react';
 import { NewsCard } from '@/components/news-card';
 import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { PageHero } from '@/components/page-hero';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
