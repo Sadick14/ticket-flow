@@ -5,22 +5,23 @@ import { Button } from '@/components/ui/button';
 import { PageHero } from '@/components/page-hero';
 import { Check } from 'lucide-react';
 import Link from 'next/link';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-const plans = [
-  {
-    name: 'Free',
-    commission: '0%',
-    description: 'Perfect for getting started with free community events.',
-    features: [
-      'Unlimited free events',
-      'Attendee Registration',
-      'Basic Event Analytics',
-      'Standard Email Support'
-    ],
-    cta: 'GET STARTED FOR FREE',
-    ctaLink: '/create',
-    color: 'gray'
-  },
+const freePlan = {
+  name: 'Free',
+  commission: '0%',
+  description: 'Perfect for getting started with free community events.',
+  features: [
+    'Unlimited free events',
+    'Attendee Registration',
+    'Basic Event Analytics',
+    'Standard Email Support'
+  ],
+  cta: 'GET STARTED FOR FREE',
+  ctaLink: '/create'
+};
+
+const paidPlans = [
   {
     name: 'Essential',
     commission: '3%',
@@ -96,8 +97,36 @@ export default function PricingClientPage() {
             </p>
           </div>
 
-          <div className="grid gap-8 lg:gap-12 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mt-16 items-stretch">
-            {plans.map((plan) => (
+          {/* Free Plan - Prominent Section */}
+          <Card className="mb-16 border-2 border-primary/50 bg-gradient-to-br from-primary/5 to-background">
+            <div className="grid md:grid-cols-2 gap-8 items-center p-8">
+              <div>
+                <CardTitle className="text-3xl font-bold mb-2">{freePlan.name}</CardTitle>
+                <CardDescription className="text-lg text-muted-foreground">{freePlan.description}</CardDescription>
+                <ul className="space-y-4 text-left my-8 text-sm">
+                    {freePlan.features.map((feature, featureIndex) => (
+                      <li key={featureIndex} className="flex items-start gap-3">
+                        <Check className="w-5 h-5 mt-0.5 flex-shrink-0 text-green-500" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+              <div className="text-center bg-background p-8 rounded-lg">
+                <div className="text-6xl font-bold text-primary mb-2">
+                    {freePlan.commission}
+                </div>
+                <div className="text-sm text-muted-foreground mb-6">For all your free events</div>
+                <Button asChild size="lg" className="w-full">
+                  <Link href={freePlan.ctaLink}>{freePlan.cta}</Link>
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+
+          <div className="grid gap-8 lg:gap-12 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mt-16 items-stretch">
+            {paidPlans.map((plan) => (
               <div
                 key={plan.name}
                 className={`relative rounded-2xl p-8 shadow-lg transition-all duration-300 transform hover:-translate-y-2 flex flex-col ${
@@ -121,7 +150,6 @@ export default function PricingClientPage() {
                   <div className="mb-6">
                     <div className={`text-5xl font-bold mb-2 ${
                       plan.popular ? 'text-white' : 
-                      plan.color === 'gray' ? 'text-primary' :
                       plan.color === 'blue' ? 'text-blue-500' :
                       plan.color === 'dark' ? 'text-white' : 'text-primary'
                     }`}>
@@ -130,7 +158,7 @@ export default function PricingClientPage() {
                     <div className={`text-sm ${
                       plan.popular || plan.color === 'dark' ? 'text-gray-300' : 'text-muted-foreground'
                     }`}>
-                      {plan.name === 'Free' ? 'For free events' : 'Commission + payment processing'}
+                      Commission + payment processing
                     </div>
                   </div>
                   <p className={`mb-8 h-20 ${
@@ -172,7 +200,7 @@ export default function PricingClientPage() {
 
           <div className="text-center mt-16">
             <p className="text-muted-foreground text-sm">
-              <span className="font-semibold text-destructive">Important:</span> Payment processing fees are separate from the commission rates.
+              <span className="font-semibold text-destructive">Important:</span> Payment processing fees from Stripe, PayPal, etc. are separate from our commission rates.
             </p>
           </div>
         </div>
