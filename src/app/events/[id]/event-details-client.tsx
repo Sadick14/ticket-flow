@@ -93,7 +93,7 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
   const totalTicketsAvailable = event.capacity;
   const availabilityPercentage = totalTicketsAvailable > 0 ? (totalTicketsSold / totalTicketsAvailable) * 100 : 0;
   
-  const ticketsAvailableForPurchase = event.price >= 0 && event.capacity > 0;
+  const ticketsAvailableForPurchase = event.capacity > 0;
   const eventDate = new Date(`${event.date}T${event.time}`);
   const isPastEvent = eventDate < new Date();
 
@@ -244,7 +244,7 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
                     <>
                       <div className="text-center">
                         <div className="text-3xl font-bold text-gray-900">
-                          {event.price === 0 ? 'Free' : `$${event.price.toFixed(2)}`}
+                          {event.price === 0 ? 'Free' : `GH₵${event.price.toFixed(2)}`}
                         </div>
                         <p className="text-sm text-gray-600">per ticket</p>
                       </div>

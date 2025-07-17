@@ -35,7 +35,8 @@ const purchaseSchema = z.object({
       attendeeEmail: z.string().email({ message: 'Please enter a valid email address.' }),
     })
   ).min(1, 'At least one attendee is required.'),
-  momoNumber: z.string().min(10, 'Please enter a valid phone number.'),
+  // MoMo number is now optional as it's not needed for free events
+  momoNumber: z.string().min(10, 'Please enter a valid phone number.').optional().or(z.literal('')),
 });
 
 type PurchaseFormValues = z.infer<typeof purchaseSchema>;
@@ -58,25 +59,30 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
     control: form.control,
     name: "attendees"
   });
+  
+  const isFree = event.price === 0;
 
   useEffect(() => {
-    const currentCount = fields.length;
-    if (quantity > currentCount) {
-      for (let i = 0; i < quantity - currentCount; i++) {
-        append({ attendeeName: '', attendeeEmail: '' });
-      }
-    } else if (quantity < currentCount) {
-      for (let i = 0; i < currentCount - quantity; i++) {
-        remove(currentCount - 1 - i);
-      }
+    // When the dialog opens, reset form with the correct number of attendees
+    if (isOpen) {
+        const currentCount = form.getValues('attendees').length;
+        if (quantity > currentCount) {
+            for (let i = 0; i < quantity - currentCount; i++) {
+                append({ attendeeName: '', attendeeEmail: '' });
+            }
+        } else if (quantity < currentCount) {
+            for (let i = 0; i < currentCount - quantity; i++) {
+                remove(currentCount - 1 - i);
+            }
+        }
     }
-  }, [quantity, fields.length, append, remove]);
+  }, [quantity, isOpen, append, remove, form]);
   
   const handlePurchase = async (data: PurchaseFormValues) => {
     setIsSubmitting(true);
     
     // For free events, just add the tickets directly
-    if (event.price === 0) {
+    if (isFree) {
       try {
         const response = await fetch('/api/add-ticket', {
             method: 'POST',
@@ -107,6 +113,12 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
     }
 
     // For paid events, call the payment API
+    if (!data.momoNumber) {
+        toast({variant: 'destructive', title: 'Payment Failed', description: 'Mobile Money number is required.'});
+        setIsSubmitting(false);
+        return;
+    }
+
     try {
       setPaymentStep('approval');
       const paymentResponse = await fetch('/api/payments/create-intent', {
@@ -135,8 +147,6 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
         description: 'Approve the transaction by entering your MoMo PIN.',
       });
       
-      // For this demo, we'll assume the webhook would confirm payment instantly.
-      // In a real app, you would wait for a webhook from MTN before creating the ticket.
       const ticketResponse = await fetch('/api/add-ticket', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -149,10 +159,6 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
 
       if (!ticketResponse.ok) throw new Error("Ticket creation failed after payment.");
       
-      // Since the dialog might close before webhook, we don't show a success message here,
-      // as the email confirmation serves that purpose. The "awaiting approval" state is sufficient.
-      // The user can close the dialog.
-
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -160,14 +166,13 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
         description: error.message || 'Could not initiate payment.',
       });
       setPaymentStep('details');
-      setIsSubmitting(false);
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
-  const isFree = event.price === 0;
-
   const resetState = () => {
-    form.reset();
+    form.reset({attendees: [{ attendeeName: '', attendeeEmail: '' }], momoNumber: ''});
     setQuantity(1);
     setPaymentStep('details');
     setIsSubmitting(false);
