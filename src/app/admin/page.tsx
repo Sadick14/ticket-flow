@@ -29,14 +29,14 @@ export default function AdminDashboardPage() {
     async function fetchAnalytics() {
       try {
         const response = await fetch('/api/analytics');
+        const data = await response.json();
         if (!response.ok) {
-          throw new Error('Failed to fetch analytics data');
+          throw new Error(data.error || 'Failed to fetch analytics data');
         }
-        const data: AnalyticsData = await response.json();
         setAnalytics(data);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Analytics fetch error:", error);
-        setAnalyticsError("Could not load visitor analytics. Check API configuration.");
+        setAnalyticsError(error.message || "Could not load visitor analytics.");
       }
     }
     fetchAnalytics();
@@ -181,7 +181,9 @@ export default function AdminDashboardPage() {
             {analytics === null && !analyticsError ? (
                 <Loader2 className="h-6 w-6 animate-spin" />
             ) : analyticsError ? (
-                <AlertCircle className="h-6 w-6 text-destructive" title={analyticsError} />
+                <div className="text-destructive text-sm" title={analyticsError}>
+                    <AlertCircle className="h-6 w-6" />
+                </div>
             ) : (
                 <div className="text-2xl font-bold">{analytics?.activeUsers}</div>
             )}
@@ -268,7 +270,7 @@ export default function AdminDashboardPage() {
             <CardContent className="grid grid-cols-3 gap-4 text-center">
                  <div>
                     <p className="text-sm text-muted-foreground">Visitors</p>
-                    {analytics === null && !analyticsError ? <Loader2 className="h-5 w-5 mx-auto animate-spin" /> : <p className="text-2xl font-bold">{analytics?.sessions ?? 'N/A'}</p>}
+                    {analytics === null && !analyticsError ? <Loader2 className="h-5 w-5 mx-auto animate-spin" /> : analyticsError ? <AlertCircle className="h-5 w-5 mx-auto text-destructive" title={analyticsError} /> : <p className="text-2xl font-bold">{analytics?.sessions ?? 'N/A'}</p>}
                 </div>
                 <div>
                     <p className="text-sm text-muted-foreground">New Users</p>
@@ -276,7 +278,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                     <p className="text-sm text-muted-foreground">Avg. Time</p>
-                    {analytics === null && !analyticsError ? <Loader2 className="h-5 w-5 mx-auto animate-spin" /> : <p className="text-2xl font-bold">{analytics?.avgSessionDuration ?? 'N/A'}</p>}
+                    {analytics === null && !analyticsError ? <Loader2 className="h-5 w-5 mx-auto animate-spin" /> : analyticsError ? <AlertCircle className="h-5 w-5 mx-auto text-destructive" title={analyticsError} /> : <p className="text-2xl font-bold">{analytics?.avgSessionDuration ?? 'N/A'}</p>}
                 </div>
             </CardContent>
         </Card>
