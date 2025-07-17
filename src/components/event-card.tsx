@@ -29,8 +29,8 @@ export function EventCard({ event }: EventCardProps) {
   const isDashboard = pathname.startsWith('/dashboard');
 
   return (
-    <Link href={`/events/${event.id}`} className="group block">
-      <Card className="h-full overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 border-border/60">
+    <Card className="h-full overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 border-border/60 group flex flex-col">
+      <Link href={`/events/${event.id}`} className="block">
         <div className="relative h-40 w-full overflow-hidden">
           <Image 
             src={event.imageUrl} 
@@ -41,7 +41,9 @@ export function EventCard({ event }: EventCardProps) {
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         </div>
-        <CardContent className="p-3 flex-grow flex flex-col justify-between">
+      </Link>
+      <CardContent className="p-3 flex-grow flex flex-col justify-between">
+        <Link href={`/events/${event.id}`} className="block">
           <div>
             <h3 className="font-bold text-base leading-tight line-clamp-2 text-foreground mb-1 group-hover:text-primary transition-colors">
               {event.name}
@@ -49,13 +51,13 @@ export function EventCard({ event }: EventCardProps) {
             <p className="text-sm font-semibold text-primary/80 mb-1">{formatRelativeDate(eventDate)}</p>
             <p className="text-sm text-muted-foreground line-clamp-1">{event.location}</p>
           </div>
-          <div className="mt-2">
-            <div className="inline-block bg-orange-100 text-orange-600 text-xs font-bold px-3 py-1 rounded-full">
-              {getPriceDisplay(event.price)}
-            </div>
+        </Link>
+        <div className="mt-2">
+          <div className="inline-block bg-orange-100 text-orange-600 text-xs font-bold px-3 py-1 rounded-full">
+            {getPriceDisplay(event.price)}
           </div>
-        </CardContent>
-      </Card>
-    </Link>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
