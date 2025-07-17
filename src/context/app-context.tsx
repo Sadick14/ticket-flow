@@ -45,7 +45,7 @@ interface AppContextType {
   updateNewsArticle: (id: string, articleData: Partial<Omit<NewsArticle, 'id' | 'publishedDate'>>) => Promise<void>;
   deleteNewsArticle: (id: string) => Promise<void>;
   // Featured Article
-  setFeaturedArticle: (article: Omit<FeaturedArticle, 'id' | 'updatedAt'>) => Promise<void>;
+  saveFeaturedArticle: (article: Omit<FeaturedArticle, 'id' | 'updatedAt'>) => Promise<void>;
   // Subscribers
   addSubscriber: (email: string, name?: string) => Promise<void>;
   deleteSubscriber: (id: string) => Promise<void>;
@@ -336,7 +336,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Featured Article
-  const setFeaturedArticle = async (article: Omit<FeaturedArticle, 'id' | 'updatedAt'>) => {
+  const saveFeaturedArticle = async (article: Omit<FeaturedArticle, 'id' | 'updatedAt'>) => {
     try {
       const articleRef = doc(db, 'featured_content', 'current');
       await setDoc(articleRef, { ...article, updatedAt: serverTimestamp() });
@@ -470,7 +470,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addNewsArticle,
       updateNewsArticle,
       deleteNewsArticle,
-      setFeaturedArticle,
+      saveFeaturedArticle,
       addSubscriber,
       deleteSubscriber,
       bulkAddSubscribers,

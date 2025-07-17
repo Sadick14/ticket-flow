@@ -20,7 +20,7 @@ interface ArticleData {
 }
 
 export default function FeaturedArticleAdminPage() {
-  const { featuredArticle, setFeaturedArticle, loading: contextLoading } = useAppContext();
+  const { featuredArticle, saveFeaturedArticle, loading: contextLoading } = useAppContext();
   const { toast } = useToast();
 
   const [topic, setTopic] = useState('Tips for successful event management');
@@ -51,7 +51,7 @@ export default function FeaturedArticleAdminPage() {
     if (!generatedArticle) return;
     setIsSaving(true);
     try {
-      await setFeaturedArticle(generatedArticle);
+      await saveFeaturedArticle(generatedArticle);
       toast({ title: 'Featured Article Updated!', description: 'The new article is now live on the homepage.' });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not save the new article.' });
