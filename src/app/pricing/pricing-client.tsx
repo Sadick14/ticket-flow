@@ -10,13 +10,12 @@ const plans = [
   {
     name: 'Free',
     commission: '0%',
-    description: 'Create and share events for free. No ticketing fees.',
+    description: 'Create and share unlimited free events. No ticketing fees.',
     features: [
-      'Event Creation & Management',
-      'Attendee Registration', 
+      'Unlimited free events',
+      'Attendee Registration',
       'Basic event analytics',
-      'Export Free Registrations',
-      'SMS Notifications'
+      'Standard email support'
     ],
     cta: 'GET STARTED FOR FREE',
     ctaLink: '/create',
@@ -25,13 +24,12 @@ const plans = [
   {
     name: 'Essential',
     commission: '3%',
-    description: 'Affordable ticketing for small events with essential tools.',
+    description: 'Affordable ticketing for paid events with essential tools.',
     features: [
-      'Paid Ticketing',
+      'Sell paid tickets',
       'Multiple Ticket Types',
       'Promotional Codes',
-      'Waitlisted Payment Methods',
-      'Self service checkout'
+      'Featured on homepage'
     ],
     cta: 'GET STARTED',
     ctaLink: '/create',
@@ -42,11 +40,10 @@ const plans = [
     commission: '2%',
     description: 'Advanced features to grow your business and manage events effectively.',
     features: [
-      'Advanced ticketing + check-in',
+      'Lowest commission rate',
       'Advanced Social Sharing',
       'Embedded Ticket Widget',
-      'Multiple Payment Gateways',
-      'Advanced Event Controls'
+      'Priority Support'
     ],
     cta: 'GET STARTED',
     ctaLink: '/create',
@@ -56,14 +53,12 @@ const plans = [
   {
     name: 'Custom',
     commission: 'Contact Us',
-    description: 'Top-tier features for large events with priority support.',
+    description: 'Top-tier features for large events with dedicated support.',
     features: [
-      'Advanced ticketing',
+      'Custom commission rates',
       'Advanced Integration',
-      'Developed Support',
-      'Personalised onboarding Liaison',
-      'API Access Support',
-      'No Ticket Limits'
+      'Developer Support',
+      'API Access'
     ],
     cta: 'CONTACT US',
     ctaLink: '/contact',
@@ -132,7 +127,7 @@ export default function PricingClientPage() {
                     <div className={`text-sm ${
                       plan.popular || plan.color === 'dark' ? 'text-gray-300' : 'text-muted-foreground'
                     }`}>
-                      {plan.name === 'Custom' ? 'Top-tier features' : 'Commission + payment processing'}
+                      {plan.name === 'Free' ? 'For free events' : 'Commission + payment processing'}
                     </div>
                   </div>
                   <p className={`mb-8 h-20 ${
@@ -174,7 +169,7 @@ export default function PricingClientPage() {
 
           <div className="text-center mt-16">
             <p className="text-muted-foreground text-sm">
-              <span className="font-semibold text-destructive">Important:</span> Booking and payment processing fees are separate from plan pricing.
+              <span className="font-semibold text-destructive">Important:</span> Payment processing fees are separate from the commission rates.
             </p>
           </div>
         </div>

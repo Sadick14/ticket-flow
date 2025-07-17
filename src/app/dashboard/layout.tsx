@@ -53,8 +53,9 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const isActive = (path: string) => pathname === path;
   
-  const hasStarterPlan = user?.subscriptionPlan === 'Starter' || user?.subscriptionPlan === 'Pro';
-  const hasProPlan = user?.subscriptionPlan === 'Pro';
+  // For now, we will assume all users have access to all features
+  // until a more granular permission system is built.
+  const hasAdvancedFeatures = true;
 
   return (
     <SidebarProvider>
@@ -147,7 +148,7 @@ export default function DashboardLayout({
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {hasStarterPlan && (
+              {hasAdvancedFeatures && (
                 <>
                   <Separator className="my-2 bg-sidebar-border" />
                   <SidebarMenuItem>
@@ -180,9 +181,6 @@ export default function DashboardLayout({
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                </>
-              )}
-              {hasProPlan && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
@@ -198,6 +196,7 @@ export default function DashboardLayout({
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+              </>
               )}
                <Separator className="my-2 bg-sidebar-border" />
                <SidebarMenuItem>
@@ -228,7 +227,6 @@ export default function DashboardLayout({
                             </Avatar>
                             <div className="flex-1 text-left overflow-hidden">
                                 <p className="text-sm font-medium truncate text-white">{user.displayName}</p>
-                                <Badge variant="secondary" className="mt-1 bg-sidebar-accent text-white">{user.subscriptionPlan} Plan</Badge>
                             </div>
                         </Button>
                     </DropdownMenuTrigger>

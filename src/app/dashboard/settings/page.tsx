@@ -229,15 +229,7 @@ export default function SettingsPage() {
       description: 'Your data export will be emailed to you within 24 hours.',
     });
   };
-
-  const planFeatures = {
-    Free: ['Up to 1 event', 'Basic dashboard', 'Standard email support'],
-    Starter: ['Up to 10 events', 'Sales & Marketing Tools', 'Team Collaboration', 'Priority email support'],
-    Pro: ['Up to 45 events', 'Advanced Analytics', 'Team Collaboration', 'Dedicated phone support', 'API Access'],
-  };
-
-  const hasPaidPlan = user?.subscriptionPlan === 'Starter' || user?.subscriptionPlan === 'Pro';
-
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -248,10 +240,9 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="team">Team</TabsTrigger>
-          <TabsTrigger value="subscription">Subscription</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
@@ -344,99 +335,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="team">
-          {hasPaidPlan ? (
-            <TeamManager />
-          ) : (
-             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Users2 className="h-5 w-5" />Team Management</CardTitle>
-                    <CardDescription>Upgrade to a paid plan to add collaborators to your events.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Alert className="border-yellow-500 text-yellow-700">
-                      <Zap className="h-4 w-4" />
-                      <AlertTitle className="text-yellow-800 font-bold">Premium Feature</AlertTitle>
-                      <AlertDescription>
-                        Team collaboration is available on our Starter and Pro plans.
-                      </AlertDescription>
-                    </Alert>
-                    <Button asChild className="mt-4">
-                        <Link href="/pricing">Upgrade Plan</Link>
-                    </Button>
-                </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="subscription" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Current Plan
-              </CardTitle>
-              <CardDescription>Manage your subscription and billing</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Current Plan */}
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    {user?.subscriptionPlan === 'Pro' ? (
-                      <Crown className="h-5 w-5 text-yellow-600" />
-                    ) : user?.subscriptionPlan === 'Starter' ? (
-                      <Zap className="h-5 w-5 text-blue-600" />
-                    ) : (
-                      <Star className="h-5 w-5 text-gray-600" />
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">{user?.subscriptionPlan || 'Free'} Plan</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {user?.subscriptionPlan === 'Free' ? 'Basic features included' : 'Advanced features enabled'}
-                    </p>
-                  </div>
-                </div>
-                <Badge variant={user?.subscriptionPlan === 'Free' ? 'secondary' : 'default'}>
-                  {user?.subscriptionPlan === 'Free' ? 'Free' : 'Active'}
-                </Badge>
-              </div>
-
-              {/* Plan Features */}
-              <div>
-                <h4 className="font-medium mb-3">Your Plan Includes:</h4>
-                <div className="space-y-2">
-                  {planFeatures[user?.subscriptionPlan as keyof typeof planFeatures || 'Free']?.map((feature, index) => (
-                    <div key={index} className="flex items-center gap-2 text-sm">
-                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                      {feature}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Upgrade Section */}
-              {user?.subscriptionPlan === 'Free' && (
-                <Alert>
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>
-                    You're on the Free plan. Upgrade to create more events and access advanced features.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <div className="flex gap-2">
-                {user?.subscriptionPlan !== 'Pro' && (
-                  <Button asChild>
-                    <Link href="/pricing">Upgrade Plan</Link>
-                  </Button>
-                )}
-                <Button variant="outline">
-                  View Billing History
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <TeamManager />
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-4">
