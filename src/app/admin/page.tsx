@@ -3,9 +3,9 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppContext } from '@/context/app-context';
-import { Users, Ticket, DollarSign, Eye, RefreshCw, Star } from 'lucide-react';
-import { useMemo } from 'react';
-import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
+import { Users, Ticket, DollarSign, Eye, Star, Loader2, AlertCircle } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { format, subDays, eachDayOfInterval } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -14,8 +14,33 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
+interface AnalyticsData {
+    activeUsers: number;
+    sessions: number;
+    avgSessionDuration: string;
+}
+
 export default function AdminDashboardPage() {
   const { events, tickets, news, users } = useAppContext();
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchAnalytics() {
+      try {
+        const response = await fetch('/api/analytics');
+        if (!response.ok) {
+          throw new Error('Failed to fetch analytics data');
+        }
+        const data: AnalyticsData = await response.json();
+        setAnalytics(data);
+      } catch (error) {
+        console.error("Analytics fetch error:", error);
+        setAnalyticsError("Could not load visitor analytics. Check API configuration.");
+      }
+    }
+    fetchAnalytics();
+  }, []);
 
   const totalRevenue = useMemo(() => {
     return tickets.reduce((sum, ticket) => sum + (ticket.price || 0), 0);
@@ -62,13 +87,6 @@ export default function AdminDashboardPage() {
     // Assuming users are sorted by join date from context, otherwise we'd need a join date field
     return [...users].reverse().slice(0, 5);
   }, [users]);
-
-  // Mock data for visitor analytics. In a real app, this would come from an API call to Google Analytics.
-  const visitorData = {
-    activeUsers: 28,
-    sessions: 310,
-    avgSessionDuration: '2m 15s',
-  };
 
   const chartConfig = {
     revenue: {
@@ -134,7 +152,13 @@ export default function AdminDashboardPage() {
             <Eye className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{visitorData.activeUsers}</div>
+            {analytics === null && !analyticsError ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+            ) : analyticsError ? (
+                <AlertCircle className="h-6 w-6 text-destructive" title={analyticsError} />
+            ) : (
+                <div className="text-2xl font-bold">{analytics?.activeUsers}</div>
+            )}
             <p className="text-xs text-muted-foreground">Users on the site right now</p>
           </CardContent>
         </Card>
@@ -207,10 +231,10 @@ export default function AdminDashboardPage() {
             <CardHeader>
                 <CardTitle>Website Analytics</CardTitle>
                 <CardDescription>
-                    Summary of user engagement.
+                    Summary of user engagement from Google Analytics.
                     <Button variant="link" asChild className="p-0 h-auto ml-1">
                       <a href="https://analytics.google.com/" target="_blank" rel="noopener noreferrer">
-                        View on Google Analytics
+                        View Full Report
                       </a>
                     </Button>
                 </CardDescription>
@@ -218,7 +242,7 @@ export default function AdminDashboardPage() {
             <CardContent className="grid grid-cols-3 gap-4 text-center">
                  <div>
                     <p className="text-sm text-muted-foreground">Visitors</p>
-                    <p className="text-2xl font-bold">{visitorData.sessions}</p>
+                    {analytics === null && !analyticsError ? <Loader2 className="h-5 w-5 mx-auto animate-spin" /> : <p className="text-2xl font-bold">{analytics?.sessions ?? 'N/A'}</p>}
                 </div>
                 <div>
                     <p className="text-sm text-muted-foreground">New Users</p>
@@ -226,7 +250,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                     <p className="text-sm text-muted-foreground">Avg. Time</p>
-                    <p className="text-2xl font-bold">{visitorData.avgSessionDuration}</p>
+                    {analytics === null && !analyticsError ? <Loader2 className="h-5 w-5 mx-auto animate-spin" /> : <p className="text-2xl font-bold">{analytics?.avgSessionDuration ?? 'N/A'}</p>}
                 </div>
             </CardContent>
         </Card>
