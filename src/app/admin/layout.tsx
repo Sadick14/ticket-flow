@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
-import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users, Archive, Users2, MessageSquare, Calendar, CreditCard } from 'lucide-react';
+import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users, Archive, Users2, MessageSquare, Calendar, CreditCard, Image as ImageIcon } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -137,6 +137,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/admin/featured-article')}
+                  tooltip={{ children: 'Featured Article' }}
+                >
+                  <Link href="/admin/featured-article">
+                    <ImageIcon />
+                    <span>Featured Article</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
                <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -238,6 +250,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   {pathname.startsWith('/admin/users') && 'User Management'}
                   {pathname.startsWith('/admin/contact-messages') && 'Contact Messages'}
                   {pathname.startsWith('/admin/news') && 'News Management'}
+                  {pathname.startsWith('/admin/featured-article') && 'Featured Article'}
                   {pathname.startsWith('/admin/subscribers') && 'Subscriber Management'}
                   {pathname.startsWith('/admin/emails') && 'Email Management'}
                   {pathname.startsWith('/admin/archived-events') && 'Archived Events'}

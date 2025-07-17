@@ -17,10 +17,11 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CategoryFilters } from '@/components/category-filters';
+import ReactMarkdown from 'react-markdown';
 
 
 export default function HomePage() {
-  const { events, news, loading, addSubscriber } = useAppContext();
+  const { events, news, loading, addSubscriber, featuredArticle } = useAppContext();
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
   const { toast } = useToast();
@@ -217,33 +218,37 @@ export default function HomePage() {
             </motion.div>
         </section>
 
-        {/* Stats Section */}
-        <section className="bg-background py-16">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              <div className="p-4">
-                <div className="text-4xl font-bold text-primary">10K+</div>
-                <div className="text-muted-foreground mt-1">Events Hosted</div>
-              </div>
-              <div className="p-4">
-                <div className="text-4xl font-bold text-primary">500K+</div>
-                <div className="text-muted-foreground mt-1">Tickets Sold</div>
-              </div>
-              <div className="p-4">
-                <div className="text-4xl font-bold text-primary">50K+</div>
-                <div className="text-muted-foreground mt-1">Happy Organizers</div>
-              </div>
-              <div className="p-4">
-                <div className="text-4xl font-bold text-primary">20+</div>
-                <div className="text-muted-foreground mt-1">Countries Served</div>
-              </div>
+        {/* Featured Article Section */}
+        {featuredArticle && (
+          <section className="py-24 bg-background">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <Card className="overflow-hidden lg:grid lg:grid-cols-2 lg:items-center">
+                <div className="relative h-64 lg:h-full">
+                  <Image 
+                    src={featuredArticle.imageUrl}
+                    alt={featuredArticle.title}
+                    layout="fill"
+                    objectFit="cover"
+                    className="transition-transform duration-300 hover:scale-105"
+                  />
+                </div>
+                <div className="p-8 lg:p-12">
+                  <CardDescription className="text-primary font-semibold uppercase tracking-wide">Featured Insight</CardDescription>
+                  <CardTitle className="mt-2 text-3xl font-bold">{featuredArticle.title}</CardTitle>
+                  <CardContent className="p-0 mt-4">
+                    <div className="prose prose-lg text-muted-foreground">
+                      <ReactMarkdown>{featuredArticle.content}</ReactMarkdown>
+                    </div>
+                  </CardContent>
+                </div>
+              </Card>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
 
         {/* Feature Showcase Section */}
-        <section className="py-24 bg-background">
+        <section className="py-24 bg-muted/40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
@@ -280,7 +285,7 @@ export default function HomePage() {
         </section>
 
         {/* How It Works Section */}
-        <section className="py-24 bg-muted/40">
+        <section className="py-24 bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
@@ -310,7 +315,7 @@ export default function HomePage() {
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: index * 0.15 }}
                         viewport={{ once: true }}
-                        className="text-center bg-background p-8 rounded-xl shadow-lg border"
+                        className="text-center bg-muted/40 p-8 rounded-xl shadow-lg border"
                       >
                         <div className="flex items-center justify-center mb-6">
                             <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary border-2 border-primary/20">
@@ -336,7 +341,7 @@ export default function HomePage() {
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: index * 0.15 }}
                         viewport={{ once: true }}
-                        className="text-center bg-background p-8 rounded-xl shadow-lg border"
+                        className="text-center bg-muted/40 p-8 rounded-xl shadow-lg border"
                       >
                         <div className="flex items-center justify-center mb-6">
                             <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary border-2 border-primary/20">
@@ -356,7 +361,7 @@ export default function HomePage() {
         </section>
         
         {/* New Event Discovery Section */}
-        <section id="events" className="py-24 bg-background">
+        <section id="events" className="py-24 bg-muted/40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
              <div className="text-center mb-16">
               <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
@@ -400,7 +405,7 @@ export default function HomePage() {
 
 
         {/* News Section */}
-        <section className="py-24 bg-muted/40">
+        <section className="py-24 bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <div className="inline-block bg-primary/10 text-primary text-sm font-semibold px-4 py-2 rounded-full mb-4">
@@ -441,7 +446,7 @@ export default function HomePage() {
         </section>
 
         {/* Subscription Section */}
-        <section className="py-24 bg-background">
+        <section className="py-24 bg-muted/40">
           <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <Mail className="mx-auto h-12 w-12 text-primary mb-4" />
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">

@@ -1,10 +1,11 @@
 
+
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission, Message } from '@/lib/types';
+import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission, Message, FeaturedArticle } from '@/lib/types';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy, serverTimestamp, writeBatch, documentId } from 'firebase/firestore';
+import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy, serverTimestamp, writeBatch, documentId, setDoc } from 'firebase/firestore';
 
 interface AppContextType {
   events: Event[];
@@ -13,6 +14,7 @@ interface AppContextType {
   users: UserProfile[];
   launchSubscribers: LaunchSubscriber[];
   contactSubmissions: ContactSubmission[];
+  featuredArticle: FeaturedArticle | null;
   loading: boolean;
   // Events
   addEvent: (event: Omit<Event, 'id' | 'collaboratorIds' | 'status'>) => Promise<void>;
@@ -42,6 +44,8 @@ interface AppContextType {
   addNewsArticle: (article: Omit<NewsArticle, 'id'>) => Promise<void>;
   updateNewsArticle: (id: string, articleData: Partial<Omit<NewsArticle, 'id' | 'publishedDate'>>) => Promise<void>;
   deleteNewsArticle: (id: string) => Promise<void>;
+  // Featured Article
+  setFeaturedArticle: (article: Omit<FeaturedArticle, 'id' | 'updatedAt'>) => Promise<void>;
   // Subscribers
   addSubscriber: (email: string, name?: string) => Promise<void>;
   deleteSubscriber: (id: string) => Promise<void>;
@@ -71,6 +75,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [launchSubscribers, setLaunchSubscribers] = useState<LaunchSubscriber[]>([]);
   const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
+  const [featuredArticle, setFeaturedArticle] = useState<FeaturedArticle | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchAllData = useCallback(async () => {
@@ -81,7 +86,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             newsSnapshot, 
             usersSnapshot,
             launchSubscribersSnapshot,
-            contactSubmissionsSnapshot
+            contactSubmissionsSnapshot,
+            featuredArticleDoc
         ] = await Promise.all([
             getDocs(query(collection(db, 'events'))),
             getDocs(query(collection(db, 'tickets'))),
@@ -89,6 +95,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             getDocs(query(collection(db, 'users'))),
             getDocs(query(collection(db, 'launch_subscribers'), orderBy('subscribedAt', 'desc'))),
             getDocs(query(collection(db, 'contact_submissions'), orderBy('submittedAt', 'desc'))),
+            getDoc(doc(db, 'featured_content', 'current')),
         ]);
 
         setEvents(removeDuplicates(eventsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event))));
@@ -97,6 +104,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setUsers(usersSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile)));
         setLaunchSubscribers(launchSubscribersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LaunchSubscriber)));
         setContactSubmissions(contactSubmissionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ContactSubmission)));
+        
+        if (featuredArticleDoc.exists()) {
+            setFeaturedArticle({ id: featuredArticleDoc.id, ...featuredArticleDoc.data() } as FeaturedArticle);
+        }
+
     } catch (error) {
         console.error("Error fetching data:", error);
     }
@@ -323,6 +335,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Featured Article
+  const setFeaturedArticle = async (article: Omit<FeaturedArticle, 'id' | 'updatedAt'>) => {
+    try {
+      const articleRef = doc(db, 'featured_content', 'current');
+      await setDoc(articleRef, { ...article, updatedAt: serverTimestamp() });
+      await fetchAllData();
+    } catch (error) {
+      console.error("Error setting featured article:", error);
+      throw error;
+    }
+  }
+
   // Subscribers
   const addSubscriber = async (email: string, name?: string) => {
     if (!email) throw new Error("Email is required.");
@@ -425,6 +449,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       users,
       launchSubscribers,
       contactSubmissions,
+      featuredArticle,
       loading, 
       addEvent, 
       updateEvent, 
@@ -445,6 +470,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addNewsArticle,
       updateNewsArticle,
       deleteNewsArticle,
+      setFeaturedArticle,
       addSubscriber,
       deleteSubscriber,
       bulkAddSubscribers,

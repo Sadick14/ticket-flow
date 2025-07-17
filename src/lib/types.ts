@@ -85,6 +85,14 @@ export interface NewsArticle {
   gallery: { url: string }[];
 }
 
+export interface FeaturedArticle {
+  id: string; // Usually a singleton doc, e.g., 'current'
+  title: string;
+  content: string; // Markdown content
+  imageUrl: string;
+  updatedAt: any; // Firestore ServerTimestamp
+}
+
 export interface LaunchSubscriber {
     id: string;
     name: string;
