@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -344,26 +345,26 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
                 <Alert>
                   <Wallet className="h-4 w-4" />
                   <AlertDescription>
-                    Flutterwave supports bank transfers across Africa. Great for Nigeria, Ghana, Kenya, and more.
+                    Recommended for Ghana & Nigeria. Flutterwave supports payouts to bank accounts and <strong>Mobile Money (MTN MoMo, etc.)</strong>.
                   </AlertDescription>
                 </Alert>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="accountNumber">Account Number</Label>
+                    <Label htmlFor="accountNumber">Account Number / MoMo Number</Label>
                     <Input
                       id="accountNumber"
                       value={bankDetails.accountNumber}
                       onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
-                      placeholder="Bank account number"
+                      placeholder="Bank account or MoMo number"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="bankName">Bank Name</Label>
+                    <Label htmlFor="bankName">Bank / Mobile Network</Label>
                     <Input
                       id="bankName"
                       value={bankDetails.bankName}
                       onChange={(e) => setBankDetails({...bankDetails, bankName: e.target.value})}
-                      placeholder="Your bank name"
+                      placeholder="e.g., MTN, GCB, etc."
                     />
                   </div>
                 </div>

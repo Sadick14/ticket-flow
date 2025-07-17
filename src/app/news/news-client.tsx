@@ -66,6 +66,7 @@ export default function NewsPageClient() {
     <div className="min-h-screen">
       <PageHero
         title="In The News"
+        backgroundImage = "/news.jpg"
         description="Stay up-to-date with the latest trends, stories, and announcements from the event world."
       />
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">

@@ -78,9 +78,10 @@ export default function AboutClientPage() {
       {/* Hero Section */}
       <PageHero 
         title="About TicketFlow"
+        backgroundImage = "/3.jpg"
         description="We're on a mission to democratize event creation and make it easy for anyone to bring people together through memorable experiences."
         ctaText="Start Creating Events"
-        ctaLink="/create"
+        ctaLink="/admin/create"
         secondaryCtaText="Get in Touch"
         secondaryCtaLink="/contact"
         height="xl"

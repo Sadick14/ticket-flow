@@ -71,6 +71,7 @@ export default function EventsPageClient() {
     <div className="min-h-screen">
       <PageHero
         title="Discover Your Next Experience"
+        backgroundImage = "/event.jpg"
         description="Browse thousands of events, from local meetups to global conferences. Your next adventure awaits."
         height="lg"
       />

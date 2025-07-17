@@ -87,6 +87,7 @@ export default function PricingClientPage() {
         {/* Hero Section */}
         <PageHero
           title="Simple, Transparent Pricing"
+          backgroundImage = "/price.jpg"
           description="Choose a plan that scales with you. From free community gatherings to large-scale professional conferences, we have you covered."
           ctaText="GET STARTED FOR FREE"
           ctaLink="/dashboard/create"
