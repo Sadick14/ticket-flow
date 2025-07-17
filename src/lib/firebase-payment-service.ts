@@ -1,3 +1,4 @@
+
 // Firebase Payment Service for TicketFlow
 import { 
   collection, 
@@ -106,7 +107,7 @@ export class FirebasePaymentService {
     eventId: string,
     creatorId: string,
     amount: number,
-    gatewayId: 'stripe' | 'paypal' | 'razorpay' | 'flutterwave',
+    gatewayId: 'mtn-momo',
     paymentSplit: PaymentSplit,
     metadata?: Record<string, any>
   ): Promise<string> {
@@ -118,7 +119,7 @@ export class FirebasePaymentService {
         eventId,
         creatorId,
         amount,
-        currency: 'USD',
+        currency: 'GHS',
         paymentGateway: gatewayId,
         gatewayTransactionId: '',
         status: 'pending',
@@ -231,7 +232,7 @@ export class FirebasePaymentService {
       const payout: Omit<Payout, 'id'> = {
         creatorId,
         amount,
-        currency: 'USD',
+        currency: 'GHS',
         status: 'pending',
         paymentMethod: paymentMethod as any,
         transactionIds,
@@ -360,7 +361,7 @@ export class FirebasePaymentService {
       let processingFees = 0;
       let refunds = 0;
       
-      const gatewayBreakdown: Record<string, any> = {};
+      const gatewayBreakdown: any = {};
       
       querySnapshot.docs.forEach(doc => {
         const transaction = doc.data() as Transaction;

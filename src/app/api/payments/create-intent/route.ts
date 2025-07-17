@@ -1,17 +1,16 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { StripeGateway } from '@/lib/gateways/stripe';
-import { PayPalGateway } from '@/lib/gateways/paypal';
-// Other gateway imports can be added here
+// Import gateway logic as needed
+// import { MtnGateway } from '@/lib/gateways/mtn'; 
 
 interface PaymentIntentRequest {
   amount: number;
   currency?: string;
-  gatewayId: 'stripe' | 'paypal' | 'razorpay' | 'flutterwave';
+  gatewayId: 'mtn-momo';
   metadata: {
     eventId: string;
     ticketId: string;
     creatorId: string;
-    stripeConnectAccountId?: string; // For Stripe Connect
   };
 }
 
@@ -19,7 +18,7 @@ export async function POST(request: NextRequest) {
   try {
     const {
       amount,
-      currency = 'USD',
+      currency = 'GHS',
       gatewayId,
       metadata,
     }: PaymentIntentRequest = await request.json();
@@ -31,30 +30,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let paymentIntent;
-
-    switch (gatewayId) {
-      case 'stripe':
-        paymentIntent = await StripeGateway.createPaymentIntent(
-          amount,
-          currency,
-          metadata
-        );
-        return NextResponse.json({ clientSecret: paymentIntent.client_secret });
+    if (gatewayId === 'mtn-momo') {
+      // Placeholder for direct MTN MoMo API integration
+      // const paymentIntent = await MtnGateway.createPaymentRequest(amount, currency, metadata);
+      // return NextResponse.json({ clientSecret: paymentIntent.transactionId, ... });
       
-      case 'paypal':
-        // The PayPal flow is different (order creation, not an intent)
-        const order = await PayPalGateway.createOrder(amount, currency, metadata);
-        return NextResponse.json({ orderId: order.id });
-      
-      // Add other gateway cases here
-      
-      default:
-        return NextResponse.json(
-          { error: 'Unsupported payment gateway' },
-          { status: 400 }
-        );
+      // For now, return a success placeholder as the API is not yet provided
+      return NextResponse.json({ 
+        success: true, 
+        message: 'MTN MoMo payment initiated (placeholder).',
+        transactionId: `test_momo_${Date.now()}` 
+      });
     }
+    
+    return NextResponse.json(
+      { error: 'Unsupported payment gateway' },
+      { status: 400 }
+    );
+
   } catch (error) {
     console.error('Payment creation error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown server error';

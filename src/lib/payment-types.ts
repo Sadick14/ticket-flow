@@ -1,7 +1,8 @@
+
 // Payment system types and interfaces
 
 export interface PaymentGateway {
-  id: 'stripe' | 'paypal' | 'razorpay' | 'flutterwave';
+  id: 'mtn-momo'; // | 'stripe' | 'paypal' | 'razorpay' | 'flutterwave';
   name: string;
   enabled: boolean;
   supportedCountries: string[];
@@ -51,7 +52,7 @@ export interface Payout {
   amount: number;
   currency: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  paymentMethod: 'bank_transfer' | 'paypal' | 'stripe_express';
+  paymentMethod: 'momo' | 'bank_transfer';
   transactionIds: string[]; // transactions included in this payout
   scheduledDate: string;
   processedDate?: string;
@@ -62,6 +63,8 @@ export interface Payout {
 export interface CreatorPaymentProfile {
   userId: string;
   preferredGateway: PaymentGateway['id'];
+  momoNumber?: string;
+  momoNetwork?: string;
   bankAccountDetails?: {
     accountNumber: string;
     routingNumber: string;

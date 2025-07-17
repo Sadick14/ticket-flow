@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -18,10 +17,9 @@ import {
   AlertCircle,
   CheckCircle,
   Wallet,
-  Info,
-  Ban
+  Info
 } from 'lucide-react';
-import { PAYMENT_GATEWAYS, PaymentCalculator } from '@/lib/payment-config';
+import { PAYMENT_GATEWAYS, PaymentCalculator, PAYMENT_CONFIG } from '@/lib/payment-config';
 import type { PaymentGateway, CreatorPaymentProfile } from '@/lib/payment-types';
 
 interface PaymentSetupProps {
@@ -31,57 +29,51 @@ interface PaymentSetupProps {
 }
 
 export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: PaymentSetupProps) {
-  const [selectedGateway, setSelectedGateway] = useState<PaymentGateway['id']>(
-    existingProfile?.preferredGateway || 'stripe'
-  );
+  const mtnGateway = PAYMENT_GATEWAYS.find(g => g.id === 'mtn-momo')!;
+  
   const [payoutSchedule, setPayoutSchedule] = useState<'daily' | 'weekly' | 'monthly'>(
     existingProfile?.payoutSchedule || 'weekly'
   );
   const [minimumPayout, setMinimumPayout] = useState(
     existingProfile?.minimumPayoutAmount || 2000
   );
-
-  const [bankDetails, setBankDetails] = useState({
-    accountNumber: existingProfile?.bankAccountDetails?.accountNumber || '',
-    routingNumber: existingProfile?.bankAccountDetails?.routingNumber || '',
-    accountHolderName: existingProfile?.bankAccountDetails?.accountHolderName || '',
-    bankName: existingProfile?.bankAccountDetails?.bankName || '',
-    country: existingProfile?.bankAccountDetails?.country || 'US'
+  
+  const [momoDetails, setMomoDetails] = useState({
+    momoNumber: existingProfile?.momoNumber || '',
+    momoNetwork: existingProfile?.momoNetwork || 'MTN'
   });
 
-  const [paypalEmail, setPaypalEmail] = useState(existingProfile?.paypalEmail || '');
   const [taxInfo, setTaxInfo] = useState({
     taxId: existingProfile?.taxInformation?.taxId || '',
-    country: existingProfile?.taxInformation?.country || 'US',
+    country: existingProfile?.taxInformation?.country || 'GH',
     businessType: existingProfile?.taxInformation?.businessType || 'individual' as const
   });
-
-  const selectedGatewayConfig = PAYMENT_GATEWAYS.find(g => g.id === selectedGateway)!;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     const profile: Partial<CreatorPaymentProfile> = {
-      preferredGateway: selectedGateway,
+      preferredGateway: 'mtn-momo',
       payoutSchedule,
       minimumPayoutAmount: minimumPayout,
-      bankAccountDetails: selectedGateway === 'stripe' || selectedGateway === 'razorpay' ? bankDetails : undefined,
-      paypalEmail: selectedGateway === 'paypal' ? paypalEmail : undefined,
+      momoNumber: momoDetails.momoNumber,
+      momoNetwork: momoDetails.momoNetwork,
       taxInformation: taxInfo,
-      isVerified: false
+      isVerified: false,
+      paymentMethod: 'momo'
     };
 
     onComplete(profile);
   };
 
-  const exampleSplit = PaymentCalculator.calculatePaymentSplit(5000, selectedGatewayConfig); // $50 ticket
+  const exampleSplit = PaymentCalculator.calculatePaymentSplit(5000, mtnGateway);
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold">Payment Setup</h1>
         <p className="text-muted-foreground">
-          Configure your payment preferences to receive earnings from ticket sales
+          Configure your MTN Mobile Money to receive earnings from ticket sales.
         </p>
       </div>
 
@@ -98,35 +90,35 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
             <div>
               <h4 className="font-semibold mb-2">Fee Structure</h4>
               <ul className="space-y-1 text-sm">
-                <li>• Platform Commission: <strong>5%</strong> (helps maintain the platform)</li>
-                <li>• Platform Fee: <strong>1%</strong> (operational costs)</li>
-                <li>• Payment Processing: <strong>Varies by gateway</strong></li>
+                <li>• Platform Commission: <strong>{PAYMENT_CONFIG.adminCommissionRate * 100}%</strong> (helps maintain the platform)</li>
+                <li>• Platform Fee: <strong>{PAYMENT_CONFIG.platformFee * 100}%</strong> (operational costs)</li>
+                <li>• MTN MoMo Processing: <strong>{mtnGateway.processingFee}%</strong></li>
                 <li>• You receive the remaining amount</li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Example: $50 Ticket</h4>
+              <h4 className="font-semibold mb-2">Example: 50 GHS Ticket</h4>
               <div className="text-sm space-y-1">
                 <div className="flex justify-between">
                   <span>Ticket Price:</span>
-                  <span>$50.00</span>
+                  <span>{PaymentCalculator.formatCurrency(5000)}</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Platform Commission (5%):</span>
-                  <span>-${(exampleSplit.adminCommission / 100).toFixed(2)}</span>
+                  <span>Platform Commission ({PAYMENT_CONFIG.adminCommissionRate * 100}%):</span>
+                  <span>-{PaymentCalculator.formatCurrency(exampleSplit.adminCommission)}</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Platform Fee (1%):</span>
-                  <span>-${(exampleSplit.platformCommission / 100).toFixed(2)}</span>
+                  <span>Platform Fee ({PAYMENT_CONFIG.platformFee * 100}%):</span>
+                  <span>-{PaymentCalculator.formatCurrency(exampleSplit.platformCommission)}</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Processing Fee ({selectedGatewayConfig.processingFee}%):</span>
-                  <span>-${(exampleSplit.paymentProcessingFee / 100).toFixed(2)}</span>
+                  <span>Processing Fee ({mtnGateway.processingFee}%):</span>
+                  <span>-{PaymentCalculator.formatCurrency(exampleSplit.paymentProcessingFee)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-semibold text-green-600">
                   <span>You Receive:</span>
-                  <span>${(exampleSplit.creatorPayout / 100).toFixed(2)}</span>
+                  <span>{PaymentCalculator.formatCurrency(exampleSplit.creatorPayout)}</span>
                 </div>
               </div>
             </div>
@@ -135,69 +127,37 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
       </Card>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Payment Gateway Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Choose Your Payment Gateway</CardTitle>
-            <CardDescription>
-              Select your preferred payment processor. Different gateways have different fees and supported regions.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4">
-              {PAYMENT_GATEWAYS.map((gateway) => (
-                <div
-                  key={gateway.id}
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                    selectedGateway === gateway.id
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                  onClick={() => setSelectedGateway(gateway.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold">{gateway.name}</h4>
-                        {selectedGateway === gateway.id && (
-                          <Badge variant="secondary">Selected</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {gateway.processingFee}% + ${(gateway.fixedFee / 100).toFixed(2)} per transaction
-                      </p>
-                      <div className="flex gap-2 flex-wrap">
-                        {gateway.supportedCountries.slice(0, 5).map(country => (
-                          <Badge key={country} variant="outline" className="text-xs">
-                            {country}
-                          </Badge>
-                        ))}
-                        {gateway.supportedCountries.length > 5 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{gateway.supportedCountries.length - 5} more
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <CreditCard className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Payout Configuration */}
         <Card>
           <CardHeader>
             <CardTitle>Payout Settings</CardTitle>
             <CardDescription>
-              Configure when and how you want to receive your earnings
+              Configure when and how you want to receive your earnings via Mobile Money.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+             <div className="space-y-2">
+                <Label htmlFor="momoNumber">Mobile Money Number</Label>
+                <Input
+                    id="momoNumber"
+                    type="tel"
+                    value={momoDetails.momoNumber}
+                    onChange={(e) => setMomoDetails({...momoDetails, momoNumber: e.target.value})}
+                    placeholder="e.g., 024xxxxxxx"
+                    required
+                />
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="momoNetwork">Mobile Network</Label>
+                <Select value={momoDetails.momoNetwork} onValueChange={(value) => setMomoDetails({...momoDetails, momoNetwork: value})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="MTN">MTN</SelectItem>
+                        <SelectItem value="Vodafone">Vodafone Cash</SelectItem>
+                        <SelectItem value="AirtelTigo">AirtelTigo Money</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="payoutSchedule">Payout Schedule</Label>
@@ -215,11 +175,10 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
                   How often you want to receive payouts
                 </p>
               </div>
-              
               <div className="space-y-2">
-                <Label htmlFor="minimumPayout">Minimum Payout Amount</Label>
+                <Label htmlFor="minimumPayout">Minimum Payout Amount (GHS)</Label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">GH₵</span>
                   <Input
                     id="minimumPayout"
                     type="number"
@@ -231,145 +190,10 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Minimum: $10.00. Payouts below this amount will be held until reached.
+                  Minimum: 10.00 GHS. Payouts below this amount will be held.
                 </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Payment Method Setup */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Payment Method</CardTitle>
-            <CardDescription>
-              Set up how you want to receive your payouts
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={selectedGateway} className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="stripe">Stripe</TabsTrigger>
-                <TabsTrigger value="paypal">PayPal</TabsTrigger>
-                <TabsTrigger value="razorpay">Razorpay</TabsTrigger>
-                <TabsTrigger value="flutterwave">Flutterwave</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="stripe" className="space-y-4">
-                <Alert>
-                  <Shield className="h-4 w-4" />
-                  <AlertDescription>
-                    Stripe Connect will securely handle your payouts. You'll be redirected to Stripe to complete verification.
-                  </AlertDescription>
-                </Alert>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="accountHolder">Account Holder Name</Label>
-                    <Input
-                      id="accountHolder"
-                      value={bankDetails.accountHolderName}
-                      onChange={(e) => setBankDetails({...bankDetails, accountHolderName: e.target.value})}
-                      placeholder="Full legal name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="country">Country</Label>
-                    <Select value={bankDetails.country} onValueChange={(value) => setBankDetails({...bankDetails, country: value})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="US">United States</SelectItem>
-                        <SelectItem value="CA">Canada</SelectItem>
-                        <SelectItem value="GB">United Kingdom</SelectItem>
-                        <SelectItem value="AU">Australia</SelectItem>
-                        <SelectItem value="NG">Nigeria</SelectItem>
-                        <SelectItem value="GH">Ghana</SelectItem>
-                        <SelectItem value="KE">Kenya</SelectItem>
-                        <SelectItem value="ZA">South Africa</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="paypal" className="space-y-4">
-                <Alert>
-                  <Wallet className="h-4 w-4" />
-                  <AlertDescription>
-                    Enter your PayPal email address to receive payouts directly to your PayPal account.
-                  </AlertDescription>
-                </Alert>
-                <div className="space-y-2">
-                  <Label htmlFor="paypalEmail">PayPal Email Address</Label>
-                  <Input
-                    id="paypalEmail"
-                    type="email"
-                    value={paypalEmail}
-                    onChange={(e) => setPaypalEmail(e.target.value)}
-                    placeholder="your-email@example.com"
-                  />
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="razorpay" className="space-y-4">
-                <Alert>
-                  <Ban className="h-4 w-4" />
-                  <AlertDescription>
-                    Razorpay will handle payouts to your bank account. Popular in India and Southeast Asia.
-                  </AlertDescription>
-                </Alert>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="accountNumber">Account Number</Label>
-                    <Input
-                      id="accountNumber"
-                      value={bankDetails.accountNumber}
-                      onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
-                      placeholder="Bank account number"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="routingNumber">IFSC/Sort Code</Label>
-                    <Input
-                      id="routingNumber"
-                      value={bankDetails.routingNumber}
-                      onChange={(e) => setBankDetails({...bankDetails, routingNumber: e.target.value})}
-                      placeholder="Bank routing/IFSC code"
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="flutterwave" className="space-y-4">
-                <Alert>
-                  <Wallet className="h-4 w-4" />
-                  <AlertDescription>
-                    Recommended for Ghana & Nigeria. Flutterwave supports payouts to bank accounts and <strong>Mobile Money (MTN MoMo, etc.)</strong>.
-                  </AlertDescription>
-                </Alert>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="accountNumber">Account Number / MoMo Number</Label>
-                    <Input
-                      id="accountNumber"
-                      value={bankDetails.accountNumber}
-                      onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
-                      placeholder="Bank account or MoMo number"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="bankName">Bank / Mobile Network</Label>
-                    <Input
-                      id="bankName"
-                      value={bankDetails.bankName}
-                      onChange={(e) => setBankDetails({...bankDetails, bankName: e.target.value})}
-                      placeholder="e.g., MTN, GCB, etc."
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
           </CardContent>
         </Card>
 
@@ -395,7 +219,6 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
                   </SelectContent>
                 </Select>
               </div>
-              
               <div className="space-y-2">
                 <Label htmlFor="taxCountry">Tax Country</Label>
                 <Select value={taxInfo.country} onValueChange={(value) => setTaxInfo({...taxInfo, country: value})}>
@@ -403,25 +226,20 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="GH">Ghana</SelectItem>
+                    <SelectItem value="NG">Nigeria</SelectItem>
                     <SelectItem value="US">United States</SelectItem>
                     <SelectItem value="CA">Canada</SelectItem>
-                    <SelectItem value="GB">United Kingdom</SelectItem>
-                    <SelectItem value="AU">Australia</SelectItem>
-                    <SelectItem value="NG">Nigeria</SelectItem>
-                    <SelectItem value="GH">Ghana</SelectItem>
-                    <SelectItem value="KE">Kenya</SelectItem>
-                    <SelectItem value="ZA">South Africa</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              
               <div className="space-y-2">
-                <Label htmlFor="taxId">Tax ID (Optional)</Label>
+                <Label htmlFor="taxId">Tax ID (e.g., Ghana Card TIN)</Label>
                 <Input
                   id="taxId"
                   value={taxInfo.taxId}
                   onChange={(e) => setTaxInfo({...taxInfo, taxId: e.target.value})}
-                  placeholder="SSN, EIN, or Tax ID"
+                  placeholder="Optional but recommended"
                 />
               </div>
             </div>

@@ -1,3 +1,4 @@
+
 import type { 
   PaymentConfiguration, 
   PaymentGateway, 
@@ -7,6 +8,16 @@ import type {
 
 // Payment gateway configurations
 export const PAYMENT_GATEWAYS: PaymentGateway[] = [
+  {
+    id: 'mtn-momo',
+    name: 'MTN Mobile Money',
+    enabled: true,
+    supportedCountries: ['GH', 'NG', 'KE', 'ZA', 'UG', 'RW', 'ZM'],
+    processingFee: 1.5, // Example fee, adjust as needed
+    fixedFee: 0, 
+    currencies: ['GHS', 'NGN', 'KES', 'ZAR', 'UGX', 'RWF', 'ZMW']
+  },
+  /*
   {
     id: 'stripe',
     name: 'Stripe',
@@ -43,6 +54,7 @@ export const PAYMENT_GATEWAYS: PaymentGateway[] = [
     fixedFee: 0,
     currencies: ['NGN', 'GHS', 'KES', 'UGX', 'TZS', 'RWF', 'ZMW', 'ZAR', 'USD']
   }
+  */
 ];
 
 // Platform configuration
@@ -52,7 +64,7 @@ export const PAYMENT_CONFIG: PaymentConfiguration = {
   minimumPayout: 1000, // $10.00 minimum payout
   payoutSchedule: 'weekly',
   supportedGateways: PAYMENT_GATEWAYS,
-  defaultGateway: 'stripe'
+  defaultGateway: 'mtn-momo'
 };
 
 // Utility functions for payment calculations
@@ -125,11 +137,11 @@ export class PaymentCalculator {
     );
   }
   
-  static getBestGateway(country: string, currency: string, amount: number): PaymentGateway {
+  static getBestGateway(country: string, currency: string, amount: number): PaymentGateway | null {
     const availableGateways = this.getAvailableGateways(country, currency);
     
     if (availableGateways.length === 0) {
-      return PAYMENT_GATEWAYS.find(g => g.id === PAYMENT_CONFIG.defaultGateway)!;
+      return null;
     }
     
     // Find gateway with lowest total fee for this transaction
@@ -142,7 +154,7 @@ export class PaymentCalculator {
     return gatewayWithFees[0].gateway;
   }
   
-  static formatCurrency(amount: number, currency: string = 'USD'): string {
+  static formatCurrency(amount: number, currency: string = 'GHS'): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
