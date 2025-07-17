@@ -1,7 +1,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import type { Ticket } from '@/lib/types';
 
 interface AddTicketRequest {
   eventId: string;
@@ -17,29 +18,41 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required ticket data' }, { status: 400 });
     }
 
+    const batch = attendees.map(attendee => {
+        const newTicket: Omit<Ticket, 'id'> = {
+            eventId,
+            attendeeName: attendee.attendeeName,
+            attendeeEmail: attendee.attendeeEmail,
+            price,
+            purchaseDate: new Date().toISOString(), // This will be replaced by server timestamp
+            checkedIn: false,
+        };
+        return addDoc(collection(db, 'tickets'), {
+            ...newTicket,
+            purchaseDate: serverTimestamp()
+        });
+    });
+
+    await Promise.all(batch);
+
+    // After successfully creating tickets, send confirmation emails for each attendee
     for (const attendee of attendees) {
-      const newTicket = {
-        eventId,
-        attendeeName: attendee.attendeeName,
-        attendeeEmail: attendee.attendeeEmail,
-        price,
-        purchaseDate: new Date().toISOString(),
-        checkedIn: false,
-      };
-      // Add the ticket to Firestore
-      await addDoc(collection(db, 'tickets'), newTicket);
-      
-      // Send confirmation email
-      await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/send-confirmation`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventId,
-          attendeeName: attendee.attendeeName,
-          attendeeEmail: attendee.attendeeEmail,
-        }),
-      });
+        try {
+            await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/send-confirmation`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    eventId,
+                    attendeeName: attendee.attendeeName,
+                    attendeeEmail: attendee.attendeeEmail,
+                }),
+            });
+        } catch (emailError) {
+            // Log the email error but don't fail the whole request
+            console.error(`Failed to send confirmation email to ${attendee.attendeeEmail}:`, emailError);
+        }
     }
+
 
     return NextResponse.json({ success: true, message: 'Tickets created successfully.' });
 

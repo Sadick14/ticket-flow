@@ -234,9 +234,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getEventById = async (id: string): Promise<Event | undefined> => {
-    const localEvent = events.find(event => event.id === id);
-    if (localEvent) return localEvent;
-    
     try {
       const docRef = doc(db, 'events', id);
       const docSnap = await getDoc(docRef);
