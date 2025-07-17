@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Search, CalendarX, Sparkles, Pin, Video, CalendarDays, Music, Utensils, Heart } from 'lucide-react';
 import type { Event } from '@/lib/types';
-import { isSameDay, isThisWeekend, parseISO, startOfToday } from 'date-fns';
+import { isPast, isSameDay, isThisWeekend, parseISO, startOfToday } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { PageHero } from '@/components/page-hero';
