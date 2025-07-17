@@ -13,6 +13,9 @@ export default function RootLayoutClient({ children }: { children: React.ReactNo
     const isAdminPage = pathname.startsWith('/admin');
     const isDashboardPage = pathname.startsWith('/dashboard');
 
+    const noHeaderFooterRoutes = ['/admin', '/dashboard'];
+    const showHeaderFooter = !noHeaderFooterRoutes.some(path => pathname.startsWith(path));
+
     // Show only the page content for admin or dashboard routes
     if (isAdminPage || isDashboardPage) {
         return (
@@ -37,7 +40,7 @@ export default function RootLayoutClient({ children }: { children: React.ReactNo
     return (
         <div className="flex flex-col min-h-screen">
             <Header />
-            <main className="flex-grow pt-16">{children}</main>
+            <main className="flex-grow">{children}</main>
             <Footer />
             <Toaster />
         </div>

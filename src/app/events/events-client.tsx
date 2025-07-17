@@ -11,6 +11,7 @@ import { Search, CalendarX } from 'lucide-react';
 import type { Event } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { PageHero } from '@/components/page-hero';
 
 const categories = ["All Events", "Nightlife & Parties", "Movies & Cinema", "Arts & Theatre", "Food & Drinks", "Networking", "Travel & Outdoor", "Professional", "Health & Wellness"];
 
@@ -67,7 +68,12 @@ export default function EventsPageClient() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
+      <PageHero
+        title="Discover Your Next Experience"
+        description="Browse thousands of events, from local meetups to global conferences. Your next adventure awaits."
+        height="lg"
+      />
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-4xl font-bold text-primary mb-8">Ghana Events</h1>
 
