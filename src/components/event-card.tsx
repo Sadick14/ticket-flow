@@ -15,12 +15,10 @@ interface EventCardProps {
 
 const getPriceDisplay = (price: number) => {
     if (price === 0) return 'FREE';
-    // This part is a guess based on the image's format "RSVP-C10", "C46+", etc.
-    // It's not a standard currency format. Let's create something similar.
-    if (price < 100) {
-        return `₵${price.toFixed(2)}`;
+    if (price < 1) { // Assuming GHS for prices less than 1
+        return `GH₵${(price * 100).toFixed(0)}`;
     }
-    return `RSVP-₵${price}`;
+    return `GH₵${price.toFixed(2)}`;
 };
 
 

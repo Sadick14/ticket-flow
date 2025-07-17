@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from 'next/link';
@@ -19,7 +20,7 @@ import { CategoryFilters } from '@/components/category-filters';
 
 
 export default function HomePage() {
-  const { events, news, loading, addSubscriber, getTicketsByEvent } = useAppContext();
+  const { events, news, loading, addSubscriber } = useAppContext();
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
   const { toast } = useToast();

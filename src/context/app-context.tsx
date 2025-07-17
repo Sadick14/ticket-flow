@@ -1,11 +1,12 @@
 
-
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission, Message } from '@/lib/types';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy, serverTimestamp, writeBatch, documentId } from 'firebase/firestore';
+import { initialEvents, initialUsers, initialNews, initialTickets, initialLaunchSubscribers, initialContactSubmissions } from '@/lib/sample-data';
+
 
 interface AppContextType {
   events: Event[];
@@ -57,6 +58,60 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// Function to seed the database if it's empty
+const seedDatabase = async () => {
+    console.log("Checking if database needs seeding...");
+    const eventsSnapshot = await getDocs(query(collection(db, 'events'), limit(1)));
+    if (eventsSnapshot.empty) {
+        console.log("Database is empty. Seeding data...");
+        const batch = writeBatch(db);
+
+        // Seed Users
+        initialUsers.forEach(user => {
+            const userRef = doc(db, 'users', user.uid);
+            batch.set(userRef, user);
+        });
+
+        // Seed Events
+        initialEvents.forEach(event => {
+            const eventRef = doc(collection(db, 'events'));
+            batch.set(eventRef, event);
+        });
+
+        // Seed News
+        initialNews.forEach(article => {
+            const articleRef = doc(collection(db, 'news'));
+            batch.set(articleRef, article);
+        });
+        
+        // Seed Tickets
+         initialTickets.forEach(ticket => {
+            const ticketRef = doc(collection(db, 'tickets'));
+            batch.set(ticketRef, ticket);
+        });
+
+        // Seed Launch Subscribers
+        initialLaunchSubscribers.forEach(sub => {
+            const subRef = doc(collection(db, 'launch_subscribers'));
+            batch.set(subRef, sub);
+        });
+        
+        // Seed Contact Submissions
+        initialContactSubmissions.forEach(sub => {
+            const subRef = doc(collection(db, 'contact_submissions'));
+            batch.set(subRef, sub);
+        });
+
+
+        await batch.commit();
+        console.log("Database seeded successfully.");
+        return true;
+    }
+    console.log("Database already contains data. No seeding needed.");
+    return false;
+};
+
+
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -66,87 +121,44 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchEvents = useCallback(async () => {
+  const fetchAllData = useCallback(async () => {
     try {
-      const eventsCollection = collection(db, 'events');
-      const eventSnapshot = await getDocs(query(eventsCollection));
-      const eventsList = eventSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
-      setEvents(eventsList);
-    } catch (error) {
-      console.error("Error fetching events:", error);
-    }
-  }, []);
+        const [
+            eventsSnapshot, 
+            ticketsSnapshot, 
+            newsSnapshot, 
+            usersSnapshot,
+            launchSubscribersSnapshot,
+            contactSubmissionsSnapshot
+        ] = await Promise.all([
+            getDocs(query(collection(db, 'events'))),
+            getDocs(query(collection(db, 'tickets'))),
+            getDocs(query(collection(db, 'news'), orderBy('publishedDate', 'desc'))),
+            getDocs(query(collection(db, 'users'))),
+            getDocs(query(collection(db, 'launch_subscribers'), orderBy('subscribedAt', 'desc'))),
+            getDocs(query(collection(db, 'contact_submissions'), orderBy('submittedAt', 'desc'))),
+        ]);
 
-  const fetchTickets = useCallback(async () => {
-     try {
-      const ticketsCollection = collection(db, 'tickets');
-      const ticketSnapshot = await getDocs(query(ticketsCollection));
-      const ticketsList = ticketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
-      setTickets(ticketsList);
+        setEvents(eventsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event)));
+        setTickets(ticketsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket)));
+        setNews(newsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NewsArticle)));
+        setUsers(usersSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile)));
+        setLaunchSubscribers(launchSubscribersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LaunchSubscriber)));
+        setContactSubmissions(contactSubmissionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ContactSubmission)));
     } catch (error) {
-      console.error("Error fetching tickets:", error);
-    }
-  }, []);
-
-  const fetchNews = useCallback(async () => {
-    try {
-      const newsCollection = collection(db, 'news');
-      const newsSnapshot = await getDocs(query(newsCollection, orderBy('publishedDate', 'desc')));
-      const newsList = newsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NewsArticle));
-      setNews(newsList);
-    } catch (error) {
-      console.error("Error fetching news:", error);
-    }
-  }, []);
-
-  const fetchUsers = useCallback(async () => {
-    try {
-      const usersCollection = collection(db, 'users');
-      const userSnapshot = await getDocs(query(usersCollection));
-      const usersList = userSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
-      setUsers(usersList);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-    }
-  }, []);
-
-  const fetchLaunchSubscribers = useCallback(async () => {
-    try {
-        const subscribersCollection = collection(db, 'launch_subscribers');
-        const subscriberSnapshot = await getDocs(query(subscribersCollection, orderBy('subscribedAt', 'desc')));
-        const subscribersList = subscriberSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LaunchSubscriber));
-        setLaunchSubscribers(subscribersList);
-    } catch (error) {
-        console.error("Error fetching launch subscribers:", error);
-    }
-  }, []);
-
-  const fetchContactSubmissions = useCallback(async () => {
-    try {
-      const submissionsCollection = collection(db, 'contact_submissions');
-      const snapshot = await getDocs(query(submissionsCollection, orderBy('submittedAt', 'desc')));
-      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ContactSubmission));
-      setContactSubmissions(list);
-    } catch (error) {
-      console.error("Error fetching contact submissions:", error);
+        console.error("Error fetching data:", error);
     }
   }, []);
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([
-        fetchEvents(), 
-        fetchTickets(), 
-        fetchNews(), 
-        fetchUsers(), 
-        fetchLaunchSubscribers(),
-        fetchContactSubmissions()
-      ]);
+      const seeded = await seedDatabase();
+      await fetchAllData();
       setLoading(false);
     }
     loadData();
-  }, [fetchEvents, fetchTickets, fetchNews, fetchUsers, fetchLaunchSubscribers, fetchContactSubmissions]);
+  }, [fetchAllData]);
 
   const addEvent = async (eventData: Omit<Event, 'id' | 'collaboratorIds' | 'status'>) => {
     try {
@@ -155,7 +167,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         collaboratorIds: [],
         status: 'active' 
       });
-      await fetchEvents();
+      await fetchAllData();
     } catch (error) {
        console.error("Error adding event:", error);
        throw error;
@@ -166,7 +178,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       const eventRef = doc(db, 'events', id);
       await updateDoc(eventRef, eventData);
-      await fetchEvents();
+      await fetchAllData();
     } catch (error) {
         console.error("Error updating event:", error);
         throw error;
@@ -177,7 +189,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       const eventRef = doc(db, 'events', id);
       await updateDoc(eventRef, { status: 'archived' });
-      await fetchEvents();
+      await fetchAllData();
     } catch (error) {
       console.error("Error archiving event:", error);
       throw error;
@@ -192,19 +204,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
     try {
       await addDoc(collection(db, 'tickets'), newTicket);
-      await fetchTickets();
-
+      await fetchAllData();
       // Send confirmation email via API route
       await fetch('/api/send-confirmation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-              eventId: ticketData.eventId,
-              attendeeName: ticketData.attendeeName,
-              attendeeEmail: ticketData.attendeeEmail,
-          }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId: ticketData.eventId,
+          attendeeName: ticketData.attendeeName,
+          attendeeEmail: ticketData.attendeeEmail,
+        }),
       });
-
     } catch (error) {
        console.error("Error adding ticket:", error);
        throw error;
@@ -228,7 +238,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const ticketRef = doc(db, 'tickets', ticketId);
     await updateDoc(ticketRef, { checkedIn: checkInStatus });
-    await fetchTickets();
+    await fetchAllData();
   };
   
   const getTicketById = async (id: string): Promise<Ticket | undefined> => {
@@ -308,7 +318,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       const userRef = doc(db, 'users', uid);
       await updateDoc(userRef, data);
-      await fetchUsers(); // Refresh the local state
+      await fetchAllData();
     } catch (error) {
       console.error("Error updating user:", error);
       throw error;
@@ -331,7 +341,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       collaboratorIds: arrayUnion(userId)
     });
 
-    await fetchEvents();
+    await fetchAllData();
     return { success: true, message: "Collaborator added successfully." };
   };
 
@@ -340,29 +350,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await updateDoc(eventRef, {
       collaboratorIds: arrayRemove(userId)
     });
-    await fetchEvents();
+    await fetchAllData();
   };
 
   const getUsersByUids = async (uids: string[]): Promise<UserProfile[]> => {
     if (!uids || uids.length === 0) return [];
-    const users: UserProfile[] = [];
-    // Firestore 'in' query is limited to 30 items. Batch if necessary.
+    const usersList: UserProfile[] = [];
     for (let i = 0; i < uids.length; i += 30) {
       const batchUids = uids.slice(i, i + 30);
-      const q = query(collection(db, 'users'), where('uid', 'in', batchUids));
+      const q = query(collection(db, 'users'), where(documentId(), 'in', batchUids));
       const querySnapshot = await getDocs(q);
       querySnapshot.forEach((doc) => {
-        users.push(doc.data() as UserProfile);
+        usersList.push({ uid: doc.id, ...doc.data() } as UserProfile);
       });
     }
-    return users;
+    return usersList;
   }
 
   // News Functions
   const addNewsArticle = async (articleData: Omit<NewsArticle, 'id'>) => {
     try {
       await addDoc(collection(db, 'news'), articleData);
-      await fetchNews();
+      await fetchAllData();
     } catch (error) {
       console.error("Error adding news article:", error);
       throw error;
@@ -373,7 +382,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       const articleRef = doc(db, 'news', id);
       await updateDoc(articleRef, articleData);
-      await fetchNews();
+      await fetchAllData();
     } catch (error) {
       console.error("Error updating news article:", error);
       throw error;
@@ -383,7 +392,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const deleteNewsArticle = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'news', id));
-      await fetchNews();
+      await fetchAllData();
     } catch (error) {
       console.error("Error deleting news article:", error);
       throw error;
@@ -399,7 +408,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         subscribedAt: new Date().toISOString(),
       };
       await addDoc(collection(db, 'launch_subscribers'), subscriberData);
-      await fetchLaunchSubscribers();
+      await fetchAllData();
     } catch (error) {
       console.error("Error adding launch subscriber:", error);
       throw error;
@@ -424,17 +433,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const replyToSubmission = async (submission: ContactSubmission, replyMessage: string) => {
-    // This function will need to be implemented, likely involving another API endpoint
-    console.log("Replying to submission...", submission.id, replyMessage);
-    // 1. Send email to user (submission.email)
-    // 2. Update submission status in Firestore
     const submissionRef = doc(db, 'contact_submissions', submission.id);
     await updateDoc(submissionRef, { 
       status: 'replied',
       adminReply: replyMessage,
       repliedAt: new Date().toISOString()
     });
-    await fetchContactSubmissions();
+    // Send email to user
+    await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            type: 'template',
+            templateId: 'simpleAnnouncement',
+            templateContent: {
+                subject: `Re: ${submission.subject}`,
+                headline: 'A reply from TicketFlow Support',
+                message: replyMessage,
+            },
+            recipientType: 'custom',
+            recipients: [submission.email],
+            senderRole: 'admin',
+        }),
+    });
+    await fetchAllData();
   };
 
   const getChatHistory = async (userId: string): Promise<Message[]> => {

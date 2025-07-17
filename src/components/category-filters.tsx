@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef } from 'react';
 import { Button } from './ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -27,7 +27,7 @@ export function CategoryFilters({ activeCategory, setActiveCategory }: CategoryF
       <Button
         variant="outline"
         size="icon"
-        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm"
+        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hidden sm:flex"
         onClick={() => scroll('left')}
       >
         <ChevronLeft className="h-4 w-4" />
@@ -50,7 +50,7 @@ export function CategoryFilters({ activeCategory, setActiveCategory }: CategoryF
       <Button
         variant="outline"
         size="icon"
-        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm"
+        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hidden sm:flex"
         onClick={() => scroll('right')}
       >
         <ChevronRight className="h-4 w-4" />
