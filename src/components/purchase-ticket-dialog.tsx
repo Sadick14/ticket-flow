@@ -132,26 +132,15 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
         title: 'Check Your Phone',
         description: 'Approve the transaction by entering your MoMo PIN.',
       });
-
-      // In a real app, you would wait for a webhook confirmation.
-      // For this demo, we simulate success after a delay.
-      setTimeout(async () => {
-        for (const attendee of data.attendees) {
-          await addTicket({
-            eventId: event.id,
-            attendeeName: attendee.attendeeName,
-            attendeeEmail: attendee.attendeeEmail,
-            price: event.price,
-          });
-        }
-        toast({
-          title: 'Purchase Successful!',
-          description: `You've got ${quantity} ticket(s) for ${event.name}.`,
-        });
-        onOpenChange(false);
-        setPaymentStep('details');
-        setIsSubmitting(false);
-      }, 15000); // Wait 15 seconds to simulate user approval
+      
+      // In a real production application, a webhook from MTN would confirm
+      // the payment on the backend, which would then create the ticket.
+      // The client would poll for the ticket status or get an update via WebSocket.
+      // For this demo, we'll assume the webhook will handle ticket creation
+      // and we just inform the user.
+      
+      // The dialog will remain open showing the "Awaiting Approval" message
+      // until the user closes it or the webhook provides a success/fail update.
 
     } catch (error: any) {
       toast({

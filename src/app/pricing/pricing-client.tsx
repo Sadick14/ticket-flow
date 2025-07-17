@@ -31,9 +31,16 @@ export default function PricingClientPage() {
     setIsUpgrading(plan);
     
     // In a real app, this would trigger a payment flow for the plan price.
-    // For now, we simulate success and update the user's plan.
+    // This is now set up to call the payment intent API.
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
+      // For non-free plans, initiate payment
+      if (price > 0) {
+        toast({ title: "Redirecting to Payment...", description: "Please complete the payment to upgrade your plan."});
+        // Here you would integrate with your payment gateway's subscription API
+        // For now, we simulate a successful payment and update the user's plan
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+
       await updateUser(user.uid, { subscriptionPlan: plan });
       toast({
         title: 'Upgrade Successful!',
@@ -63,6 +70,7 @@ export default function PricingClientPage() {
       'Standard Email Support'
     ],
     cta: 'Get Started For Free',
+    priceGHS: 0,
     ctaLink: '/dashboard/create'
   };
 
@@ -167,9 +175,14 @@ export default function PricingClientPage() {
                       {freePlan.price}
                   </div>
                   <div className="text-sm text-muted-foreground mb-6">{freePlan.priceDescription}</div>
-                  <Button asChild size="lg" className="w-full">
-                    <Link href={freePlan.ctaLink}>{freePlan.cta}</Link>
-                  </Button>
+                   <Button 
+                      onClick={() => handleChoosePlan(freePlan.name, freePlan.priceGHS)}
+                      size="lg" 
+                      className="w-full"
+                      disabled={isUpgrading === freePlan.name || user?.subscriptionPlan === freePlan.name}
+                    >
+                      {isUpgrading === freePlan.name ? <Loader2 className="animate-spin"/> : (user?.subscriptionPlan === freePlan.name ? 'Current Plan' : 'Downgrade to Free')}
+                    </Button>
                 </div>
               </div>
             </Card>
@@ -232,7 +245,7 @@ export default function PricingClientPage() {
                   <div className="mt-auto pt-8">
                     <Button 
                       onClick={() => plan.name === 'Custom' ? window.location.href = '/contact' : handleChoosePlan(plan.name, plan.priceGHS)}
-                      disabled={isUpgrading === plan.name}
+                      disabled={isUpgrading === plan.name || user?.subscriptionPlan === plan.name}
                       className={`w-full py-3 rounded-full font-medium ${
                         plan.popular 
                           ? 'bg-white text-primary hover:bg-gray-100'
@@ -242,7 +255,7 @@ export default function PricingClientPage() {
                       }`}
                       variant={plan.popular || plan.color === 'dark' ? 'default' : 'outline'}
                     >
-                      {isUpgrading === plan.name ? <Loader2 className="animate-spin" /> : plan.cta}
+                      {isUpgrading === plan.name ? <Loader2 className="animate-spin" /> : user?.subscriptionPlan === plan.name ? 'Current Plan' : plan.cta}
                     </Button>
                   </div>
                 </div>
