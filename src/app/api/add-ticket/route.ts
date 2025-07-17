@@ -22,8 +22,7 @@ export async function POST(request: NextRequest) {
     const ticketsCollection = collection(db, 'tickets');
     const newTicketsData = [];
 
-    const batch = writeBatch(db);
-
+    // Using a loop to create tickets one by one to get their IDs for the response
     for (const attendee of attendees) {
       const newTicket: Omit<Ticket, 'id'> = {
         eventId,
@@ -32,37 +31,36 @@ export async function POST(request: NextRequest) {
         price,
         purchaseDate: new Date().toISOString(), // Placeholder
         checkedIn: false,
+        ...(transactionId && { gatewayTransactionId: transactionId })
       };
-      const ticketRef = addDoc(ticketsCollection, {
+      
+      const docRef = await addDoc(ticketsCollection, {
         ...newTicket,
         purchaseDate: serverTimestamp(),
-        ...(transactionId && { gatewayTransactionId: transactionId })
       });
-      
-      // We need the ID for the response, so we'll have to create them one by one
-      // If we don't need the ID back, we can use a writeBatch for efficiency
-      const docRef = await ticketRef;
-      newTicketsData.push({ id: docRef.id, ...attendee });
+      newTicketsData.push({ id: docRef.id, ...newTicket });
     }
 
-    // Since we're not using batch for creation now, we commit one by one above.
-    // If you switch back to batch, uncomment the next line.
-    // await batch.commit();
-
     // After successfully creating tickets, send confirmation emails
-    for (const attendee of attendees) {
+    for (const ticket of newTicketsData) {
         try {
-            await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/send-confirmation`, {
+            // Using absolute URL for server-side fetch
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
+            const emailResponse = await fetch(`${appUrl}/api/send-confirmation`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    eventId,
-                    attendeeName: attendee.attendeeName,
-                    attendeeEmail: attendee.attendeeEmail,
+                    eventId: ticket.eventId,
+                    attendeeName: ticket.attendeeName,
+                    attendeeEmail: ticket.attendeeEmail,
                 }),
             });
+            if (!emailResponse.ok) {
+                const errorData = await emailResponse.json();
+                console.error(`Failed to send confirmation email to ${ticket.attendeeEmail}:`, errorData.error);
+            }
         } catch (emailError) {
-            console.error(`Failed to send confirmation email to ${attendee.attendeeEmail}:`, emailError);
+            console.error(`Error triggering confirmation email for ${ticket.attendeeEmail}:`, emailError);
         }
     }
 
