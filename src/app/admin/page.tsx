@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppContext } from '@/context/app-context';
-import { Users, Ticket, DollarSign, Eye, Star, Loader2, AlertCircle } from 'lucide-react';
+import { Users, Ticket, DollarSign, Eye, Star, Loader2, AlertCircle, Calendar } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { format, subDays, eachDayOfInterval } from 'date-fns';
@@ -106,8 +106,8 @@ export default function AdminDashboardPage() {
         <h1 className="text-2xl font-bold">Admin Dashboard</h1>
         <p className="text-muted-foreground">An overview of the entire platform.</p>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <Card className="xl:col-span-1">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ticket Revenue</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -117,7 +117,7 @@ export default function AdminDashboardPage() {
             <p className="text-xs text-muted-foreground">Total earnings from all sales</p>
           </CardContent>
         </Card>
-        <Card className="xl:col-span-1">
+        <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Subscription Revenue</CardTitle>
                 <Star className="h-4 w-4 text-muted-foreground" />
@@ -127,7 +127,7 @@ export default function AdminDashboardPage() {
                 <p className="text-xs text-muted-foreground">Total monthly recurring revenue</p>
             </CardContent>
         </Card>
-        <Card className="xl:col-span-1">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Tickets Sold</CardTitle>
             <Ticket className="h-4 w-4 text-muted-foreground" />
@@ -137,7 +137,7 @@ export default function AdminDashboardPage() {
             <p className="text-xs text-muted-foreground">Across all events</p>
           </CardContent>
         </Card>
-        <Card className="xl:col-span-1">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -147,7 +147,17 @@ export default function AdminDashboardPage() {
             <p className="text-xs text-muted-foreground">Signed up on the platform</p>
           </CardContent>
         </Card>
-         <Card className="xl:col-span-1">
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Events</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{events.length}</div>
+                <p className="text-xs text-muted-foreground">Total events on the platform</p>
+            </CardContent>
+        </Card>
+         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Visitors</CardTitle>
             <Eye className="h-4 w-4 text-muted-foreground" />
