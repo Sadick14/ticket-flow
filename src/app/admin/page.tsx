@@ -16,7 +16,7 @@ export default function AdminDashboardPage() {
   const { events, tickets, news, users } = useAppContext();
 
   const totalRevenue = useMemo(() => {
-    return tickets.reduce((sum, ticket) => sum + ticket.price, 0);
+    return tickets.reduce((sum, ticket) => sum + (ticket.price || 0), 0);
   }, [tickets]);
 
   const salesLast7Days = useMemo(() => {
@@ -32,7 +32,7 @@ export default function AdminDashboardPage() {
       );
       return {
         date: format(day, 'MMM d'),
-        revenue: dayTickets.reduce((sum, ticket) => sum + ticket.price, 0),
+        revenue: dayTickets.reduce((sum, ticket) => sum + (ticket.price || 0), 0),
         tickets: dayTickets.length,
       };
     });
@@ -141,6 +141,7 @@ export default function AdminDashboardPage() {
                     <TableBody>
                         {recentSales.map(ticket => {
                             const event = events.find(e => e.id === ticket.eventId);
+                            const price = typeof ticket.price === 'number' ? ticket.price : 0;
                             return (
                                 <TableRow key={ticket.id}>
                                     <TableCell>
@@ -148,7 +149,7 @@ export default function AdminDashboardPage() {
                                     </TableCell>
                                     <TableCell>{ticket.attendeeName}</TableCell>
                                     <TableCell className="text-right">
-                                        <Badge variant="outline">${ticket.price.toFixed(2)}</Badge>
+                                        <Badge variant="outline">${price.toFixed(2)}</Badge>
                                     </TableCell>
                                 </TableRow>
                             )
