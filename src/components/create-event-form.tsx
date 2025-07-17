@@ -104,7 +104,7 @@ const eventFormSchema = z.object({
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
 
-const categories = ["Music", "Sports", "Food & Drink", "Arts & Theater", "Technology", "Business", "Other"];
+const categories = ["Nightlife & Parties", "Movies & Cinema", "Arts & Theatre", "Food & Drinks", "Networking", "Travel & Outdoor", "Professional", "Health & Wellness"];
 
 const eventLimits: Record<SubscriptionPlan, number> = {
     Free: 1,
