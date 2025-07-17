@@ -103,7 +103,7 @@ export default function AttendeesPage() {
         attendee.eventName,
         attendee.eventDate,
         attendee.eventLocation,
-        format(parseISO(attendee.purchaseDate), 'yyyy-MM-dd'),
+        typeof attendee.purchaseDate === 'string' ? format(parseISO(attendee.purchaseDate), 'yyyy-MM-dd') : 'N/A',
         `${attendee.price.toFixed(2)}`,
         attendee.checkedIn ? 'Yes' : 'No'
       ].join(','))
@@ -260,7 +260,7 @@ export default function AttendeesPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {format(parseISO(attendee.purchaseDate), 'MMM dd, yyyy')}
+                        {typeof attendee.purchaseDate === 'string' ? format(parseISO(attendee.purchaseDate), 'MMM dd, yyyy') : 'N/A'}
                       </TableCell>
                       <TableCell className="text-right">
                         <Badge variant="outline">{PaymentCalculator.formatCurrency(attendee.price * 100, 'GHS')}</Badge>
