@@ -54,7 +54,8 @@ export default function AdminDashboardPage() {
 
   const totalSubscriptionRevenue = useMemo(() => {
     return users.reduce((sum, user) => {
-      return sum + (subscriptionPrices[user.subscriptionPlan] || 0);
+      const plan = user.subscriptionPlan || 'Free';
+      return sum + (subscriptionPrices[plan] || 0);
     }, 0);
   }, [users]);
 
