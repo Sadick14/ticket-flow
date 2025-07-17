@@ -3,9 +3,9 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppContext } from '@/context/app-context';
-import { Users, Ticket, Newspaper, DollarSign, Clock, Eye, BarChart, LineChart } from 'lucide-react';
+import { Users, Ticket, Newspaper, DollarSign, Clock, Eye, BarChart, LineChart as LineChartIcon } from 'lucide-react';
 import { useMemo } from 'react';
-import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
 import { format, subDays, eachDayOfInterval } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -113,15 +113,16 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent>
                  <ResponsiveContainer width="100%" height={300}>
-                    <RechartsBarChart data={salesLast7Days}>
+                    <LineChart data={salesLast7Days}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" fontSize={12} />
                         <YAxis yAxisId="left" stroke="#8884d8" fontSize={12} />
                         <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" fontSize={12} />
                         <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}/>
-                        <Bar yAxisId="left" dataKey="revenue" fill="#8884d8" name="Revenue ($)" />
-                        <Bar yAxisId="right" dataKey="tickets" fill="#82ca9d" name="Tickets" />
-                    </RechartsBarChart>
+                        <Legend />
+                        <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="#8884d8" name="Revenue ($)" />
+                        <Line yAxisId="right" type="monotone" dataKey="tickets" stroke="#82ca9d" name="Tickets" />
+                    </LineChart>
                 </ResponsiveContainer>
             </CardContent>
         </Card>
