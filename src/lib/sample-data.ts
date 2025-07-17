@@ -1,3 +1,4 @@
+
 import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission } from './types';
 
 export const initialUsers: UserProfile[] = [
