@@ -58,10 +58,19 @@ export default function AnalyticsPage() {
 
   const dateRange = getDateRange();
 
+  const safeParseDate = (date: any): Date | null => {
+    if (!date) return null;
+    if (typeof date === 'string') return parseISO(date);
+    if (typeof date.toDate === 'function') return date.toDate(); // Firestore Timestamp
+    if (date.seconds) return new Date(date.seconds * 1000); // Another Timestamp format
+    return null;
+  }
+
   // Analytics data
   const analyticsData = useMemo(() => {
     const filteredTickets = allUserTickets.filter(ticket => {
-      const purchaseDate = parseISO(ticket.purchaseDate);
+      const purchaseDate = safeParseDate(ticket.purchaseDate);
+      if (!purchaseDate) return false;
       return purchaseDate >= dateRange.start && purchaseDate <= dateRange.end;
     });
 
@@ -77,8 +86,8 @@ export default function AnalyticsPage() {
     // Weekly trends
     const weeklyData = eachDayOfInterval({ start: dateRange.start, end: dateRange.end }).map(day => {
       const dayTickets = filteredTickets.filter(ticket => {
-        const purchaseDate = parseISO(ticket.purchaseDate);
-        return format(purchaseDate, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd');
+        const purchaseDate = safeParseDate(ticket.purchaseDate);
+        return purchaseDate ? format(purchaseDate, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd') : false;
       });
       
       return {
@@ -107,8 +116,8 @@ export default function AnalyticsPage() {
     const periodLength = Math.abs(dateRange.end.getTime() - dateRange.start.getTime());
     const previousStart = new Date(dateRange.start.getTime() - periodLength);
     const previousTickets = allUserTickets.filter(ticket => {
-      const purchaseDate = parseISO(ticket.purchaseDate);
-      return purchaseDate >= previousStart && purchaseDate < dateRange.start;
+      const purchaseDate = safeParseDate(ticket.purchaseDate);
+      return purchaseDate ? purchaseDate >= previousStart && purchaseDate < dateRange.start : false;
     });
 
     const currentRevenue = filteredTickets.reduce((sum, ticket) => sum + ticket.price, 0);
