@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { sendEmail } from '@/lib/email';
+import { sendEmail, renderTemplate } from '@/lib/email';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { ContactSubmission } from '@/lib/types';
@@ -48,11 +48,14 @@ export async function POST(request: NextRequest) {
     });
 
     // 3. Send confirmation email to user
+    const confirmationEmail = renderTemplate('simpleAnnouncement', {
+        subject: "We've received your message!",
+        headline: `Thanks for reaching out, ${name}!`,
+        message: "This is an automated confirmation that we have received your message. Our team will review it and get back to you as soon as possible."
+    });
     await sendEmail({
       to: email,
-      subject: "We've received your message!",
-      html: `<p>Hi ${name},</p><p>This is an automated confirmation that we have received your message. Our team will get back to you as soon as possible.</p>`,
-      text: `Hi ${name},\n\nThank you for contacting us. We have received your message and will get back to you soon.`
+      ...confirmationEmail,
     })
 
     return NextResponse.json({ success: true, message: "Your message has been sent successfully." });

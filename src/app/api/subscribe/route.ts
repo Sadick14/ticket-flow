@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { sendEmail } from '@/lib/email';
+import { sendEmail, renderTemplate } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,19 +27,16 @@ export async function POST(request: NextRequest) {
       subscribedAt: new Date().toISOString(),
     });
 
-    // Send confirmation email (optional)
+    // Send confirmation email
+    const confirmationEmail = renderTemplate('simpleAnnouncement', {
+        subject: "Welcome to the TicketFlow Newsletter!",
+        headline: "You're Subscribed!",
+        message: "Thanks for joining our newsletter. You're all set to receive the latest updates on exciting events, new platform features, and special offers."
+    });
+    
     await sendEmail({
       to: email,
-      subject: 'Welcome to the TicketFlow Newsletter!',
-      text: 'Thanks for subscribing! You\'ll now receive the latest updates on events and features from TicketFlow.',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2>Welcome to TicketFlow!</h2>
-          <p>Thanks for subscribing to our newsletter. You're all set to receive the latest updates on exciting events, new platform features, and special offers.</p>
-          <p>Stay tuned!</p>
-          <p>Best regards,<br/>The TicketFlow Team</p>
-        </div>
-      `
+      ...confirmationEmail
     });
 
     return NextResponse.json({ success: true, message: 'Successfully subscribed.' });
