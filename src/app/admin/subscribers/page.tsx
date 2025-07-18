@@ -15,13 +15,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useDropzone } from 'react-dropzone';
-import type { LaunchSubscriber } from '@/lib/types';
 
 export default function AdminSubscribersPage() {
-  const { launchSubscribers: initialSubscribers, loading, addSubscriber, deleteSubscriber, bulkAddSubscribers } = useAppContext();
+  const { launchSubscribers, loading, addSubscriber, deleteSubscriber, bulkAddSubscribers } = useAppContext();
   const { toast } = useToast();
   const [isNotifying, setIsNotifying] = useState(false);
-  const [subscribers, setSubscribers] = useState<LaunchSubscriber[]>(initialSubscribers);
 
   // States for manual add
   const [newSubEmail, setNewSubEmail] = useState('');
@@ -47,10 +45,6 @@ export default function AdminSubscribersPage() {
     accept: { 'text/csv': ['.csv'] },
     multiple: false,
   });
-  
-  useState(() => {
-    setSubscribers(initialSubscribers);
-  }, [initialSubscribers]);
 
   const handleNotify = async () => {
     setIsNotifying(true);
@@ -85,7 +79,6 @@ export default function AdminSubscribersPage() {
   const handleDelete = async (id: string) => {
     try {
       await deleteSubscriber(id);
-      setSubscribers(prev => prev.filter(sub => sub.id !== id));
       toast({ title: "Subscriber Removed" });
     } catch {
       toast({ variant: 'destructive', title: "Error", description: "Failed to remove subscriber." });
@@ -93,7 +86,7 @@ export default function AdminSubscribersPage() {
   };
 
   const handleExport = () => {
-    const csv = Papa.unparse(subscribers.map(s => ({
+    const csv = Papa.unparse(launchSubscribers.map(s => ({
       email: s.email,
       name: s.name,
       subscribedAt: s.subscribedAt
@@ -219,10 +212,10 @@ export default function AdminSubscribersPage() {
             </DialogContent>
           </Dialog>
           
-          <Button onClick={handleExport} variant="outline" disabled={subscribers.length === 0}>
+          <Button onClick={handleExport} variant="outline" disabled={launchSubscribers.length === 0}>
               <Download className="mr-2 h-4 w-4"/> Export CSV
           </Button>
-          <Button onClick={handleNotify} disabled={subscribers.length === 0 || isNotifying}>
+          <Button onClick={handleNotify} disabled={launchSubscribers.length === 0 || isNotifying}>
               {isNotifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <Mail className="mr-2 h-4 w-4" />
               {isNotifying ? 'Sending...' : 'Notify All'}
@@ -233,7 +226,7 @@ export default function AdminSubscribersPage() {
       <Card>
         <CardHeader>
           <CardTitle>Subscriber List</CardTitle>
-          <CardDescription>{subscribers.length} user(s) have subscribed for notifications.</CardDescription>
+          <CardDescription>{launchSubscribers.length} user(s) have subscribed for notifications.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
@@ -249,13 +242,13 @@ export default function AdminSubscribersPage() {
               <TableBody>
                 {loading ? (
                   <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
-                ) : subscribers.length === 0 ? (
+                ) : launchSubscribers.length === 0 ? (
                   <TableRow><TableCell colSpan={4} className="text-center py-8">
                      <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                     No subscribers found yet.
                     </TableCell></TableRow>
                 ) : (
-                  subscribers.map(sub => {
+                  launchSubscribers.map(sub => {
                     const subscribedDate = getSubscribedAtDate(sub.subscribedAt);
                     return (
                         <TableRow key={sub.id}>
