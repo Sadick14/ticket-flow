@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardDescription, CardTitle } from '@/com
 import { Ticket as TicketIcon, Loader2, KeyRound, CheckCircle, Hourglass, Star, Copy, XCircle, Ban } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 import {
   InputOTP,
   InputOTPGroup,
