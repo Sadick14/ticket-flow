@@ -18,12 +18,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import type { Event, Ticket } from '@/lib/types';
-import { Loader2, Minus, Plus, Wallet, Phone, Shield } from 'lucide-react';
+import { Loader2, Minus, Plus, Wallet, Phone, Shield, Copy, CheckCircle, Hourglass } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PaymentCalculator } from '@/lib/payment-config';
 import { ViewTicketDialog } from './view-ticket-dialog';
 import { useAuth } from '@/context/auth-context';
-import { v4 as uuidv4 } from 'uuid';
 
 interface PurchaseTicketDialogProps {
   event: Event;
@@ -38,25 +37,33 @@ const purchaseSchema = z.object({
       attendeeEmail: z.string().email({ message: 'Please enter a valid email address.' }),
     })
   ).min(1, 'At least one attendee is required.'),
-  momoNumber: z.string().min(10, 'Please enter a valid phone number.').optional().or(z.literal('')),
 });
 
 type PurchaseFormValues = z.infer<typeof purchaseSchema>;
+
+// Generate a simple human-readable booking code
+const generateBookingCode = () => {
+    const chars = 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789';
+    let result = '';
+    for (let i = 0; i < 6; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+};
+
 
 export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTicketDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [quantity, setQuantity] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [paymentStep, setPaymentStep] = useState<'details' | 'approval'>('details');
-  const [newlyPurchasedTickets, setNewlyPurchasedTickets] = useState<Ticket[]>([]);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [step, setStep] = useState<'details' | 'confirmation'>('details');
+  const [bookingCode, setBookingCode] = useState('');
 
   const form = useForm<PurchaseFormValues>({
     resolver: zodResolver(purchaseSchema),
     defaultValues: {
       attendees: [{ attendeeName: '', attendeeEmail: '' }],
-      momoNumber: '',
     }
   });
 
@@ -83,60 +90,13 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
     }
   }, [quantity, isOpen, append, remove, form]);
 
-  const showTicketPopup = (ticketsData: Ticket[]) => {
-    setNewlyPurchasedTickets(ticketsData);
-    onOpenChange(false);
-    setIsViewModalOpen(true);
-  };
   
   const handlePurchase = async (data: PurchaseFormValues) => {
     setIsSubmitting(true);
-    
-    // For paid events, first initiate MoMo payment
-    if (!isFree && data.momoNumber) {
-        setPaymentStep('approval');
-        try {
-            const response = await fetch('/api/payments/create-intent', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    amount: totalPrice * 100, // to pesewas/cents
-                    currency: 'GHS',
-                    gatewayId: 'mtn-momo',
-                    momoNumber: data.momoNumber,
-                    metadata: {
-                        eventId: event.id,
-                        creatorId: event.creatorId,
-                        ticketId: uuidv4(), // Temporary ID for this batch
-                        userId: user?.uid || 'guest',
-                        type: 'ticket',
-                    }
-                })
-            });
+    const newBookingCode = generateBookingCode();
+    setBookingCode(newBookingCode);
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.details || 'Payment request failed.');
-            }
-            
-            // At this point, the user is approving on their phone.
-            // A robust solution uses webhooks. For this demo, we'll assume success
-            // after a short delay and proceed with ticket creation.
-            setTimeout(() => processTicketCreation(data), 10000); // Wait 10s
-            
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Payment Failed', description: error.message });
-            setIsSubmitting(false);
-            setPaymentStep('details');
-        }
-    } else {
-        // For free events, directly create tickets
-        await processTicketCreation(data);
-    }
-  };
-
-  const processTicketCreation = async (data: PurchaseFormValues) => {
-     try {
+    try {
         const response = await fetch('/api/add-ticket', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -144,61 +104,96 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
               eventId: event.id,
               attendees: data.attendees,
               price: event.price,
+              bookingCode: newBookingCode,
+              status: isFree ? 'confirmed' : 'pending'
             })
         });
         const result = await response.json();
-        if (!response.ok) throw new Error(result.error || "Registration failed.");
-
-        toast({
-          title: 'Registration Successful!',
-          description: `You've got ${quantity} ticket(s) for ${event.name}. Check your email for confirmation.`,
-        });
-        showTicketPopup(result.tickets);
+        if (!response.ok) throw new Error(result.error || "Booking failed.");
+        
+        if(isFree) {
+            toast({
+              title: 'Registration Successful!',
+              description: `You've got ${quantity} ticket(s) for ${event.name}. Check your email!`,
+            });
+            onOpenChange(false);
+        } else {
+            setStep('confirmation');
+        }
 
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Registration Failed',
+        title: 'Booking Failed',
         description: error.message || 'Something went wrong. Please try again.',
       });
     } finally {
         setIsSubmitting(false);
-        setPaymentStep('details');
     }
-  }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ description: "Copied to clipboard!" });
+  };
 
   const resetState = () => {
-    form.reset({attendees: [{ attendeeName: '', attendeeEmail: '' }], momoNumber: ''});
+    form.reset({attendees: [{ attendeeName: '', attendeeEmail: '' }]});
     setQuantity(1);
-    setPaymentStep('details');
+    setStep('details');
     setIsSubmitting(false);
-    setNewlyPurchasedTickets([]);
+    setBookingCode('');
+  }
+
+  const handleDialogClose = (open: boolean) => {
+    if (!open) {
+      resetState();
+    }
+    onOpenChange(open);
   }
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={(open) => {
-        if (!open) resetState();
-        onOpenChange(open);
-      }}>
+      <Dialog open={isOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-headline">
-              {isFree ? 'Register for Event' : 'Buy Tickets'}
+              {step === 'details' ? (isFree ? 'Register for Event' : 'Reserve Your Tickets') : 'Complete Your Booking'}
             </DialogTitle>
-            <DialogDescription>
-              You are getting {quantity} ticket(s) for {event.name}.
+             <DialogDescription>
+              {step === 'details' 
+                ? `You are reserving ${quantity} ticket(s) for ${event.name}.`
+                : 'Follow the instructions below to confirm your payment.'
+              }
             </DialogDescription>
           </DialogHeader>
           
-          {paymentStep === 'approval' ? (
-            <div className="py-8 text-center space-y-4">
-              <Loader2 className="h-12 w-12 mx-auto animate-spin text-primary" />
-              <h3 className="text-lg font-semibold">Awaiting Approval</h3>
+          {step === 'confirmation' ? (
+            <div className="py-4 space-y-4 text-center">
+              <Hourglass className="h-12 w-12 mx-auto text-primary" />
+              <h3 className="text-xl font-semibold">Payment Required</h3>
               <p className="text-muted-foreground">
-                Please check your phone and enter your MoMo PIN to approve the payment of
-                <strong className="text-foreground"> {PaymentCalculator.formatCurrency(totalPrice * 100, 'GHS')}</strong>.
+                Your booking is pending. Please complete the manual payment to confirm your tickets.
               </p>
+              <Card className="text-left p-4 bg-muted/50">
+                 <p className="text-sm font-semibold">Instructions:</p>
+                 <ol className="text-sm list-decimal list-inside space-y-1 mt-2">
+                    <li>Send Mobile Money to: <strong className="text-primary">024 123 4567</strong></li>
+                    <li>Amount: <strong className="text-primary">{PaymentCalculator.formatCurrency(totalPrice * 100, 'GHS')}</strong></li>
+                    <li>
+                      Reference/Narration:
+                      <div className="flex items-center gap-2 mt-1">
+                        <Input readOnly value={bookingCode} className="font-mono text-xs h-8"/>
+                        <Button type="button" size="icon" variant="ghost" onClick={() => copyToClipboard(bookingCode)}><Copy className="h-4 w-4"/></Button>
+                      </div>
+                    </li>
+                 </ol>
+                 <p className="text-xs text-muted-foreground mt-4">Your ticket will be confirmed once payment is received. This may take up to a few hours.</p>
+              </Card>
+               <Button onClick={() => onOpenChange(false)} className="w-full">
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  I Understand, I will Pay Manually
+                </Button>
             </div>
           ) : (
             <form onSubmit={form.handleSubmit(handlePurchase)} className="space-y-4">
@@ -235,17 +230,6 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
                   </div>
                 </ScrollArea>
                 
-                {!isFree && (
-                  <div className="space-y-2">
-                      <Label htmlFor="momoNumber" className="flex items-center gap-2"><Wallet/> Mobile Money Payment</Label>
-                       <div className="relative">
-                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input id="momoNumber" placeholder="Enter MoMo Number" {...form.register('momoNumber')} className="pl-10" required/>
-                      </div>
-                      {form.formState.errors.momoNumber && <p className="text-sm text-destructive">{form.formState.errors.momoNumber.message}</p>}
-                  </div>
-                )}
-
                 <div className="p-4 bg-muted rounded-lg text-center">
                   <p className="text-sm text-muted-foreground">Total Price</p>
                   <p className="text-3xl font-bold">
@@ -256,21 +240,13 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
                 <DialogFooter className="mt-6">
                   <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
                   <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="animate-spin" /> : isFree ? 'Get Free Ticket' : 'Pay Now'}
+                    {isSubmitting ? <Loader2 className="animate-spin" /> : isFree ? 'Get Free Ticket' : 'Confirm Booking'}
                   </Button>
                 </DialogFooter>
             </form>
           )}
         </DialogContent>
       </Dialog>
-      {newlyPurchasedTickets.length > 0 && (
-        <ViewTicketDialog
-          ticket={newlyPurchasedTickets[0]}
-          event={event}
-          isOpen={isViewModalOpen}
-          onOpenChange={setIsViewModalOpen}
-        />
-      )}
     </>
   );
 }

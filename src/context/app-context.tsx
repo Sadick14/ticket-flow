@@ -35,6 +35,7 @@ interface AppContextType {
   getTicketById: (id: string) => Promise<Ticket | undefined>;
   getUserTickets: (email: string) => Ticket[];
   getTicketsByEvent: (eventId: string) => Ticket[];
+  updateTicket: (id: string, ticketData: Partial<Omit<Ticket, 'id'>>) => Promise<void>;
   // Users
   updateUser: (uid: string, data: Partial<UserProfile>) => Promise<void>;
   addCollaborator: (eventId: string, email: string) => Promise<{success: boolean, message: string}>;
@@ -196,6 +197,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         return undefined;
     }
   };
+
+  const updateTicket = async (id: string, ticketData: Partial<Omit<Ticket, 'id'>>) => {
+    try {
+      const ticketRef = doc(db, 'tickets', id);
+      await updateDoc(ticketRef, ticketData);
+      await fetchAllData();
+    } catch (error) {
+        console.error("Error updating ticket:", error);
+        throw error;
+    }
+  }
 
   const getEventById = async (id: string): Promise<Event | undefined> => {
     try {
@@ -457,6 +469,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       checkInTicket,
       manualCheckInTicket,
       getTicketById,
+      updateTicket,
       getEventById, 
       getEventsByCreator,
       getCollaboratedEvents,

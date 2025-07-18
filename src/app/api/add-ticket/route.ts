@@ -10,7 +10,8 @@ interface AddTicketRequest {
   eventId: string;
   attendees: { attendeeName: string; attendeeEmail: string }[];
   price: number;
-  transactionId?: string; // Optional for paid tickets
+  bookingCode: string;
+  status: 'pending' | 'confirmed';
 }
 
 async function getEventById(id: string): Promise<Event | null> {
@@ -24,10 +25,10 @@ async function getEventById(id: string): Promise<Event | null> {
 
 export async function POST(request: NextRequest) {
   try {
-    const { eventId, attendees, price, transactionId }: AddTicketRequest = await request.json();
+    const { eventId, attendees, price, bookingCode, status }: AddTicketRequest = await request.json();
 
-    if (!eventId || !attendees || attendees.length === 0) {
-      return NextResponse.json({ error: 'Missing required ticket data' }, { status: 400 });
+    if (!eventId || !attendees || attendees.length === 0 || !bookingCode) {
+      return NextResponse.json({ error: 'Missing required booking data' }, { status: 400 });
     }
     
     const event = await getEventById(eventId);
@@ -45,9 +46,10 @@ export async function POST(request: NextRequest) {
         attendeeName: attendee.attendeeName,
         attendeeEmail: attendee.attendeeEmail,
         price,
-        purchaseDate: new Date().toISOString(), // Placeholder
+        purchaseDate: new Date().toISOString(),
         checkedIn: false,
-        ...(transactionId && { gatewayTransactionId: transactionId })
+        status: status,
+        bookingCode: bookingCode,
       };
       
       const docRef = await addDoc(ticketsCollection, {
@@ -58,30 +60,30 @@ export async function POST(request: NextRequest) {
       const finalTicket = { id: docRef.id, ...newTicket };
       newTicketsData.push(finalTicket);
 
-      // Directly send email after creating each ticket
-      try {
-        const eventDate = parseISO(`${event.date}T${event.time}`);
-        const emailContent = renderTemplate('ticketConfirmation', {
-            eventName: event.name,
-            eventDate: format(eventDate, 'PPP p'),
-            attendeeName: finalTicket.attendeeName,
-            ticketUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/tickets`,
-        });
-        
-        await sendEmail({
-            to: finalTicket.attendeeEmail,
-            subject: emailContent.subject,
-            html: emailContent.html,
-            text: emailContent.text
-        });
-      } catch (emailError) {
-        console.error(`Error sending confirmation email for ${finalTicket.attendeeEmail}:`, emailError);
-        // Do not block the whole process if one email fails
+      // Only send confirmation email if payment is confirmed (i.e., for free events)
+      if (status === 'confirmed') {
+        try {
+          const eventDate = parseISO(`${event.date}T${event.time}`);
+          const emailContent = renderTemplate('ticketConfirmation', {
+              eventName: event.name,
+              eventDate: format(eventDate, 'PPP p'),
+              attendeeName: finalTicket.attendeeName,
+              ticketUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/tickets`,
+          });
+          
+          await sendEmail({
+              to: finalTicket.attendeeEmail,
+              subject: emailContent.subject,
+              html: emailContent.html,
+              text: emailContent.text
+          });
+        } catch (emailError) {
+          console.error(`Error sending confirmation email for ${finalTicket.attendeeEmail}:`, emailError);
+        }
       }
     }
 
-
-    return NextResponse.json({ success: true, message: 'Tickets created successfully.', tickets: newTicketsData });
+    return NextResponse.json({ success: true, message: 'Booking successful.', tickets: newTicketsData });
 
   } catch (error) {
     console.error('Error creating ticket:', error);

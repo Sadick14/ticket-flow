@@ -60,7 +60,8 @@ export interface Ticket {
   purchaseDate: string;
   checkedIn: boolean;
   price: number;
-  gatewayTransactionId?: string;
+  status: 'pending' | 'confirmed';
+  bookingCode: string;
 }
 
 export interface UserProfile {

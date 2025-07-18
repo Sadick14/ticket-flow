@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Mail, MapPin, Search, Users, Download, CheckCircle, Loader2 } from 'lucide-react';
+import { Calendar, Mail, MapPin, Search, Users, Download, CheckCircle, Loader2, Hourglass } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import type { Ticket, Event, UserProfile } from '@/lib/types';
 import { Switch } from '@/components/ui/switch';
@@ -20,11 +20,12 @@ import { PaymentCalculator } from '@/lib/payment-config';
 
 export default function AttendeesPage() {
   const { user } = useAuth();
-  const { events, tickets, getEventsByCreator, getCollaboratedEvents, manualCheckInTicket } = useAppContext();
+  const { events, tickets, getEventsByCreator, getCollaboratedEvents, manualCheckInTicket, updateTicket } = useAppContext();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEventId, setSelectedEventId] = useState<string>('all');
   const [checkingIn, setCheckingIn] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<string | null>(null);
 
   const userEvents = user ? getEventsByCreator(user.uid) : [];
   const collaboratedEvents = user ? getCollaboratedEvents(user.uid) : [];
@@ -94,9 +95,40 @@ export default function AttendeesPage() {
     }
   };
 
+  const handleConfirmPayment = async (ticketId: string) => {
+    if (!user) return;
+    setConfirming(ticketId);
+    try {
+      await updateTicket(ticketId, { status: 'confirmed' });
+      toast({
+        title: `Payment Confirmed`,
+        description: `Ticket has been marked as confirmed.`,
+      });
+    } catch (e: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Confirmation Failed',
+        description: e.message,
+      });
+    } finally {
+      setConfirming(null);
+    }
+  };
+
+  const getStatusBadge = (status: 'pending' | 'confirmed' | undefined) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="destructive"><Hourglass className="mr-1 h-3 w-3" />Pending</Badge>;
+      case 'confirmed':
+        return <Badge className="bg-green-100 text-green-700"><CheckCircle className="mr-1 h-3 w-3" />Confirmed</Badge>;
+      default:
+        return <Badge className="bg-green-100 text-green-700"><CheckCircle className="mr-1 h-3 w-3" />Confirmed</Badge>;
+    }
+  };
+
   const exportAttendees = () => {
     const csvContent = [
-      ['Name', 'Email', 'Event', 'Date', 'Location', 'Purchase Date', 'Price (GHS)', 'Checked In'].join(','),
+      ['Name', 'Email', 'Event', 'Date', 'Location', 'Purchase Date', 'Price (GHS)', 'Checked In', 'Status', 'Booking Code'].join(','),
       ...filteredAttendees.map((attendee: any) => [
         attendee.attendeeName,
         attendee.attendeeEmail,
@@ -105,7 +137,9 @@ export default function AttendeesPage() {
         attendee.eventLocation,
         typeof attendee.purchaseDate === 'string' ? format(parseISO(attendee.purchaseDate), 'yyyy-MM-dd') : 'N/A',
         `${attendee.price.toFixed(2)}`,
-        attendee.checkedIn ? 'Yes' : 'No'
+        attendee.checkedIn ? 'Yes' : 'No',
+        attendee.status || 'confirmed',
+        attendee.bookingCode || 'N/A'
       ].join(','))
     ].join('\n');
 
@@ -232,9 +266,9 @@ export default function AttendeesPage() {
                   <TableRow>
                     <TableHead>Attendee</TableHead>
                     <TableHead>Event</TableHead>
-                    <TableHead>Purchase Date</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="text-center">Checked In</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -259,11 +293,9 @@ export default function AttendeesPage() {
                             {format(parseISO(attendee.eventDate), 'MMM dd, yyyy')}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        {typeof attendee.purchaseDate === 'string' ? format(parseISO(attendee.purchaseDate), 'MMM dd, yyyy') : 'N/A'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant="outline">{PaymentCalculator.formatCurrency(attendee.price * 100, 'GHS')}</Badge>
+                       <TableCell>
+                        {getStatusBadge(attendee.status)}
+                        {attendee.status === 'pending' && <p className="text-xs text-muted-foreground">Code: {attendee.bookingCode}</p>}
                       </TableCell>
                        <TableCell className="text-center">
                         {checkingIn === attendee.id ? (
@@ -276,6 +308,19 @@ export default function AttendeesPage() {
                           />
                         )}
                       </TableCell>
+                       <TableCell className="text-right">
+                         {attendee.status === 'pending' && (
+                           <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleConfirmPayment(attendee.id)}
+                              disabled={confirming === attendee.id}
+                           >
+                              {confirming === attendee.id && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                              Confirm Payment
+                           </Button>
+                         )}
+                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
