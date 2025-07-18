@@ -18,13 +18,17 @@ export interface LaunchConfig {
 }
 
 export function getLaunchConfig(): LaunchConfig {
-  // Get launch date from environment or default to Friday
-  const launchDateString = process.env.NEXT_PUBLIC_LAUNCH_DATE || '2025-07-18T12:00:00Z';
+  // Get today's date and set time to 8 PM UTC (20:00)
+  const today = new Date();
+  today.setUTCHours(20, 0, 0, 0);
+
+  // Get launch date from environment or default to 8 PM today
+  const launchDateString = process.env.NEXT_PUBLIC_LAUNCH_DATE || today.toISOString();
   const launchDate = new Date(launchDateString);
   const now = new Date();
   
   // Check if launch mode is enabled
-  const launchMode = process.env.NEXT_PUBLIC_LAUNCH_MODE || 'live';
+  const launchMode = process.env.NEXT_PUBLIC_LAUNCH_MODE || 'countdown';
   const isCountdownMode = launchMode === 'countdown';
   
   // Calculate if we've launched

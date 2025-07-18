@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import { EventCard } from '@/components/event-card';
 import { useAppContext } from '@/context/app-context';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowRight, Newspaper, CalendarX, Zap, CreditCard, BarChart, Mail, PenSquare, Ticket, Users as UsersIcon, Search, CheckCircle } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { ArrowRight, Newspaper, CalendarX, Zap, CreditCard, BarChart, Mail, PenSquare, Ticket, Users as UsersIcon, Search, CheckCircle, Rocket, X } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
 import { NewsCard } from '@/components/news-card';
 import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -18,6 +18,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CategoryFilters } from '@/components/category-filters';
 import ReactMarkdown from 'react-markdown';
+import { getLaunchConfig } from '@/lib/launch';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 
 export default function HomePage() {
@@ -26,6 +28,20 @@ export default function HomePage() {
   const [isSubscribing, setIsSubscribing] = useState(false);
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState('All Events');
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  useEffect(() => {
+    const launchConfig = getLaunchConfig();
+    const now = new Date();
+    // Show welcome message if launched within the last 24 hours.
+    if (launchConfig.isLaunched && now.getTime() - launchConfig.launchDate.getTime() < 24 * 60 * 60 * 1000) {
+      const welcomeShown = sessionStorage.getItem('welcomeMessageShown');
+      if (!welcomeShown) {
+        setShowWelcome(true);
+        sessionStorage.setItem('welcomeMessageShown', 'true');
+      }
+    }
+  }, []);
 
   const filteredEvents = useMemo(() => {
     return activeCategory === 'All Events'
@@ -168,6 +184,18 @@ export default function HomePage() {
   return (
     <>
       <div className="w-full">
+         {showWelcome && (
+            <Alert className="fixed top-20 right-6 z-50 w-full max-w-sm border-green-500 bg-green-50 text-green-800">
+                <Rocket className="h-4 w-4 text-green-600" />
+                <AlertTitle className="font-bold text-green-900">Welcome to TicketFlow!</AlertTitle>
+                <AlertDescription>
+                    We're officially live! Thanks for being one of our first visitors.
+                </AlertDescription>
+                 <button onClick={() => setShowWelcome(false)} className="absolute top-2 right-2 p-1 rounded-md hover:bg-green-100">
+                    <X className="h-4 w-4"/>
+                </button>
+            </Alert>
+        )}
         {/* Hero Section with Video Background */}
          <section className="relative h-screen min-h-[600px] md:min-h-[800px] flex items-center justify-center text-center text-white overflow-hidden">
             <video
