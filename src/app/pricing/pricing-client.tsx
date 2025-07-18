@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PageHero } from '@/components/page-hero';
-import { Check, Loader2, Phone, Shield } from 'lucide-react';
+import { Check, Loader2, Phone, Shield, Copy } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
@@ -20,7 +20,18 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { PaymentCalculator } from '@/lib/payment-config';
+
+// Generate a simple human-readable booking code
+const generateReferenceCode = () => {
+    const chars = 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789';
+    let result = 'PLAN-';
+    for (let i = 0; i < 6; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+};
+
 
 export default function PricingClientPage() {
   const { user, signInWithGoogle } = useAuth();
@@ -28,7 +39,7 @@ export default function PricingClientPage() {
   const { toast } = useToast();
   const [isUpgrading, setIsUpgrading] = useState<SubscriptionPlan | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<{name: SubscriptionPlan, priceGHS: number} | null>(null);
-  const [momoNumber, setMomoNumber] = useState('');
+  const [referenceCode, setReferenceCode] = useState('');
 
   const handleChoosePlan = async (plan: SubscriptionPlan, priceGHS: number) => {
     if (!user) {
@@ -36,79 +47,44 @@ export default function PricingClientPage() {
       return;
     }
     
-    // For free plan, just update the user record
-    if (priceGHS === 0) {
-      setIsUpgrading(plan);
-      try {
+    setIsUpgrading(plan);
+    try {
+      // For Free plan, just update and finish.
+      if (priceGHS === 0) {
         await updateUser(user.uid, { subscriptionPlan: plan });
         toast({
           title: 'Plan Updated!',
           description: `You are now on the ${plan} plan.`,
         });
-      } catch {
-         toast({
-          variant: 'destructive',
-          title: 'Update Failed',
-          description: 'Could not update your plan.',
-        });
-      } finally {
-        setIsUpgrading(null);
+        return;
       }
-      return;
-    }
 
-    // For paid plans, open payment dialog
-    setSelectedPlan({ name: plan, priceGHS });
+      // For paid plans, optimistically upgrade the plan in the DB,
+      // then show manual payment instructions.
+      await updateUser(user.uid, { subscriptionPlan: plan });
+      setReferenceCode(generateReferenceCode());
+      setSelectedPlan({ name: plan, priceGHS });
+      
+    } catch {
+       toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: 'Could not update your plan.',
+      });
+    } finally {
+      setIsUpgrading(null);
+    }
   };
   
-  const handleSubscriptionPayment = async () => {
-    if (!user || !selectedPlan || !momoNumber) return;
-    
-    setIsUpgrading(selectedPlan.name);
-
-    try {
-        const response = await fetch('/api/payments/create-intent', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                amount: selectedPlan.priceGHS * 100, // to pesewas/cents
-                currency: 'GHS',
-                gatewayId: 'mtn-momo',
-                momoNumber,
-                metadata: {
-                    userId: user.uid,
-                    plan: selectedPlan.name,
-                    type: 'subscription'
-                }
-            })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.details || 'Payment request failed.');
-        }
-
-        // The request to pay is asynchronous.
-        // For this UI flow, we'll assume it will go through and update the plan.
-        // A robust system would wait for a webhook confirmation.
-        await updateUser(user.uid, { subscriptionPlan: selectedPlan.name });
-        toast({
-            title: 'Payment Initiated & Plan Upgraded!',
-            description: `Please approve the payment of GH₵${selectedPlan.priceGHS} on your phone. Your plan has been upgraded to ${selectedPlan.name}.`,
-        });
-
-    } catch(e: any) {
-        toast({
-            variant: 'destructive',
-            title: 'Upgrade Failed',
-            description: e.message || 'Could not process payment. Please try again.',
-        });
-    } finally {
-        setIsUpgrading(null);
-        setSelectedPlan(null);
-        setMomoNumber('');
-    }
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ description: "Copied to clipboard!" });
   };
+  
+  const handleDialogClose = () => {
+    setSelectedPlan(null);
+    setReferenceCode('');
+  }
 
   const freePlan = {
     name: 'Free' as SubscriptionPlan,
@@ -296,32 +272,39 @@ export default function PricingClientPage() {
         </section>
       </div>
 
-      <Dialog open={!!selectedPlan} onOpenChange={() => setSelectedPlan(null)}>
+      <Dialog open={!!selectedPlan} onOpenChange={handleDialogClose}>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Upgrade to {selectedPlan?.name} Plan</DialogTitle>
+                <DialogTitle>Complete Your Upgrade to {selectedPlan?.name}</DialogTitle>
                 <DialogDescription>
-                    Complete your payment of GH₵{selectedPlan?.priceGHS} to upgrade your plan.
+                    Your plan is now active. Please make the payment to keep your subscription.
                 </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-                <Label htmlFor="momoNumber" className="flex items-center gap-2"><Shield /> Secure MoMo Payment</Label>
-                <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        id="momoNumber"
-                        placeholder="Enter your Mobile Money number"
-                        value={momoNumber}
-                        onChange={(e) => setMomoNumber(e.target.value)}
-                        className="pl-10"
-                    />
-                </div>
+             <div className="py-4 space-y-4 text-center">
+              <Shield className="h-12 w-12 mx-auto text-primary" />
+              <h3 className="text-xl font-semibold">Manual Payment Required</h3>
+              <p className="text-muted-foreground">
+                Follow the instructions below to complete your payment and secure your plan.
+              </p>
+              <Card className="text-left p-4 bg-muted/50">
+                 <p className="text-sm font-semibold">Instructions:</p>
+                 <ol className="text-sm list-decimal list-inside space-y-1 mt-2">
+                    <li>Send Mobile Money to: <strong className="text-primary">024 123 4567</strong></li>
+                    <li>Amount: <strong className="text-primary">{PaymentCalculator.formatCurrency(selectedPlan?.priceGHS || 0, 'GHS')}</strong></li>
+                    <li>
+                      Reference/Narration:
+                      <div className="flex items-center gap-2 mt-1">
+                        <Input readOnly value={referenceCode} className="font-mono text-xs h-8"/>
+                        <Button type="button" size="icon" variant="ghost" onClick={() => copyToClipboard(referenceCode)}><Copy className="h-4 w-4"/></Button>
+                      </div>
+                    </li>
+                 </ol>
+                 <p className="text-xs text-muted-foreground mt-4">Your subscription will be fully activated upon payment confirmation by our team.</p>
+              </Card>
             </div>
             <DialogFooter>
-                <Button variant="outline" onClick={() => setSelectedPlan(null)}>Cancel</Button>
-                <Button onClick={handleSubscriptionPayment} disabled={isUpgrading === selectedPlan?.name || !momoNumber}>
-                    {isUpgrading === selectedPlan?.name && <Loader2 className="animate-spin mr-2 h-4 w-4"/>}
-                    Pay GH₵{selectedPlan?.priceGHS}
+                <Button onClick={handleDialogClose} className="w-full">
+                    Done
                 </Button>
             </DialogFooter>
         </DialogContent>
