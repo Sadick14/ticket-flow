@@ -1,22 +1,23 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useAppContext } from '@/context/app-context';
-import type { Event, Ticket } from '@/lib/types';
+import type { Event, Ticket, UserProfile } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Calendar, Users, Hourglass, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Loader2, Calendar, Users, Hourglass, CheckCircle, ArrowLeft, DollarSign, TrendingUp, HandCoins } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { PaymentCalculator, PAYMENT_CONFIG } from '@/lib/payment-config';
 
 export default function AdminEventDetailsPage() {
   const { id } = useParams();
-  const { getEventById, getTicketsByEvent, updateTicket, loading } = useAppContext();
+  const { getEventById, getTicketsByEvent, updateTicket, loading, users } = useAppContext();
   const { toast } = useToast();
 
   const [event, setEvent] = useState<Event | null>(null);
@@ -56,6 +57,33 @@ export default function AdminEventDetailsPage() {
       setIsApproving(null);
     }
   };
+  
+  const getUserById = (id: string): UserProfile | undefined => users.find(u => u.uid === id);
+
+  const financials = useMemo(() => {
+    if (!event) return null;
+    
+    const creator = getUserById(event.creatorId);
+    if (!creator) return null;
+
+    const confirmedTickets = tickets.filter(t => t.status === 'confirmed');
+    const totalRevenue = confirmedTickets.reduce((sum, ticket) => sum + ticket.price, 0);
+
+    const commissionRate = PaymentCalculator.getCommissionRate(creator.subscriptionPlan || 'Free');
+    const platformFeeRate = PAYMENT_CONFIG.platformFee;
+    
+    const adminCommission = totalRevenue * commissionRate;
+    const platformCommission = totalRevenue * platformFeeRate;
+    const totalDeductions = adminCommission + platformCommission; // simplified
+    const creatorPayout = totalRevenue - totalDeductions;
+
+    return {
+      totalRevenue: totalRevenue * 100, // to pesewas/cents
+      totalCommission: totalDeductions * 100,
+      creatorPayout: creatorPayout * 100,
+      commissionRate: (commissionRate + platformFeeRate) * 100
+    };
+  }, [event, tickets, users]);
 
   const getStatusBadge = (status: 'pending' | 'confirmed') => {
     switch (status) {
@@ -89,6 +117,44 @@ export default function AdminEventDetailsPage() {
           </p>
         </div>
       </div>
+      
+      {/* Financials Section */}
+      {financials && (
+         <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{PaymentCalculator.formatCurrency(financials.totalRevenue, 'GHS')}</div>
+                <p className="text-xs text-muted-foreground">From confirmed ticket sales</p>
+              </CardContent>
+            </Card>
+             <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Platform Commission</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{PaymentCalculator.formatCurrency(financials.totalCommission, 'GHS')}</div>
+                <p className="text-xs text-muted-foreground">Based on {financials.commissionRate.toFixed(1)}% rate</p>
+              </CardContent>
+            </Card>
+             <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Net Payout to Creator</CardTitle>
+                <HandCoins className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{PaymentCalculator.formatCurrency(financials.creatorPayout, 'GHS')}</div>
+                <p className="text-xs text-muted-foreground">After all deductions</p>
+              </CardContent>
+            </Card>
+         </div>
+      )}
+
+
       <Card>
         <CardHeader>
           <CardTitle>Attendee List & Payment Approval</CardTitle>
