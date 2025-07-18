@@ -8,7 +8,7 @@ import type { Ticket, Event, SubscriptionRequest } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardDescription, CardTitle } from '@/components/ui/card';
-import { Ticket as TicketIcon, Loader2, KeyRound, CheckCircle, Hourglass, Star, Copy } from 'lucide-react';
+import { Ticket as TicketIcon, Loader2, KeyRound, CheckCircle, Hourglass, Star, Copy, XCircle, Ban } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -17,8 +17,19 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp"
 import { PageHero } from '@/components/page-hero';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isPast } from 'date-fns';
 import { PaymentCalculator } from '@/lib/payment-config';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export default function MyPageClient() {
   const { user, loading: authLoading } = useAuth();
@@ -26,19 +37,21 @@ export default function MyPageClient() {
     getUserTicketsByEmail, 
     getUserSubscriptionRequests, 
     loading: appLoading, 
-    getEventById 
+    deleteTicket,
   } = useAppContext();
   
   const [attendeeEmail, setAttendeeEmail] = useState<string | null>(null);
   const [emailInput, setEmailInput] = useState('');
   
-  const [pendingTickets, setPendingTickets] = useState<Ticket[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [pendingSubscriptions, setPendingSubscriptions] = useState<SubscriptionRequest[]>([]);
   
   const [isVerified, setIsVerified] = useState(false);
   const [otp, setOtp] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  const [isCancelling, setIsCancelling] = useState<string | null>(null);
+
 
   const { toast } = useToast();
 
@@ -50,14 +63,14 @@ export default function MyPageClient() {
 
   useEffect(() => {
     if (isVerified && attendeeEmail) {
-      const fetchPendingItems = async () => {
-        const tickets = await getUserTicketsByEmail(attendeeEmail);
-        setPendingTickets(tickets.filter(t => t.status === 'pending'));
+      const fetchItems = async () => {
+        const fetchedTickets = await getUserTicketsByEmail(attendeeEmail);
+        setTickets(fetchedTickets);
         
-        const subs = await getUserSubscriptionRequests(attendeeEmail);
-        setPendingSubscriptions(subs.filter(s => s.status === 'pending'));
+        const fetchedSubs = await getUserSubscriptionRequests(attendeeEmail);
+        setPendingSubscriptions(fetchedSubs.filter(s => s.status === 'pending'));
       };
-      fetchPendingItems();
+      fetchItems();
     }
   }, [isVerified, attendeeEmail, getUserTicketsByEmail, getUserSubscriptionRequests]);
 
@@ -109,6 +122,19 @@ export default function MyPageClient() {
       setIsVerifying(false);
     }
   }
+  
+  const handleCancelTicket = async (ticketId: string) => {
+    setIsCancelling(ticketId);
+    try {
+      await deleteTicket(ticketId);
+      setTickets(prev => prev.filter(t => t.id !== ticketId));
+      toast({ title: "Booking Cancelled", description: "Your ticket reservation has been cancelled." });
+    } catch {
+      toast({ variant: 'destructive', title: "Cancellation Failed" });
+    } finally {
+      setIsCancelling(null);
+    }
+  };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -121,9 +147,9 @@ export default function MyPageClient() {
             <Card className="max-w-md mx-auto">
                 <CardContent className="p-8 text-center">
                     <TicketIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-medium text-foreground">Find Your Pending Items</h3>
+                    <h3 className="mt-4 text-lg font-medium text-foreground">Find Your Bookings</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Enter the email address you used during purchase to view your pending tickets and subscriptions.
+                        Enter the email address you used during purchase to view your tickets and subscriptions.
                     </p>
                     <div className="mt-6 flex flex-col sm:flex-row gap-2">
                         <Input 
@@ -177,13 +203,13 @@ export default function MyPageClient() {
         )
     }
 
-    if (pendingTickets.length === 0 && pendingSubscriptions.length === 0) {
+    if (tickets.length === 0 && pendingSubscriptions.length === 0) {
       return (
         <Card>
             <CardContent className="py-16 text-center">
                 <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
-                <h3 className="mt-4 text-lg font-medium text-foreground">You're All Caught Up!</h3>
-                <p className="mt-1 text-sm text-muted-foreground">You have no items pending approval for {attendeeEmail}.</p>
+                <h3 className="mt-4 text-lg font-medium text-foreground">You're All Set!</h3>
+                <p className="mt-1 text-sm text-muted-foreground">You have no items pending for {attendeeEmail}.</p>
                 <div className="mt-6">
                     <Button asChild>
                       <Link href="/events">Browse More Events</Link>
@@ -220,14 +246,17 @@ export default function MyPageClient() {
           </Card>
         )}
         
-        {pendingTickets.length > 0 && (
+        {tickets.length > 0 && (
            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Hourglass/> Pending Tickets</CardTitle>
-                <CardDescription>These tickets are awaiting payment confirmation.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><TicketIcon/> My Tickets</CardTitle>
+                <CardDescription>All your tickets, both pending and confirmed.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {pendingTickets.map(ticket => (
+                {tickets.map(ticket => {
+                  const isTicketExpired = ticket.event ? isPast(new Date(`${ticket.event.date}T23:59:59`)) : false;
+
+                  return (
                   <div key={ticket.id} className="p-4 border rounded-lg bg-muted/50">
                     <div className="flex justify-between items-start">
                         <div>
@@ -236,13 +265,54 @@ export default function MyPageClient() {
                         </div>
                         <p className="font-bold text-primary">{PaymentCalculator.formatCurrency(ticket.price * 100, 'GHS')}</p>
                     </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <p className="text-sm text-muted-foreground">Booking Code:</p>
-                      <Input readOnly value={ticket.bookingCode} className="font-mono text-xs h-8 w-32"/>
-                      <Button type="button" size="icon" variant="ghost" onClick={() => copyToClipboard(ticket.bookingCode)}><Copy className="h-4 w-4"/></Button>
-                    </div>
+                     <div className="flex justify-between items-center mt-3 pt-3 border-t">
+                        <div className="flex items-center gap-2">
+                          {isTicketExpired ? (
+                            <Badge variant="outline"><Ban className="mr-1 h-3 w-3" />Expired</Badge>
+                          ) : ticket.status === 'confirmed' ? (
+                            <Badge className="bg-green-100 text-green-700"><CheckCircle className="mr-1 h-3 w-3" />Confirmed</Badge>
+                          ) : (
+                            <Badge variant="destructive"><Hourglass className="mr-1 h-3 w-3" />Pending Payment</Badge>
+                          )}
+                        </div>
+                        {ticket.status === 'pending' && !isTicketExpired && (
+                           <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="sm" disabled={isCancelling === ticket.id}>
+                                {isCancelling === ticket.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <XCircle className="mr-2 h-4 w-4" />}
+                                Cancel Booking
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will cancel your unpaid ticket reservation for {ticket.event?.name}. This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Keep Reservation</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleCancelTicket(ticket.id)}>
+                                  Yes, Cancel It
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
+
+                      {ticket.status === 'pending' && !isTicketExpired && (
+                        <div className="mt-3 p-3 bg-blue-50/50 rounded-md border border-blue-200">
+                          <p className="text-sm text-blue-700 font-medium mb-1">Action Required</p>
+                          <p className="text-xs text-blue-600">Please use the booking code below as a reference to complete your payment.</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Input readOnly value={ticket.bookingCode} className="font-mono text-xs h-8"/>
+                            <Button type="button" size="icon" variant="ghost" onClick={() => copyToClipboard(ticket.bookingCode)}><Copy className="h-4 w-4"/></Button>
+                          </div>
+                        </div>
+                      )}
                   </div>
-                ))}
+                )})}
               </CardContent>
             </Card>
         )}

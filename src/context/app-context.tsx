@@ -19,7 +19,7 @@ interface AppContextType {
   // Events
   addEvent: (event: Omit<Event, 'id' | 'collaboratorIds' | 'status'>) => Promise<void>;
   updateEvent: (id: string, eventData: Partial<Omit<Event, 'id'>>) => Promise<void>;
-  deleteEvent: (id: string) => Promise<void>; // This will now archive the event
+  deleteEvent: (id: string) => Promise<void>;
   getEventById: (id: string) => Promise<Event | undefined>;
   getEventsByCreator: (creatorId: string) => Event[];
   getCollaboratedEvents: (userId: string) => Event[];
@@ -36,6 +36,7 @@ interface AppContextType {
   getUserTicketsByEmail: (email: string) => Promise<Ticket[]>;
   getTicketsByEvent: (eventId: string) => Ticket[];
   updateTicket: (id: string, ticketData: Partial<Omit<Ticket, 'id'>>) => Promise<void>;
+  deleteTicket: (id: string) => Promise<void>;
   // Users
   updateUser: (uid: string, data: Partial<UserProfile>) => Promise<void>;
   addCollaborator: (eventId: string, email: string) => Promise<{success: boolean, message: string}>;
@@ -218,6 +219,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         throw error;
     }
   }
+  
+  const deleteTicket = async (id: string) => {
+    try {
+      const ticketRef = doc(db, 'tickets', id);
+      await deleteDoc(ticketRef);
+      await fetchAllData();
+    } catch (error) {
+        console.error("Error deleting ticket:", error);
+        throw error;
+    }
+  };
 
   const getEventById = async (id: string): Promise<Event | undefined> => {
     try {
@@ -535,6 +547,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       getUserTicketsByEmail,
       getTicketsByEvent,
       updateTicket,
+      deleteTicket,
       getEventById, 
       getEventsByCreator,
       getCollaboratedEvents,

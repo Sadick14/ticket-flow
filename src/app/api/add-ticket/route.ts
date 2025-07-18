@@ -5,6 +5,7 @@ import { db } from '@/lib/firebase';
 import { sendEmail, renderTemplate } from '@/lib/email';
 import type { Ticket, Event } from '@/lib/types';
 import { format, parseISO } from 'date-fns';
+import { PaymentCalculator } from '@/lib/payment-config';
 
 interface AddTicketRequest {
   eventId: string;
@@ -60,10 +61,12 @@ export async function POST(request: NextRequest) {
       const finalTicket = { id: docRef.id, ...newTicket };
       newTicketsData.push(finalTicket);
 
-      // Only send confirmation email if payment is confirmed (i.e., for free events)
-      if (status === 'confirmed') {
+      const eventDate = parseISO(`${event.date}T${event.time}`);
+      const totalPrice = price * attendees.length;
+
+      // Send different emails based on ticket status
+      if (status === 'confirmed') { // For free events
         try {
-          const eventDate = parseISO(`${event.date}T${event.time}`);
           const emailContent = renderTemplate('ticketConfirmation', {
               eventName: event.name,
               eventDate: format(eventDate, 'PPP p'),
@@ -79,6 +82,25 @@ export async function POST(request: NextRequest) {
           });
         } catch (emailError) {
           console.error(`Error sending confirmation email for ${finalTicket.attendeeEmail}:`, emailError);
+        }
+      } else { // For pending (paid) events
+         try {
+          const emailContent = renderTemplate('pendingPaymentInstructions', {
+              eventName: event.name,
+              attendeeName: finalTicket.attendeeName,
+              totalPrice: PaymentCalculator.formatCurrency(totalPrice * 100, 'GHS'),
+              bookingCode: bookingCode,
+              paymentNumber: "0597479994"
+          });
+          
+          await sendEmail({
+              to: finalTicket.attendeeEmail,
+              subject: emailContent.subject,
+              html: emailContent.html,
+              text: emailContent.text
+          });
+        } catch (emailError) {
+          console.error(`Error sending payment instructions for ${finalTicket.attendeeEmail}:`, emailError);
         }
       }
     }

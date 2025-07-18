@@ -154,6 +154,34 @@ export const emailTemplates = {
         return { subject, html, text };
     }
   },
+  pendingPaymentInstructions: {
+    name: 'Pending Payment Instructions',
+    category: 'announcement',
+    fields: {
+      eventName: { label: 'Event Name', type: 'text', placeholder: '' },
+      attendeeName: { label: 'Attendee Name', type: 'text', placeholder: '' },
+      totalPrice: { label: 'Total Price', type: 'text', placeholder: '' },
+      bookingCode: { label: 'Booking Code', type: 'text', placeholder: '' },
+      paymentNumber: { label: 'Payment Number', type: 'text', placeholder: '' },
+    },
+    generate: (content) => {
+      const { eventName, attendeeName, totalPrice, bookingCode, paymentNumber } = content;
+      const subject = `Action Required: Complete your payment for ${eventName}`;
+      const html = emailWrapper('Payment Required', `
+        <h2>Hi ${attendeeName},</h2>
+        <p>Thank you for booking your spot for <strong>${eventName}</strong>! Your reservation is pending payment.</p>
+        <h3>Payment Instructions:</h3>
+        <ol>
+          <li>Send <strong>${totalPrice}</strong> via Mobile Money to: <strong>${paymentNumber}</strong>.</li>
+          <li>Use the following booking code as your payment reference: <strong style="font-size: 1.2em; color: #237A7A;">${bookingCode}</strong></li>
+        </ol>
+        <p>Once we confirm your payment, we will send your final ticket confirmation. Your booking is held for 24 hours.</p>
+        <p>Thank you!</p>
+      `);
+      const text = `Hi ${attendeeName},\n\nYour booking for ${eventName} is pending. Please complete your payment of ${totalPrice} to ${paymentNumber} using the reference code: ${bookingCode}.\n\nThank you!`;
+      return { subject, html, text };
+    },
+  },
   eventReminder: {
     name: 'Event Reminder',
     category: 'announcement', // Not selectable in admin
