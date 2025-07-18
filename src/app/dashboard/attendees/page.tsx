@@ -16,16 +16,14 @@ import { format, parseISO } from 'date-fns';
 import type { Ticket, Event, UserProfile } from '@/lib/types';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { PaymentCalculator } from '@/lib/payment-config';
 
 export default function AttendeesPage() {
   const { user } = useAuth();
-  const { events, tickets, getEventsByCreator, getCollaboratedEvents, manualCheckInTicket, updateTicket } = useAppContext();
+  const { events, tickets, getEventsByCreator, getCollaboratedEvents, manualCheckInTicket } = useAppContext();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEventId, setSelectedEventId] = useState<string>('all');
   const [checkingIn, setCheckingIn] = useState<string | null>(null);
-  const [confirming, setConfirming] = useState<string | null>(null);
 
   const userEvents = user ? getEventsByCreator(user.uid) : [];
   const collaboratedEvents = user ? getCollaboratedEvents(user.uid) : [];
@@ -92,26 +90,6 @@ export default function AttendeesPage() {
       });
     } finally {
       setCheckingIn(null);
-    }
-  };
-
-  const handleConfirmPayment = async (ticketId: string) => {
-    if (!user) return;
-    setConfirming(ticketId);
-    try {
-      await updateTicket(ticketId, { status: 'confirmed' });
-      toast({
-        title: `Payment Confirmed`,
-        description: `Ticket has been marked as confirmed.`,
-      });
-    } catch (e: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Confirmation Failed',
-        description: e.message,
-      });
-    } finally {
-      setConfirming(null);
     }
   };
 
@@ -268,7 +246,6 @@ export default function AttendeesPage() {
                     <TableHead>Event</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-center">Checked In</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -308,19 +285,6 @@ export default function AttendeesPage() {
                           />
                         )}
                       </TableCell>
-                       <TableCell className="text-right">
-                         {attendee.status === 'pending' && (
-                           <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleConfirmPayment(attendee.id)}
-                              disabled={confirming === attendee.id}
-                           >
-                              {confirming === attendee.id && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                              Confirm Payment
-                           </Button>
-                         )}
-                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

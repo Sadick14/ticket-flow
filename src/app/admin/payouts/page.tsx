@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAppContext } from '@/context/app-context';
@@ -13,28 +13,28 @@ import { Badge } from '@/components/ui/badge';
 import { FirebasePaymentService } from '@/lib/firebase-payment-service';
 import { useToast } from '@/hooks/use-toast';
 import { PaymentCalculator } from '@/lib/payment-config';
+import type { Payout } from '@/lib/payment-types';
 
 export default function AdminPayoutsPage() {
   const { users, loading } = useAppContext();
   const { toast } = useToast();
-  const [payouts, setPayouts] = useState<any[]>([]);
+  const [payouts, setPayouts] = useState<Payout[]>([]);
   const [payoutsLoading, setPayoutsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  useMemo(async () => {
-    setPayoutsLoading(true);
-    // This is a placeholder. In a real app, you'd fetch this from your DB.
-    // For now, we'll simulate it, assuming payouts are requested.
-    const fetchedPayouts = await FirebasePaymentService.getPendingPayouts();
-    setPayouts(fetchedPayouts);
-    setPayoutsLoading(false);
+  useEffect(() => {
+    const fetchPayouts = async () => {
+        setPayoutsLoading(true);
+        const fetchedPayouts = await FirebasePaymentService.getPendingPayouts();
+        setPayouts(fetchedPayouts);
+        setPayoutsLoading(false);
+    }
+    fetchPayouts();
   }, []);
 
   const handleProcessPayout = async (payoutId: string) => {
     setProcessingId(payoutId);
     try {
-      // In a real app, this would trigger a real funds transfer.
-      // Here, we just update the status.
       await FirebasePaymentService.updatePayout(payoutId, { status: 'completed' });
       
       const updatedPayouts = await FirebasePaymentService.getPendingPayouts();
@@ -129,7 +129,7 @@ export default function AdminPayoutsPage() {
                                 )}
                             </TableCell>
                             <TableCell>
-                                <Badge variant="secondary">{PaymentCalculator.formatCurrency(payout.amount * 100, 'GHS')}</Badge>
+                                <Badge variant="secondary">{PaymentCalculator.formatCurrency(payout.amount, 'GHS')}</Badge>
                             </TableCell>
                              <TableCell>
                                <span className="capitalize">{payout.paymentMethod}</span>

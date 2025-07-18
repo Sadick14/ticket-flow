@@ -63,9 +63,11 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const removeDuplicates = <T extends { id: string }>(items: T[]): T[] => {
     const seen = new Set<string>();
     return items.filter(item => {
-        const duplicate = seen.has(item.id);
+        if (seen.has(item.id)) {
+            return false;
+        }
         seen.add(item.id);
-        return !duplicate;
+        return true;
     });
 };
 
