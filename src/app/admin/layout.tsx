@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
-import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users, Archive, Users2, MessageSquare, Calendar, CreditCard, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users, Archive, Users2, MessageSquare, Calendar, CreditCard, Image as ImageIcon, Star } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -86,6 +86,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <Link href="/admin/events">
                     <Calendar />
                     <span>Events</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/admin/subscriptions')}
+                  tooltip={{ children: 'Subscriptions' }}
+                >
+                  <Link href="/admin/subscriptions">
+                    <Star />
+                    <span>Subscriptions</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -247,6 +259,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   {pathname === '/admin' && 'Admin Dashboard'}
                   {pathname.startsWith('/admin/events/') && 'Event Attendee Management'}
                   {pathname === '/admin/events' && 'Event Management'}
+                  {pathname.startsWith('/admin/subscriptions') && 'Subscription Management'}
                   {pathname.startsWith('/admin/payouts') && 'Payout Management'}
                   {pathname.startsWith('/admin/users') && 'User Management'}
                   {pathname.startsWith('/admin/contact-messages') && 'Contact Messages'}

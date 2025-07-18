@@ -120,3 +120,14 @@ export interface Message {
     attachments?: string[]; // Array of data URIs
     timestamp?: any;
 }
+
+export interface SubscriptionRequest {
+    id: string;
+    userId: string;
+    plan: SubscriptionPlan;
+    price: number;
+    bookingCode: string;
+    status: 'pending' | 'approved';
+    requestedAt: string; // ISO string
+    approvedAt?: string; // ISO string
+}

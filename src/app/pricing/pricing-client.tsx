@@ -24,18 +24,15 @@ import { PaymentCalculator } from '@/lib/payment-config';
 
 // Generate a simple human-readable booking code
 const generateReferenceCode = () => {
-    const chars = 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789';
-    let result = 'PLAN-';
-    for (let i = 0; i < 6; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
+    const chars = 'PLAN-';
+    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+    return `${chars}${random}`;
 };
 
 
 export default function PricingClientPage() {
   const { user, signInWithGoogle } = useAuth();
-  const { updateUser } = useAppContext();
+  const { updateUser, createSubscriptionRequest } = useAppContext();
   const { toast } = useToast();
   const [isUpgrading, setIsUpgrading] = useState<SubscriptionPlan | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<{name: SubscriptionPlan, priceGHS: number} | null>(null);
@@ -49,27 +46,24 @@ export default function PricingClientPage() {
     
     setIsUpgrading(plan);
     try {
-      // For Free plan, just update and finish.
-      if (priceGHS === 0) {
+      if (priceGHS === 0) { // Handle free plan directly
         await updateUser(user.uid, { subscriptionPlan: plan });
         toast({
           title: 'Plan Updated!',
           description: `You are now on the ${plan} plan.`,
         });
-        return;
+      } else { // Handle paid plans
+        const bookingCode = generateReferenceCode();
+        await createSubscriptionRequest(user.uid, plan, priceGHS, bookingCode);
+        setReferenceCode(bookingCode);
+        setSelectedPlan({ name: plan, priceGHS });
       }
-
-      // For paid plans, optimistically upgrade the plan in the DB,
-      // then show manual payment instructions.
-      await updateUser(user.uid, { subscriptionPlan: plan });
-      setReferenceCode(generateReferenceCode());
-      setSelectedPlan({ name: plan, priceGHS });
       
     } catch {
        toast({
         variant: 'destructive',
         title: 'Update Failed',
-        description: 'Could not update your plan.',
+        description: 'Could not process your plan request.',
       });
     } finally {
       setIsUpgrading(null);
@@ -277,14 +271,14 @@ export default function PricingClientPage() {
             <DialogHeader>
                 <DialogTitle>Complete Your Upgrade to {selectedPlan?.name}</DialogTitle>
                 <DialogDescription>
-                    Your plan is now active. Please make the payment to keep your subscription.
+                    Your upgrade request has been submitted. Please complete the payment to activate your plan.
                 </DialogDescription>
             </DialogHeader>
              <div className="py-4 space-y-4 text-center">
               <Shield className="h-12 w-12 mx-auto text-primary" />
               <h3 className="text-xl font-semibold">Manual Payment Required</h3>
               <p className="text-muted-foreground">
-                Follow the instructions below to complete your payment and secure your plan.
+                Follow the instructions below to complete your payment. Your plan will be activated by an admin upon confirmation.
               </p>
               <Card className="text-left p-4 bg-muted/50">
                  <p className="text-sm font-semibold">Instructions:</p>
@@ -299,7 +293,7 @@ export default function PricingClientPage() {
                       </div>
                     </li>
                  </ol>
-                 <p className="text-xs text-muted-foreground mt-4">Your subscription will be fully activated upon payment confirmation by our team.</p>
+                 <p className="text-xs text-muted-foreground mt-4">Your subscription will be activated once payment is confirmed by our team.</p>
               </Card>
             </div>
             <DialogFooter>

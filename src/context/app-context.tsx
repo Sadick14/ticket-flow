@@ -1,9 +1,8 @@
 
-
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission, Message, FeaturedArticle } from '@/lib/types';
+import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission, Message, FeaturedArticle, SubscriptionRequest, SubscriptionPlan } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy, serverTimestamp, writeBatch, documentId, setDoc } from 'firebase/firestore';
 
@@ -15,6 +14,7 @@ interface AppContextType {
   launchSubscribers: LaunchSubscriber[];
   contactSubmissions: ContactSubmission[];
   featuredArticle: FeaturedArticle | null;
+  subscriptionRequests: SubscriptionRequest[];
   loading: boolean;
   // Events
   addEvent: (event: Omit<Event, 'id' | 'collaboratorIds' | 'status'>) => Promise<void>;
@@ -51,6 +51,9 @@ interface AppContextType {
   addSubscriber: (email: string, name?: string) => Promise<void>;
   deleteSubscriber: (id: string) => Promise<void>;
   bulkAddSubscribers: (subscribers: {email: string, name?: string}[]) => Promise<void>;
+  // Subscription Requests
+  createSubscriptionRequest: (userId: string, plan: SubscriptionPlan, price: number, bookingCode: string) => Promise<void>;
+  approveSubscriptionRequest: (requestId: string, userId: string, plan: SubscriptionPlan) => Promise<void>;
   // Contact Submissions
   replyToSubmission: (submission: ContactSubmission, replyMessage: string) => Promise<void>;
   // AI Chat
@@ -79,6 +82,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [launchSubscribers, setLaunchSubscribers] = useState<LaunchSubscriber[]>([]);
   const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
   const [featuredArticle, setFeaturedArticle] = useState<FeaturedArticle | null>(null);
+  const [subscriptionRequests, setSubscriptionRequests] = useState<SubscriptionRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchAllData = useCallback(async () => {
@@ -90,7 +94,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             usersSnapshot,
             launchSubscribersSnapshot,
             contactSubmissionsSnapshot,
-            featuredArticleDoc
+            featuredArticleDoc,
+            subscriptionRequestsSnapshot,
         ] = await Promise.all([
             getDocs(query(collection(db, 'events'))),
             getDocs(query(collection(db, 'tickets'))),
@@ -99,6 +104,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             getDocs(query(collection(db, 'launch_subscribers'), orderBy('subscribedAt', 'desc'))),
             getDocs(query(collection(db, 'contact_submissions'), orderBy('submittedAt', 'desc'))),
             getDoc(doc(db, 'featured_content', 'current')),
+            getDocs(query(collection(db, 'subscription_requests'), orderBy('requestedAt', 'desc'))),
         ]);
 
         setEvents(removeDuplicates(eventsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event))));
@@ -107,6 +113,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setUsers(usersSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile)));
         setLaunchSubscribers(launchSubscribersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LaunchSubscriber)));
         setContactSubmissions(contactSubmissionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ContactSubmission)));
+        setSubscriptionRequests(subscriptionRequestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SubscriptionRequest)));
         
         if (featuredArticleDoc.exists()) {
             setFeaturedArticle({ id: featuredArticleDoc.id, ...featuredArticleDoc.data() } as FeaturedArticle);
@@ -397,6 +404,31 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await fetchAllData();
   };
 
+  // Subscription Requests
+  const createSubscriptionRequest = async (userId: string, plan: SubscriptionPlan, price: number, bookingCode: string) => {
+    await addDoc(collection(db, 'subscription_requests'), {
+      userId,
+      plan,
+      price,
+      bookingCode,
+      status: 'pending',
+      requestedAt: serverTimestamp()
+    });
+    await fetchAllData();
+  };
+
+  const approveSubscriptionRequest = async (requestId: string, userId: string, plan: SubscriptionPlan) => {
+    const batch = writeBatch(db);
+    const requestRef = doc(db, 'subscription_requests', requestId);
+    batch.update(requestRef, { status: 'approved', approvedAt: serverTimestamp() });
+
+    const userRef = doc(db, 'users', userId);
+    batch.update(userRef, { subscriptionPlan: plan });
+
+    await batch.commit();
+    await fetchAllData();
+  };
+
 
   const replyToSubmission = async (submission: ContactSubmission, replyMessage: string) => {
     const submissionRef = doc(db, 'contact_submissions', submission.id);
@@ -464,6 +496,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       launchSubscribers,
       contactSubmissions,
       featuredArticle,
+      subscriptionRequests,
       loading, 
       addEvent, 
       updateEvent, 
@@ -489,6 +522,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addSubscriber,
       deleteSubscriber,
       bulkAddSubscribers,
+      createSubscriptionRequest,
+      approveSubscriptionRequest,
       replyToSubmission,
       getChatHistory,
       saveChatMessage
