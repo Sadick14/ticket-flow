@@ -1,28 +1,130 @@
 
 'use client';
 
-import { Rocket } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/auth-context';
+import { useAppContext } from '@/context/app-context';
+import { PaymentSetupForm } from '@/components/payment-setup-form';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Loader2, CheckCircle, Wallet, Calendar, Banknote } from 'lucide-react';
+import type { CreatorPaymentProfile } from '@/lib/payment-types';
+import { FirebasePaymentService } from '@/lib/firebase-payment-service';
+import { useToast } from '@/hooks/use-toast';
+import { PaymentCalculator } from '@/lib/payment-config';
+
 
 export default function PaymentSettingsClient() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [profile, setProfile] = useState<CreatorPaymentProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      FirebasePaymentService.getPaymentProfile(user.uid)
+        .then((p) => {
+          setProfile(p);
+          if (!p) setIsEditing(true); // If no profile, go straight to edit mode
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [user]);
+
+  const handleSaveProfile = async (data: Partial<CreatorPaymentProfile>) => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+        await FirebasePaymentService.savePaymentProfile({ ...data, userId: user.uid });
+        const updatedProfile = await FirebasePaymentService.getPaymentProfile(user.uid);
+        setProfile(updatedProfile);
+        setIsEditing(false);
+        toast({
+            title: 'Success!',
+            description: 'Your payment settings have been saved.',
+        });
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Failed to save your settings. Please try again.',
+        });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+  
+  if (isEditing || !profile) {
+    return (
+        <PaymentSetupForm 
+            onComplete={handleSaveProfile}
+            existingProfile={profile || undefined}
+            onSkip={profile ? () => setIsEditing(false) : undefined}
+        />
+    )
+  }
+
   return (
-    <div className="max-w-4xl mx-auto p-6 text-center">
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Payment Settings</h1>
+        <Button onClick={() => setIsEditing(true)}>Edit Settings</Button>
+      </div>
+
       <Card>
         <CardHeader>
-          <div className="mx-auto p-4 bg-primary/10 rounded-full w-fit mb-4">
-            <Rocket className="h-10 w-10 text-primary" />
-          </div>
-          <CardTitle className="text-3xl font-bold">Payments Coming Soon!</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Wallet className="h-5 w-5"/>
+            Your Payout Details
+          </CardTitle>
+          <CardDescription>
+            This is where your earnings from ticket sales will be sent.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            We are working hard to launch our full payment and payout system. You'll soon be able to manage your earnings and get paid directly from your dashboard.
-          </p>
-          <p className="text-muted-foreground mt-4">
-            Thank you for your patience!
-          </p>
+        <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+                <p className="text-muted-foreground">Status</p>
+                <div className="flex items-center gap-2 text-green-600 font-semibold">
+                    <CheckCircle className="h-4 w-4"/>
+                    <span>Verified</span>
+                </div>
+            </div>
+             <div className="flex items-center justify-between p-3 border rounded-lg">
+                <p className="text-muted-foreground">Payment Method</p>
+                <p className="font-semibold uppercase">{profile.paymentMethod}</p>
+            </div>
+             <div className="flex items-center justify-between p-3 border rounded-lg">
+                <p className="text-muted-foreground">Mobile Money Number</p>
+                <p className="font-semibold">{profile.momoNumber}</p>
+            </div>
         </CardContent>
       </Card>
+      
+      <Card>
+          <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Payout Schedule
+              </CardTitle>
+          </CardHeader>
+          <CardContent className="grid md:grid-cols-2 gap-4">
+               <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <p className="text-muted-foreground">Frequency</p>
+                    <p className="font-semibold capitalize">{profile.payoutSchedule}</p>
+                </div>
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <p className="text-muted-foreground">Minimum Payout</p>
+                    <p className="font-semibold">{PaymentCalculator.formatCurrency(profile.minimumPayoutAmount, 'GHS')}</p>
+                </div>
+          </CardContent>
+      </Card>
+
     </div>
   );
 }

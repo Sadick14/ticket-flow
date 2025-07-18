@@ -8,19 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { 
-  CreditCard, 
-  DollarSign, 
-  Shield, 
-  AlertCircle,
+  Info,
   CheckCircle,
-  Wallet,
-  Info
 } from 'lucide-react';
 import { PAYMENT_GATEWAYS, PaymentCalculator, PAYMENT_CONFIG } from '@/lib/payment-config';
-import type { PaymentGateway, CreatorPaymentProfile } from '@/lib/payment-types';
+import type { CreatorPaymentProfile } from '@/lib/payment-types';
+import { useAuth } from '@/context/auth-context';
 
 interface PaymentSetupProps {
   onComplete: (profile: Partial<CreatorPaymentProfile>) => void;
@@ -30,6 +25,7 @@ interface PaymentSetupProps {
 
 export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: PaymentSetupProps) {
   const mtnGateway = PAYMENT_GATEWAYS.find(g => g.id === 'mtn-momo')!;
+  const { user } = useAuth();
   
   const [payoutSchedule, setPayoutSchedule] = useState<'daily' | 'weekly' | 'monthly'>(
     existingProfile?.payoutSchedule || 'weekly'
@@ -51,22 +47,24 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     
     const profile: Partial<CreatorPaymentProfile> = {
+      userId: user.uid,
       preferredGateway: 'mtn-momo',
       payoutSchedule,
       minimumPayoutAmount: minimumPayout,
       momoNumber: momoDetails.momoNumber,
       momoNetwork: momoDetails.momoNetwork,
       taxInformation: taxInfo,
-      isVerified: false,
+      isVerified: true, // Auto-verify for MoMo for now
       paymentMethod: 'momo'
     };
 
     onComplete(profile);
   };
 
-  const exampleSplit = PaymentCalculator.calculatePaymentSplit(5000, mtnGateway);
+  const exampleSplit = PaymentCalculator.calculatePaymentSplit(5000, mtnGateway, user?.subscriptionPlan || 'Free');
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -77,7 +75,6 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
         </p>
       </div>
 
-      {/* Fee Structure Explanation */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -90,7 +87,7 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
             <div>
               <h4 className="font-semibold mb-2">Fee Structure</h4>
               <ul className="space-y-1 text-sm">
-                <li>• Platform Commission: <strong>{PAYMENT_CONFIG.adminCommissionRate * 100}%</strong> (helps maintain the platform)</li>
+                <li>• Platform Commission: <strong>{PaymentCalculator.getCommissionRate(user?.subscriptionPlan || 'Free') * 100}%</strong> (based on your plan)</li>
                 <li>• Platform Fee: <strong>{PAYMENT_CONFIG.platformFee * 100}%</strong> (operational costs)</li>
                 <li>• MTN MoMo Processing: <strong>{mtnGateway.processingFee}%</strong></li>
                 <li>• You receive the remaining amount</li>
@@ -104,15 +101,15 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
                   <span>{PaymentCalculator.formatCurrency(5000)}</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Platform Commission ({PAYMENT_CONFIG.adminCommissionRate * 100}%):</span>
+                  <span>Platform Commission:</span>
                   <span>-{PaymentCalculator.formatCurrency(exampleSplit.adminCommission)}</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Platform Fee ({PAYMENT_CONFIG.platformFee * 100}%):</span>
+                  <span>Platform Fee:</span>
                   <span>-{PaymentCalculator.formatCurrency(exampleSplit.platformCommission)}</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Processing Fee ({mtnGateway.processingFee}%):</span>
+                  <span>Processing Fee:</span>
                   <span>-{PaymentCalculator.formatCurrency(exampleSplit.paymentProcessingFee)}</span>
                 </div>
                 <Separator />
@@ -127,12 +124,11 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
       </Card>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Payout Configuration */}
         <Card>
           <CardHeader>
             <CardTitle>Payout Settings</CardTitle>
             <CardDescription>
-              Configure when and how you want to receive your earnings via Mobile Money.
+              Configure when and how you want to receive your earnings.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -171,12 +167,9 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
                     <SelectItem value="monthly">Monthly</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  How often you want to receive payouts
-                </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="minimumPayout">Minimum Payout Amount (GHS)</Label>
+                <Label htmlFor="minimumPayout">Minimum Payout (GHS)</Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">GH₵</span>
                   <Input
@@ -189,71 +182,11 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
                     className="pl-10"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Minimum: 10.00 GHS. Payouts below this amount will be held.
-                </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Tax Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Tax Information</CardTitle>
-            <CardDescription>
-              Required for tax reporting and compliance
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="businessType">Account Type</Label>
-                <Select value={taxInfo.businessType} onValueChange={(value: any) => setTaxInfo({...taxInfo, businessType: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="individual">Individual</SelectItem>
-                    <SelectItem value="business">Business</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="taxCountry">Tax Country</Label>
-                <Select value={taxInfo.country} onValueChange={(value) => setTaxInfo({...taxInfo, country: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="GH">Ghana</SelectItem>
-                    <SelectItem value="NG">Nigeria</SelectItem>
-                    <SelectItem value="US">United States</SelectItem>
-                    <SelectItem value="CA">Canada</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="taxId">Tax ID (e.g., Ghana Card TIN)</Label>
-                <Input
-                  id="taxId"
-                  value={taxInfo.taxId}
-                  onChange={(e) => setTaxInfo({...taxInfo, taxId: e.target.value})}
-                  placeholder="Optional but recommended"
-                />
-              </div>
-            </div>
-            
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Tax information helps us generate accurate tax forms. You're responsible for reporting earnings in your jurisdiction.
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-
-        {/* Action Buttons */}
         <div className="flex justify-between items-center pt-6">
           {onSkip && (
             <Button type="button" variant="outline" onClick={onSkip}>

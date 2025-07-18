@@ -1,6 +1,5 @@
 
-
-export type SubscriptionPlan = 'Free' | 'Essential' | 'Pro';
+export type SubscriptionPlan = 'Free' | 'Essential' | 'Pro' | 'Custom';
 
 export interface Speaker {
   name: string;
@@ -61,6 +60,7 @@ export interface Ticket {
   purchaseDate: string;
   checkedIn: boolean;
   price: number;
+  gatewayTransactionId?: string;
 }
 
 export interface UserProfile {
@@ -119,5 +119,3 @@ export interface Message {
     attachments?: string[]; // Array of data URIs
     timestamp?: any;
 }
-
-    

@@ -1,5 +1,4 @@
 
-
 // Payment system types and interfaces
 import { SubscriptionPlan } from './types';
 
@@ -54,20 +53,22 @@ export interface Payout {
   amount: number;
   currency: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  paymentMethod: 'momo' | 'bank_transfer';
+  paymentMethod: 'momo';
   transactionIds: string[]; // transactions included in this payout
   scheduledDate: string;
   processedDate?: string;
   failureReason?: string;
+  gatewayPayoutId?: string;
   metadata?: Record<string, any>;
+  createdAt: string;
 }
 
 export interface CreatorPaymentProfile {
   userId: string;
   preferredGateway: PaymentGateway['id'];
-  momoNumber?: string;
-  momoNetwork?: string;
-  paymentMethod?: 'momo' | 'bank';
+  paymentMethod: 'momo';
+  momoNumber: string;
+  momoNetwork: string;
   taxInformation?: {
     taxId: string;
     country: string;

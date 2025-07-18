@@ -18,10 +18,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import type { Event, Ticket } from '@/lib/types';
-import { Loader2, Minus, Plus, Wallet, Phone } from 'lucide-react';
+import { Loader2, Minus, Plus, Wallet, Phone, Shield } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PaymentCalculator } from '@/lib/payment-config';
 import { ViewTicketDialog } from './view-ticket-dialog';
+import { useAuth } from '@/context/auth-context';
+import { v4 as uuidv4 } from 'uuid';
 
 interface PurchaseTicketDialogProps {
   event: Event;
@@ -43,10 +45,11 @@ type PurchaseFormValues = z.infer<typeof purchaseSchema>;
 
 export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTicketDialogProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [quantity, setQuantity] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentStep, setPaymentStep] = useState<'details' | 'approval'>('details');
-  const [newlyPurchasedTicket, setNewlyPurchasedTicket] = useState<Ticket | null>(null);
+  const [newlyPurchasedTickets, setNewlyPurchasedTickets] = useState<Ticket[]>([]);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   const form = useForm<PurchaseFormValues>({
@@ -63,6 +66,7 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
   });
   
   const isFree = event.price === 0;
+  const totalPrice = event.price * quantity;
 
   useEffect(() => {
     if (isOpen) {
@@ -79,26 +83,60 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
     }
   }, [quantity, isOpen, append, remove, form]);
 
-  const showTicketPopup = (ticketData: any) => {
-    // Assuming the API returns the first ticket created in the batch
-    const firstTicket: Ticket = {
-      id: ticketData.tickets[0].id,
-      eventId: event.id,
-      attendeeName: ticketData.tickets[0].attendeeName,
-      attendeeEmail: ticketData.tickets[0].attendeeEmail,
-      purchaseDate: new Date().toISOString(),
-      checkedIn: false,
-      price: event.price,
-    };
-    setNewlyPurchasedTicket(firstTicket);
-    onOpenChange(false); // Close purchase dialog
-    setIsViewModalOpen(true); // Open view dialog
+  const showTicketPopup = (ticketsData: Ticket[]) => {
+    setNewlyPurchasedTickets(ticketsData);
+    onOpenChange(false);
+    setIsViewModalOpen(true);
   };
   
   const handlePurchase = async (data: PurchaseFormValues) => {
     setIsSubmitting(true);
     
-    try {
+    // For paid events, first initiate MoMo payment
+    if (!isFree && data.momoNumber) {
+        setPaymentStep('approval');
+        try {
+            const response = await fetch('/api/payments/create-intent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount: totalPrice * 100, // to pesewas/cents
+                    currency: 'GHS',
+                    gatewayId: 'mtn-momo',
+                    momoNumber: data.momoNumber,
+                    metadata: {
+                        eventId: event.id,
+                        creatorId: event.creatorId,
+                        ticketId: uuidv4(), // Temporary ID for this batch
+                        userId: user?.uid || 'guest',
+                        type: 'ticket',
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.details || 'Payment request failed.');
+            }
+            
+            // At this point, the user is approving on their phone.
+            // A robust solution uses webhooks. For this demo, we'll assume success
+            // after a short delay and proceed with ticket creation.
+            setTimeout(() => processTicketCreation(data), 10000); // Wait 10s
+            
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Payment Failed', description: error.message });
+            setIsSubmitting(false);
+            setPaymentStep('details');
+        }
+    } else {
+        // For free events, directly create tickets
+        await processTicketCreation(data);
+    }
+  };
+
+  const processTicketCreation = async (data: PurchaseFormValues) => {
+     try {
         const response = await fetch('/api/add-ticket', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -115,7 +153,7 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
           title: 'Registration Successful!',
           description: `You've got ${quantity} ticket(s) for ${event.name}. Check your email for confirmation.`,
         });
-        showTicketPopup(result);
+        showTicketPopup(result.tickets);
 
     } catch (error: any) {
       toast({
@@ -123,18 +161,18 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
         title: 'Registration Failed',
         description: error.message || 'Something went wrong. Please try again.',
       });
-      setPaymentStep('details');
     } finally {
         setIsSubmitting(false);
+        setPaymentStep('details');
     }
-  };
+  }
 
   const resetState = () => {
     form.reset({attendees: [{ attendeeName: '', attendeeEmail: '' }], momoNumber: ''});
     setQuantity(1);
     setPaymentStep('details');
     setIsSubmitting(false);
-    setNewlyPurchasedTicket(null);
+    setNewlyPurchasedTickets([]);
   }
 
   return (
@@ -159,7 +197,7 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
               <h3 className="text-lg font-semibold">Awaiting Approval</h3>
               <p className="text-muted-foreground">
                 Please check your phone and enter your MoMo PIN to approve the payment of
-                <strong className="text-foreground"> {PaymentCalculator.formatCurrency((event.price * quantity) * 100, 'GHS')}</strong>.
+                <strong className="text-foreground"> {PaymentCalculator.formatCurrency(totalPrice * 100, 'GHS')}</strong>.
               </p>
             </div>
           ) : (
@@ -211,7 +249,7 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
                 <div className="p-4 bg-muted rounded-lg text-center">
                   <p className="text-sm text-muted-foreground">Total Price</p>
                   <p className="text-3xl font-bold">
-                    {isFree ? 'FREE' : PaymentCalculator.formatCurrency((event.price * quantity) * 100, 'GHS')}
+                    {isFree ? 'FREE' : PaymentCalculator.formatCurrency(totalPrice * 100, 'GHS')}
                   </p>
                 </div>
 
@@ -225,9 +263,9 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
           )}
         </DialogContent>
       </Dialog>
-      {newlyPurchasedTicket && (
+      {newlyPurchasedTickets.length > 0 && (
         <ViewTicketDialog
-          ticket={newlyPurchasedTicket}
+          ticket={newlyPurchasedTickets[0]}
           event={event}
           isOpen={isViewModalOpen}
           onOpenChange={setIsViewModalOpen}

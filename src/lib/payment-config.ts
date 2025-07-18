@@ -27,6 +27,7 @@ export const PAYMENT_CONFIG: PaymentConfiguration = {
     Free: 0.05, // 5%
     Essential: 0.03, // 3%
     Pro: 0.01, // 1%
+    Custom: 0.01, // Default for custom, can be overridden
   },
   platformFee: 0.01, // 1% additional platform fee
   minimumPayout: 1000, // 10 GHS in lowest denomination

@@ -52,27 +52,25 @@ export class FirebasePaymentService {
     }
   }
 
-  static async savePaymentProfile(profile: CreatorPaymentProfile): Promise<void> {
+  static async savePaymentProfile(profileData: Partial<CreatorPaymentProfile> & { userId: string }): Promise<void> {
     try {
-      const profileRef = doc(db, 'users', profile.userId, 'paymentProfile', 'main');
-      
-      // Check if profile already exists
-      const existingProfile = await getDoc(profileRef);
-      const updateData: any = {
-        ...profile,
-        updatedAt: serverTimestamp(),
-      };
-      
-      // Only set createdAt if this is a new profile
-      if (!existingProfile.exists()) {
-        updateData.createdAt = serverTimestamp();
-      }
-      
-      await setDoc(profileRef, updateData, { merge: true });
-      
+        const profileRef = doc(db, 'users', profileData.userId, 'paymentProfile', 'main');
+        
+        const existingProfileSnap = await getDoc(profileRef);
+        const updateData: any = {
+            ...profileData,
+            updatedAt: serverTimestamp(),
+        };
+
+        if (!existingProfileSnap.exists()) {
+            updateData.createdAt = serverTimestamp();
+        }
+
+        await setDoc(profileRef, updateData, { merge: true });
+
     } catch (error) {
-      console.error('Error saving payment profile:', error);
-      throw error;
+        console.error('Error saving payment profile:', error);
+        throw error;
     }
   }
 
@@ -83,7 +81,6 @@ export class FirebasePaymentService {
     try {
       const profileRef = doc(db, 'users', userId, 'paymentProfile', 'main');
       
-      // Filter out undefined values and handle timestamp fields
       const updateData: any = {};
       Object.entries(updates).forEach(([key, value]) => {
         if (value !== undefined) {
@@ -223,7 +220,7 @@ export class FirebasePaymentService {
     creatorId: string,
     amount: number,
     transactionIds: string[],
-    paymentMethod: string,
+    paymentMethod: 'momo',
     scheduledDate: Date
   ): Promise<string> {
     try {
@@ -234,7 +231,7 @@ export class FirebasePaymentService {
         amount,
         currency: 'GHS',
         status: 'pending',
-        paymentMethod: paymentMethod as any,
+        paymentMethod,
         transactionIds,
         scheduledDate: scheduledDate.toISOString(),
       };
@@ -278,11 +275,7 @@ export class FirebasePaymentService {
         where('scheduledDate', '<=', Timestamp.now())
       );
 
-      if (schedule) {
-        // Note: You'd need to add payoutSchedule field to payout docs
-        // or join with user payment profiles to filter by schedule
-      }
-
+      // Filtering by schedule on client side for now as it requires composite index
       const querySnapshot = await getDocs(payoutsQuery);
       
       return querySnapshot.docs.map(doc => {
@@ -290,9 +283,9 @@ export class FirebasePaymentService {
         return {
           ...data,
           id: doc.id,
-          scheduledDate: data.scheduledDate?.toDate?.()?.toISOString() || new Date().toISOString(),
-          processedDate: data.processedDate?.toDate?.()?.toISOString(),
-          createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+          scheduledDate: data.scheduledDate?.toDate?.().toISOString() || new Date().toISOString(),
+          processedDate: data.processedDate?.toDate?.().toISOString(),
+          createdAt: data.createdAt?.toDate?.().toISOString() || new Date().toISOString(),
         } as Payout;
       });
     } catch (error) {
@@ -373,7 +366,6 @@ export class FirebasePaymentService {
         creatorPayouts += split.creatorPayout;
         processingFees += split.paymentProcessingFee;
         
-        // Gateway breakdown
         const gateway = transaction.paymentGateway;
         if (!gatewayBreakdown[gateway]) {
           gatewayBreakdown[gateway] = { volume: 0, transactions: 0, fees: 0 };
@@ -400,129 +392,6 @@ export class FirebasePaymentService {
       
     } catch (error) {
       console.error('Error getting creator analytics:', error);
-      throw error;
-    }
-  }
-
-  // Balance Management
-  static async getCreatorBalance(creatorId: string): Promise<{
-    available: number;
-    pending: number;
-    total: number;
-  }> {
-    try {
-      // Get completed transactions that haven't been paid out yet
-      const completedQuery = query(
-        collection(db, 'transactions'),
-        where('creatorId', '==', creatorId),
-        where('status', '==', 'completed')
-      );
-      
-      const completedSnapshot = await getDocs(completedQuery);
-      
-      // Get all payouts for this creator
-      const payoutsQuery = query(
-        collection(db, 'payouts'),
-        where('creatorId', '==', creatorId),
-        where('status', 'in', ['completed', 'processing'])
-      );
-      
-      const payoutsSnapshot = await getDocs(payoutsQuery);
-      
-      // Calculate total earned
-      let totalEarned = 0;
-      const allTransactionIds = new Set<string>();
-      
-      completedSnapshot.docs.forEach(doc => {
-        const transaction = doc.data() as Transaction;
-        totalEarned += transaction.paymentSplit.creatorPayout;
-        allTransactionIds.add(doc.id);
-      });
-      
-      // Calculate already paid out
-      let totalPaidOut = 0;
-      const paidOutTransactionIds = new Set<string>();
-      
-      payoutsSnapshot.docs.forEach(doc => {
-        const payout = doc.data() as Payout;
-        totalPaidOut += payout.amount;
-        payout.transactionIds.forEach(id => paidOutTransactionIds.add(id));
-      });
-      
-      // Calculate pending (completed but not yet paid out)
-      let pending = 0;
-      completedSnapshot.docs.forEach(doc => {
-        if (!paidOutTransactionIds.has(doc.id)) {
-          const transaction = doc.data() as Transaction;
-          pending += transaction.paymentSplit.creatorPayout;
-        }
-      });
-      
-      const available = totalEarned - totalPaidOut;
-      
-      return {
-        available: Math.max(0, available),
-        pending,
-        total: totalEarned,
-      };
-      
-    } catch (error) {
-      console.error('Error getting creator balance:', error);
-      throw error;
-    }
-  }
-
-  // Refund Management
-  static async createRefundRequest(
-    transactionId: string,
-    ticketId: string,
-    amount: number,
-    reason: string,
-    requestedBy: string
-  ): Promise<string> {
-    try {
-      const refundRef = doc(collection(db, 'refundRequests'));
-      
-      const refundRequest: Omit<RefundRequest, 'id'> = {
-        transactionId,
-        ticketId,
-        amount,
-        reason,
-        status: 'pending',
-        requestedBy,
-        requestDate: new Date().toISOString(),
-        refundMethod: 'original_payment',
-      };
-
-      await setDoc(refundRef, {
-        ...refundRequest,
-        requestDate: serverTimestamp(),
-      });
-      
-      return refundRef.id;
-    } catch (error) {
-      console.error('Error creating refund request:', error);
-      throw error;
-    }
-  }
-
-  static async updateRefundRequest(
-    refundId: string, 
-    updates: Partial<RefundRequest>
-  ): Promise<void> {
-    try {
-      const refundRef = doc(db, 'refundRequests', refundId);
-      
-      const updateData: any = { ...updates };
-      
-      if (updates.status && ['approved', 'denied', 'processed'].includes(updates.status)) {
-        updateData.processDate = serverTimestamp();
-      }
-      
-      await updateDoc(refundRef, updateData);
-      
-    } catch (error) {
-      console.error('Error updating refund request:', error);
       throw error;
     }
   }

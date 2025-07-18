@@ -4,59 +4,112 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PageHero } from '@/components/page-hero';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Loader2, Phone, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-context';
 import type { SubscriptionPlan } from '@/lib/types';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function PricingClientPage() {
-  const { user } = useAuth();
+  const { user, signInWithGoogle } = useAuth();
   const { updateUser } = useAppContext();
   const { toast } = useToast();
   const [isUpgrading, setIsUpgrading] = useState<SubscriptionPlan | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<{name: SubscriptionPlan, priceGHS: number} | null>(null);
+  const [momoNumber, setMomoNumber] = useState('');
 
-  const handleChoosePlan = async (plan: SubscriptionPlan, price: number) => {
+  const handleChoosePlan = async (plan: SubscriptionPlan, priceGHS: number) => {
     if (!user) {
-      toast({
-        variant: 'destructive',
-        title: 'Please sign in',
-        description: 'You need to be logged in to upgrade your plan.',
-      });
+      signInWithGoogle();
       return;
     }
     
-    setIsUpgrading(plan);
-    
-    // In a real app, this would trigger a payment flow for the plan price.
-    // This is now set up to call the payment intent API.
-    try {
-      // For non-free plans, initiate payment
-      if (price > 0) {
-        toast({ title: "Redirecting to Payment...", description: "Please complete the payment to upgrade your plan."});
-        // Here you would integrate with your payment gateway's subscription API
-        // For now, we simulate a successful payment and update the user's plan
-        await new Promise(resolve => setTimeout(resolve, 2000));
+    // For free plan, just update the user record
+    if (priceGHS === 0) {
+      setIsUpgrading(plan);
+      try {
+        await updateUser(user.uid, { subscriptionPlan: plan });
+        toast({
+          title: 'Plan Updated!',
+          description: `You are now on the ${plan} plan.`,
+        });
+      } catch {
+         toast({
+          variant: 'destructive',
+          title: 'Update Failed',
+          description: 'Could not update your plan.',
+        });
+      } finally {
+        setIsUpgrading(null);
       }
+      return;
+    }
 
-      await updateUser(user.uid, { subscriptionPlan: plan });
-      toast({
-        title: 'Upgrade Successful!',
-        description: `You are now on the ${plan} plan.`,
-      });
-    } catch {
-      toast({
-        variant: 'destructive',
-        title: 'Upgrade Failed',
-        description: 'Could not update your plan. Please try again.',
-      });
+    // For paid plans, open payment dialog
+    setSelectedPlan({ name: plan, priceGHS });
+  };
+  
+  const handleSubscriptionPayment = async () => {
+    if (!user || !selectedPlan || !momoNumber) return;
+    
+    setIsUpgrading(selectedPlan.name);
+
+    try {
+        // In a real app, you would call your backend to create a payment intent
+        const response = await fetch('/api/payments/create-intent', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                amount: selectedPlan.priceGHS * 100, // in cents/pesewas
+                currency: 'GHS',
+                gatewayId: 'mtn-momo',
+                momoNumber,
+                metadata: {
+                    userId: user.uid,
+                    plan: selectedPlan.name,
+                    type: 'subscription'
+                }
+            })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.details || 'Payment request failed.');
+        }
+
+        // The request to pay is asynchronous.
+        // For this UI flow, we'll assume it will go through and update the plan.
+        // A robust system would wait for a webhook confirmation.
+        await updateUser(user.uid, { subscriptionPlan: selectedPlan.name });
+        toast({
+            title: 'Payment Initiated & Plan Upgraded!',
+            description: `Please approve the payment of GH₵${selectedPlan.priceGHS} on your phone. Your plan has been upgraded to ${selectedPlan.name}.`,
+        });
+
+    } catch(e: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Upgrade Failed',
+            description: e.message || 'Could not process payment. Please try again.',
+        });
     } finally {
-      setIsUpgrading(null);
+        setIsUpgrading(null);
+        setSelectedPlan(null);
+        setMomoNumber('');
     }
   };
-
 
   const freePlan = {
     name: 'Free' as SubscriptionPlan,
@@ -70,8 +123,7 @@ export default function PricingClientPage() {
       'Standard Email Support'
     ],
     cta: 'Get Started For Free',
-    priceGHS: 0,
-    ctaLink: '/dashboard/create'
+    priceGHS: 0
   };
 
   const paidPlans = [
@@ -89,8 +141,7 @@ export default function PricingClientPage() {
         'Promotional Codes',
       ],
       cta: 'Choose Essential',
-      ctaLink: '#',
-      color: 'blue'
+      popular: false
     },
     {
       name: 'Pro' as SubscriptionPlan,
@@ -107,14 +158,12 @@ export default function PricingClientPage() {
         'Priority Support'
       ],
       cta: 'Choose Pro',
-      ctaLink: '#',
-      color: 'primary',
       popular: true
     },
     {
       name: 'Custom' as SubscriptionPlan,
       price: 'Contact Us',
-      priceGHS: -1,
+      priceGHS: -1, // Indicates contact needed
       priceDescription: 'For a tailored solution',
       description: 'For large-scale events with unique requirements.',
       features: [
@@ -125,15 +174,13 @@ export default function PricingClientPage() {
         'Developer Support'
       ],
       cta: 'Contact Us',
-      ctaLink: '/contact',
-      color: 'dark'
+      popular: false
     }
   ];
 
   return (
     <>
       <div className="min-h-screen">
-        {/* Hero Section */}
         <PageHero
           title="Simple, Transparent Pricing"
           backgroundImage = "/price.jpg"
@@ -143,60 +190,55 @@ export default function PricingClientPage() {
           height="xl"
         />
 
-        {/* Pricing Section */}
         <section id="pricing" className="py-24 bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-6">
-                <span className="block">Choose Your Plan</span>
+                Choose Your Plan
               </h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
                 Select the plan that fits your event needs. Paid plans are a monthly fee plus commission.
               </p>
             </div>
-
-            {/* Free Plan - Prominent Section */}
-            <Card className="mb-16 border-2 border-primary/50 bg-gradient-to-br from-primary/5 to-background">
-              <div className="grid md:grid-cols-2 gap-8 items-center p-8">
-                <div>
-                  <CardTitle className="text-3xl font-bold mb-2">{freePlan.name}</CardTitle>
-                  <CardDescription className="text-lg text-muted-foreground">{freePlan.description}</CardDescription>
-                  <ul className="space-y-4 text-left my-8 text-sm">
-                      {freePlan.features.map((feature, featureIndex) => (
-                        <li key={featureIndex} className="flex items-start gap-3">
-                          <Check className="w-5 h-5 mt-0.5 flex-shrink-0 text-green-500" />
+            
+            <div className="grid gap-8 lg:gap-12 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mt-16 items-stretch">
+             {/* Free Plan */}
+              <div className="relative rounded-2xl p-8 shadow-lg flex flex-col bg-card border">
+                  <div className="flex-grow">
+                    <h3 className="text-2xl font-bold mb-4">{freePlan.name}</h3>
+                    <div className="mb-6">
+                      <div className="text-5xl font-bold mb-2 text-primary">{freePlan.price}</div>
+                      <div className="text-sm text-muted-foreground">{freePlan.priceDescription}</div>
+                    </div>
+                    <p className="mb-8 h-20 text-muted-foreground">{freePlan.description}</p>
+                    <ul className="space-y-4 text-left mb-8 text-sm">
+                      {freePlan.features.map((feature, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <Check className="w-5 h-5 mt-0.5 flex-shrink-0 text-primary" />
                           <span>{feature}</span>
                         </li>
                       ))}
-                  </ul>
-                </div>
-                <div className="text-center bg-background p-8 rounded-lg">
-                  <div className="text-6xl font-bold text-primary mb-2">
-                      {freePlan.price}
+                    </ul>
                   </div>
-                  <div className="text-sm text-muted-foreground mb-6">{freePlan.priceDescription}</div>
-                   <Button 
+                  <div className="mt-auto pt-8">
+                    <Button 
                       onClick={() => handleChoosePlan(freePlan.name, freePlan.priceGHS)}
-                      size="lg" 
-                      className="w-full"
                       disabled={isUpgrading === freePlan.name || user?.subscriptionPlan === freePlan.name}
+                      variant="outline"
+                      className="w-full"
                     >
-                      {isUpgrading === freePlan.name ? <Loader2 className="animate-spin"/> : (user?.subscriptionPlan === freePlan.name ? 'Current Plan' : 'Downgrade to Free')}
+                      {isUpgrading === freePlan.name ? <Loader2 className="animate-spin"/> : (user?.subscriptionPlan === freePlan.name ? 'Current Plan' : 'Choose Free')}
                     </Button>
-                </div>
+                  </div>
               </div>
-            </Card>
 
-
-            <div className="grid gap-8 lg:gap-12 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mt-16 items-stretch">
+              {/* Paid Plans */}
               {paidPlans.map((plan) => (
                 <div
                   key={plan.name}
                   className={`relative rounded-2xl p-8 shadow-lg transition-all duration-300 transform hover:-translate-y-2 flex flex-col ${
                     plan.popular
-                      ? 'bg-gradient-to-br from-primary to-accent text-white scale-105'
-                      : plan.color === 'dark'
-                      ? 'bg-gray-900 text-white'
+                      ? 'bg-gradient-to-br from-primary to-accent text-white scale-105 border-primary'
                       : 'bg-card border'
                   }`}
                 >
@@ -211,31 +253,21 @@ export default function PricingClientPage() {
                   <div className="flex-grow">
                     <h3 className="text-2xl font-bold mb-4">{plan.name}</h3>
                     <div className="mb-6">
-                      <div className={`text-5xl font-bold mb-2 ${
-                        plan.popular ? 'text-white' : 
-                        plan.color === 'blue' ? 'text-blue-500' :
-                        plan.color === 'dark' ? 'text-white' : 'text-primary'
-                      }`}>
+                      <div className={`text-5xl font-bold mb-2 ${plan.popular ? 'text-white' : 'text-primary'}`}>
                         {plan.price}
                       </div>
-                      <div className={`text-sm ${
-                        plan.popular || plan.color === 'dark' ? 'text-gray-300' : 'text-muted-foreground'
-                      }`}>
+                      <div className={`text-sm ${plan.popular ? 'text-gray-300' : 'text-muted-foreground'}`}>
                         {plan.priceDescription}
                       </div>
                     </div>
-                    <p className={`mb-8 h-20 ${
-                      plan.popular || plan.color === 'dark' ? 'text-gray-300' : 'text-muted-foreground'
-                    }`}>
+                    <p className={`mb-8 h-20 ${plan.popular ? 'text-gray-300' : 'text-muted-foreground'}`}>
                       {plan.description}
                     </p>
                     
                     <ul className="space-y-4 text-left mb-8 text-sm">
                       {plan.features.map((feature, featureIndex) => (
                         <li key={featureIndex} className="flex items-start gap-3">
-                          <Check className={`w-5 h-5 mt-0.5 flex-shrink-0 ${
-                            plan.popular ? 'text-green-300' : 'text-primary'
-                          }`} />
+                          <Check className={`w-5 h-5 mt-0.5 flex-shrink-0 ${plan.popular ? 'text-green-300' : 'text-primary'}`} />
                           <span>{feature}</span>
                         </li>
                       ))}
@@ -244,16 +276,10 @@ export default function PricingClientPage() {
                   
                   <div className="mt-auto pt-8">
                     <Button 
-                      onClick={() => plan.name === 'Custom' ? window.location.href = '/contact' : handleChoosePlan(plan.name, plan.priceGHS)}
+                      onClick={() => plan.priceGHS === -1 ? window.location.href='/contact' : handleChoosePlan(plan.name, plan.priceGHS)}
                       disabled={isUpgrading === plan.name || user?.subscriptionPlan === plan.name}
-                      className={`w-full py-3 rounded-full font-medium ${
-                        plan.popular 
-                          ? 'bg-white text-primary hover:bg-gray-100'
-                          : plan.color === 'dark'
-                          ? 'bg-white text-gray-900 hover:bg-gray-200'
-                          : ''
-                      }`}
-                      variant={plan.popular || plan.color === 'dark' ? 'default' : 'outline'}
+                      className={`w-full ${plan.popular && 'bg-white text-primary hover:bg-gray-100'}`}
+                      variant={plan.popular ? 'default' : 'outline'}
                     >
                       {isUpgrading === plan.name ? <Loader2 className="animate-spin" /> : user?.subscriptionPlan === plan.name ? 'Current Plan' : plan.cta}
                     </Button>
@@ -270,6 +296,37 @@ export default function PricingClientPage() {
           </div>
         </section>
       </div>
+
+      <Dialog open={!!selectedPlan} onOpenChange={() => setSelectedPlan(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Upgrade to {selectedPlan?.name} Plan</DialogTitle>
+                <DialogDescription>
+                    Complete your payment of GH₵{selectedPlan?.priceGHS} to upgrade your plan.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+                <Label htmlFor="momoNumber" className="flex items-center gap-2"><Shield /> Secure MoMo Payment</Label>
+                <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        id="momoNumber"
+                        placeholder="Enter your Mobile Money number"
+                        value={momoNumber}
+                        onChange={(e) => setMomoNumber(e.target.value)}
+                        className="pl-10"
+                    />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setSelectedPlan(null)}>Cancel</Button>
+                <Button onClick={handleSubscriptionPayment} disabled={isUpgrading === selectedPlan?.name || !momoNumber}>
+                    {isUpgrading === selectedPlan?.name && <Loader2 className="animate-spin mr-2 h-4 w-4"/>}
+                    Pay GH₵{selectedPlan?.priceGHS}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
