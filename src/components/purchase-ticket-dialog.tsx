@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Event, Ticket } from '@/lib/types';
 import { Loader2, Minus, Plus, Wallet, Phone, Shield, Copy, CheckCircle, Hourglass } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card } from '@/components/ui/card';
 import { PaymentCalculator } from '@/lib/payment-config';
 import { ViewTicketDialog } from './view-ticket-dialog';
 import { useAuth } from '@/context/auth-context';
