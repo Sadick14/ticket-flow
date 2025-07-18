@@ -246,33 +246,7 @@ export default function HomePage() {
             </motion.div>
         </section>
 
-        {/* Featured Article Section */}
-        {featuredArticle && (
-          <section className="py-24 bg-background">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <Card className="overflow-hidden lg:grid lg:grid-cols-2 lg:items-center">
-                <div className="relative h-64 lg:h-full">
-                  <Image 
-                    src={featuredArticle.imageUrl}
-                    alt={featuredArticle.title}
-                    layout="fill"
-                    objectFit="cover"
-                    className="transition-transform duration-300 hover:scale-105"
-                  />
-                </div>
-                <div className="p-8 lg:p-12">
-                  <CardDescription className="text-primary font-semibold uppercase tracking-wide">Featured Insight</CardDescription>
-                  <CardTitle className="mt-2 text-3xl font-bold">{featuredArticle.title}</CardTitle>
-                  <CardContent className="p-0 mt-4">
-                    <div className="prose prose-lg text-muted-foreground">
-                      <ReactMarkdown>{featuredArticle.content}</ReactMarkdown>
-                    </div>
-                  </CardContent>
-                </div>
-              </Card>
-            </div>
-          </section>
-        )}
+       
 
 
         {/* Feature Showcase Section */}
@@ -430,6 +404,35 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+
+         {/* Featured Article Section */}
+        {featuredArticle && (
+          <section className="py-24 bg-background">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <Card className="overflow-hidden lg:grid lg:grid-cols-2 lg:items-center">
+                <div className="relative h-64 lg:h-full">
+                  <Image 
+                    src={featuredArticle.imageUrl}
+                    alt={featuredArticle.title}
+                    layout="fill"
+                    objectFit="cover"
+                    className="transition-transform duration-300 hover:scale-105"
+                  />
+                </div>
+                <div className="p-8 lg:p-12">
+                  <CardDescription className="text-primary font-semibold uppercase tracking-wide">Featured Insight</CardDescription>
+                  <CardTitle className="mt-2 text-3xl font-bold">{featuredArticle.title}</CardTitle>
+                  <CardContent className="p-0 mt-4">
+                    <div className="prose prose-lg text-muted-foreground">
+                      <ReactMarkdown>{featuredArticle.content}</ReactMarkdown>
+                    </div>
+                  </CardContent>
+                </div>
+              </Card>
+            </div>
+          </section>
+        )}
 
 
         {/* News Section */}
