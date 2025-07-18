@@ -12,15 +12,15 @@ const emailWrapper = (title: string, content: string) => `
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'PT Sans', Arial, sans-serif; margin: 0; padding: 0; background-color: #F0F8FF; }
+    body { font-family: 'PT Sans', Arial, sans-serif; margin: 0; padding: 0; background-color: #f8f9fa; }
     .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
-    .header { background-color: #237A7A; color: white; padding: 24px; text-align: center; }
+    .header { background-color: #f76610; color: white; padding: 24px; text-align: center; }
     .logo { font-size: 28px; font-weight: 700; color: #ffffff; text-decoration: none; letter-spacing: 1px; }
     .content { padding: 30px; color: #334155; line-height: 1.6; }
-    .content h2 { color: #237A7A; margin-top: 0; }
-    .button { display: inline-block; background-color: #70A4A4; color: white !important; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 20px; }
+    .content h2 { color: #f76610; margin-top: 0; }
+    .button { display: inline-block; background-color: #f76610; color: white !important; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 20px; }
     .footer { text-align: center; padding: 20px; color: #64748b; font-size: 14px; }
-    .footer a { color: #237A7A; text-decoration: none; }
+    .footer a { color: #f76610; text-decoration: none; }
   </style>
 </head>
 <body>
@@ -173,7 +173,7 @@ export const emailTemplates = {
         <h3>Payment Instructions:</h3>
         <ol>
           <li>Send <strong>${totalPrice}</strong> via Mobile Money to: <strong>${paymentNumber}</strong>.</li>
-          <li>Use the following booking code as your payment reference: <strong style="font-size: 1.2em; color: #237A7A;">${bookingCode}</strong></li>
+          <li>Use the following booking code as your payment reference: <strong style="font-size: 1.2em; color: #f76610;">${bookingCode}</strong></li>
         </ol>
         <p>Once we confirm your payment, we will send your final ticket confirmation. Your booking is held for 24 hours.</p>
         <p>Thank you!</p>
