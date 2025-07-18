@@ -245,7 +245,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="flex-1">
                 <h1 className="text-lg font-semibold">
                   {pathname === '/admin' && 'Admin Dashboard'}
-                  {pathname.startsWith('/admin/events') && 'Event Management'}
+                  {pathname.startsWith('/admin/events/') && 'Event Attendee Management'}
+                  {pathname === '/admin/events' && 'Event Management'}
                   {pathname.startsWith('/admin/payouts') && 'Payout Management'}
                   {pathname.startsWith('/admin/users') && 'User Management'}
                   {pathname.startsWith('/admin/contact-messages') && 'Contact Messages'}

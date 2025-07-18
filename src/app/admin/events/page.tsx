@@ -30,7 +30,7 @@ export default function AdminEventsPage() {
   }, [events, searchTerm, users]);
 
   const getEventFinancials = (event: any) => {
-    const eventTickets = tickets.filter(t => t.eventId === event.id);
+    const eventTickets = tickets.filter(t => t.eventId === event.id && t.status === 'confirmed');
     const totalRevenue = eventTickets.reduce((sum, ticket) => sum + ticket.price, 0);
     const creator = getUserById(event.creatorId);
     const creatorPlan = creator?.subscriptionPlan || 'Free';
@@ -138,7 +138,7 @@ export default function AdminEventsPage() {
                             </TableCell>
                              <TableCell className="text-right">
                                 <Button variant="ghost" size="sm" asChild>
-                                    <Link href={`/events/${event.id}`} target="_blank">
+                                    <Link href={`/admin/events/${event.id}`}>
                                         <Eye className="mr-2 h-4 w-4" /> View
                                     </Link>
                                 </Button>
