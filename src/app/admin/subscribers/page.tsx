@@ -136,6 +136,19 @@ export default function AdminSubscribersPage() {
     });
   };
 
+  const getSubscribedAtDate = (subscribedAt: any): Date | null => {
+      if (!subscribedAt) return null;
+      // Handle Firestore Timestamp object
+      if (subscribedAt.toDate) {
+          return subscribedAt.toDate();
+      }
+      // Handle ISO string
+      if (typeof subscribedAt === 'string') {
+          return parseISO(subscribedAt);
+      }
+      return null;
+  }
+
   return (
     <div className="space-y-6">
        <div className="flex flex-wrap items-center justify-between gap-4">
@@ -237,36 +250,39 @@ export default function AdminSubscribersPage() {
                     No subscribers found yet.
                     </TableCell></TableRow>
                 ) : (
-                  launchSubscribers.map(sub => (
-                    <TableRow key={sub.id}>
-                      <TableCell>{sub.email}</TableCell>
-                      <TableCell>{sub.name || 'N/A'}</TableCell>
-                      <TableCell>{sub.subscribedAt ? format(parseISO(sub.subscribedAt), 'MMM dd, yyyy') : 'N/A'}</TableCell>
-                      <TableCell className="text-right">
-                         <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This will permanently remove the subscriber. This action cannot be undone.
-                                </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(sub.id)}>
-                                    Delete
-                                </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  launchSubscribers.map(sub => {
+                    const subscribedDate = getSubscribedAtDate(sub.subscribedAt);
+                    return (
+                        <TableRow key={sub.id}>
+                        <TableCell>{sub.email}</TableCell>
+                        <TableCell>{sub.name || 'N/A'}</TableCell>
+                        <TableCell>{subscribedDate ? format(subscribedDate, 'MMM dd, yyyy') : 'N/A'}</TableCell>
+                        <TableCell className="text-right">
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will permanently remove the subscriber. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(sub.id)}>
+                                        Delete
+                                    </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </TableCell>
+                        </TableRow>
+                    )
+                  })
                 )}
               </TableBody>
             </Table>
