@@ -67,12 +67,11 @@ export default function PricingClientPage() {
     setIsUpgrading(selectedPlan.name);
 
     try {
-        // In a real app, you would call your backend to create a payment intent
         const response = await fetch('/api/payments/create-intent', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                amount: selectedPlan.priceGHS * 100, // in cents/pesewas
+                amount: selectedPlan.priceGHS * 100, // to pesewas/cents
                 currency: 'GHS',
                 gatewayId: 'mtn-momo',
                 momoNumber,

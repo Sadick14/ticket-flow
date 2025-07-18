@@ -49,7 +49,7 @@ async function getAuthToken(): Promise<string> {
 
 export class MtnGateway {
   static async requestToPay(
-    amount: number, // amount in GHS
+    amount: number, // amount in GHS, e.g. 50.00
     currency: string,
     momoNumber: string,
     payerMessage: string,
@@ -61,7 +61,7 @@ export class MtnGateway {
     const referenceId = uuidv4();
 
     const body = {
-      amount: amount.toString(),
+      amount: amount.toString(), // API expects amount as a string
       currency: currency,
       externalId: metadata.ticketId || uuidv4(),
       payer: {
