@@ -17,12 +17,13 @@ import {
   Calendar,
   BarChart3,
   Download,
-  Eye
+  Eye,
+  HandCoins
 } from 'lucide-react';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, subDays } from 'date-fns';
 import Link from 'next/link';
 import type { Ticket, Event } from '@/lib/types';
-import { PaymentCalculator } from '@/lib/payment-config';
+import { PaymentCalculator, PAYMENT_CONFIG } from '@/lib/payment-config';
 
 export default function SalesPage() {
   const { user } = useAuth();
@@ -33,7 +34,7 @@ export default function SalesPage() {
   
   const allUserTickets = useMemo(() => {
     const userEventIds = new Set(userEvents.map(e => e.id));
-    return tickets.filter((ticket: Ticket) => userEventIds.has(ticket.eventId));
+    return tickets.filter((ticket: Ticket) => userEventIds.has(ticket.eventId) && ticket.status === 'confirmed');
   }, [tickets, userEvents]);
 
   // Calculate time range
@@ -86,14 +87,24 @@ export default function SalesPage() {
     
     const previousRevenue = previousTickets.reduce((sum, ticket) => sum + ticket.price, 0);
     const revenueGrowth = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : totalRevenue > 0 ? 100 : 0;
+    
+    const commissionRate = PaymentCalculator.getCommissionRate(user?.subscriptionPlan || 'Free');
+    const platformFeeRate = PAYMENT_CONFIG.platformFee;
+    const adminCommission = totalRevenue * commissionRate;
+    const platformCommission = totalRevenue * platformFeeRate;
+    const totalCommission = adminCommission + platformCommission; // Simplified
+    const netPayout = totalRevenue - totalCommission;
+
 
     return {
       totalRevenue,
       totalTickets,
       averageTicketPrice,
       revenueGrowth,
+      totalCommission,
+      netPayout
     };
-  }, [filteredTickets, allUserTickets, dateRange]);
+  }, [filteredTickets, allUserTickets, dateRange, user?.subscriptionPlan]);
 
   // Event performance
   const eventPerformance = useMemo(() => {
@@ -103,14 +114,23 @@ export default function SalesPage() {
       const totalTicketsSold = eventTickets.length;
       const salesRate = event.capacity > 0 ? (totalTicketsSold / event.capacity) * 100 : 0;
 
+      const commissionRate = PaymentCalculator.getCommissionRate(user?.subscriptionPlan || 'Free');
+      const platformFeeRate = PAYMENT_CONFIG.platformFee;
+      const adminCommission = totalRevenue * commissionRate;
+      const platformCommission = totalRevenue * platformFeeRate;
+      const totalCommission = adminCommission + platformCommission;
+      const netPayout = totalRevenue - totalCommission;
+
       return {
         ...event,
         totalRevenue,
         totalTicketsSold,
         salesRate,
+        totalCommission,
+        netPayout
       };
     }).sort((a, b) => b.totalRevenue - a.totalRevenue);
-  }, [userEvents, allUserTickets]);
+  }, [userEvents, allUserTickets, user?.subscriptionPlan]);
 
   // Daily sales chart data
   const dailySales = useMemo(() => {
@@ -136,12 +156,14 @@ export default function SalesPage() {
 
   const exportSalesData = () => {
     const csvContent = [
-      ['Event', 'Date', 'Tickets Sold', 'Revenue', 'Capacity', 'Sales Rate'].join(','),
+      ['Event', 'Date', 'Tickets Sold', 'Revenue (GHS)', 'Commission (GHS)', 'Net Payout (GHS)', 'Capacity', 'Sales Rate'].join(','),
       ...eventPerformance.map(event => [
         event.name,
         event.date,
         event.totalTicketsSold,
-        `${PaymentCalculator.formatCurrency(event.totalRevenue * 100, 'GHS')}`,
+        `${(event.totalRevenue).toFixed(2)}`,
+        `${(event.totalCommission).toFixed(2)}`,
+        `${(event.netPayout).toFixed(2)}`,
         event.capacity,
         `${event.salesRate.toFixed(1)}%`
       ].join(','))
@@ -198,6 +220,30 @@ export default function SalesPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Commission</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{PaymentCalculator.formatCurrency(salesStats.totalCommission * 100, 'GHS')}</div>
+            <p className="text-xs text-muted-foreground">
+              Total platform fees
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Net Payout</CardTitle>
+            <HandCoins className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{PaymentCalculator.formatCurrency(salesStats.netPayout * 100, 'GHS')}</div>
+            <p className="text-xs text-muted-foreground">
+              Your estimated earnings
+            </p>
+          </CardContent>
+        </Card>
+         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tickets Sold</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -205,30 +251,6 @@ export default function SalesPage() {
             <div className="text-2xl font-bold">{salesStats.totalTickets}</div>
             <p className="text-xs text-muted-foreground">
               In selected time period
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Ticket Price</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{PaymentCalculator.formatCurrency(salesStats.averageTicketPrice * 100, 'GHS')}</div>
-            <p className="text-xs text-muted-foreground">
-              Per ticket average
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Events</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{userEvents.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Total events created
             </p>
           </CardContent>
         </Card>
@@ -297,11 +319,11 @@ export default function SalesPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Event</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Tickets Sold</TableHead>
                     <TableHead>Revenue</TableHead>
+                    <TableHead>Commission</TableHead>
+                    <TableHead>Net Payout</TableHead>
                     <TableHead>Sales Rate</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
+                    <TableHead className="w-[100px] text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -313,32 +335,25 @@ export default function SalesPage() {
                           <div className="text-sm text-muted-foreground">{event.location}</div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3 text-muted-foreground" />
-                          {format(parseISO(event.date), 'MMM dd, yyyy')}
-                        </div>
+                       <TableCell>
+                        <Badge variant="secondary">{PaymentCalculator.formatCurrency(event.totalRevenue * 100, 'GHS')}</Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{event.totalTicketsSold}</span>
-                          <span className="text-muted-foreground">/ {event.capacity}</span>
-                        </div>
+                        <Badge variant="outline">{PaymentCalculator.formatCurrency(event.totalCommission * 100, 'GHS')}</Badge>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="font-mono">
-                          {PaymentCalculator.formatCurrency(event.totalRevenue * 100, 'GHS')}
-                        </Badge>
+                       <TableCell>
+                        <Badge variant="outline" className="text-green-600 font-semibold">{PaymentCalculator.formatCurrency(event.netPayout * 100, 'GHS')}</Badge>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
                           <div className="flex justify-between text-sm">
+                             <span>{event.totalTicketsSold} / {event.capacity}</span>
                             <span>{event.salesRate.toFixed(1)}%</span>
                           </div>
                           <Progress value={event.salesRate} className="h-1" />
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-right">
                         <Button variant="ghost" size="sm" asChild>
                           <Link href={`/events/${event.id}`}>
                             <Eye className="h-4 w-4" />
