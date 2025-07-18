@@ -33,7 +33,7 @@ interface AppContextType {
   checkInTicket: (ticketId: string, eventId: string, currentUserId: string) => Promise<void>;
   manualCheckInTicket: (ticketId: string, eventId: string, currentUserId: string, checkInStatus: boolean) => Promise<void>;
   getTicketById: (id: string) => Promise<Ticket | undefined>;
-  getUserTickets: (email: string) => Ticket[];
+  getUserTicketsByEmail: (email: string) => Promise<Ticket[]>;
   getTicketsByEvent: (eventId: string) => Ticket[];
   updateTicket: (id: string, ticketData: Partial<Omit<Ticket, 'id'>>) => Promise<void>;
   // Users
@@ -54,6 +54,7 @@ interface AppContextType {
   // Subscription Requests
   createSubscriptionRequest: (userId: string, plan: SubscriptionPlan, price: number, bookingCode: string) => Promise<void>;
   approveSubscriptionRequest: (requestId: string, userId: string, plan: SubscriptionPlan) => Promise<void>;
+  getUserSubscriptionRequests: (email: string) => Promise<SubscriptionRequest[]>;
   // Contact Submissions
   replyToSubmission: (submission: ContactSubmission, replyMessage: string) => Promise<void>;
   // AI Chat
@@ -241,9 +242,36 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return events.filter(event => event.collaboratorIds?.includes(userId) && event.status === 'active');
   }
 
-  const getUserTickets = (email: string): Ticket[] => {
-    return tickets.filter(t => t.attendeeEmail.toLowerCase() === email.toLowerCase());
+  const getUserTicketsByEmail = async (email: string): Promise<Ticket[]> => {
+    const q = query(collection(db, "tickets"), where("attendeeEmail", "==", email));
+    const querySnapshot = await getDocs(q);
+    const userTickets = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
+    
+    // Enrich with event data
+    for (let ticket of userTickets) {
+      if (ticket.eventId) {
+        ticket.event = await getEventById(ticket.eventId);
+      }
+    }
+    return userTickets;
   }
+
+  const getUserSubscriptionRequests = async (email: string): Promise<SubscriptionRequest[]> => {
+    // Subscriptions are linked by userId, so first find the user by email
+    const usersQuery = query(collection(db, "users"), where("email", "==", email), limit(1));
+    const userSnapshot = await getDocs(usersQuery);
+
+    if (userSnapshot.empty) {
+      return [];
+    }
+    const userId = userSnapshot.docs[0].id;
+    
+    // Now find subscription requests for that userId
+    const subsQuery = query(collection(db, "subscription_requests"), where("userId", "==", userId));
+    const subsSnapshot = await getDocs(subsQuery);
+    return subsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SubscriptionRequest));
+  };
+
 
   const getTicketsByEvent = (eventId: string): Ticket[] => {
     return tickets.filter(ticket => ticket.eventId === eventId);
@@ -504,12 +532,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       checkInTicket,
       manualCheckInTicket,
       getTicketById,
+      getUserTicketsByEmail,
+      getTicketsByEvent,
       updateTicket,
       getEventById, 
       getEventsByCreator,
       getCollaboratedEvents,
-      getUserTickets,
-      getTicketsByEvent,
       getEventStats,
       updateUser,
       addCollaborator,
@@ -524,6 +552,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       bulkAddSubscribers,
       createSubscriptionRequest,
       approveSubscriptionRequest,
+      getUserSubscriptionRequests,
       replyToSubmission,
       getChatHistory,
       saveChatMessage

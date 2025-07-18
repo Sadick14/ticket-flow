@@ -1,4 +1,5 @@
 
+
 export type SubscriptionPlan = 'Free' | 'Essential' | 'Pro' | 'Custom';
 
 export interface Speaker {
@@ -62,6 +63,8 @@ export interface Ticket {
   price: number;
   status: 'pending' | 'confirmed';
   bookingCode: string;
+  // This is added client-side after fetching
+  event?: Event;
 }
 
 export interface UserProfile {

@@ -4,14 +4,12 @@
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/app-context';
 import { useAuth } from '@/context/auth-context';
-import type { Ticket, Event } from '@/lib/types';
-import { ViewTicketDialog } from '@/components/view-ticket-dialog';
+import type { Ticket, Event, SubscriptionRequest } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardDescription, CardTitle } from '@/components/ui/card';
-import { Ticket as TicketIcon, Loader2, KeyRound, CheckCircle } from 'lucide-react';
+import { Ticket as TicketIcon, Loader2, KeyRound, CheckCircle, Hourglass, Star, Copy } from 'lucide-react';
 import Link from 'next/link';
-import { TicketCard } from '@/components/ticket-card';
 import { useToast } from '@/hooks/use-toast';
 import {
   InputOTP,
@@ -19,18 +17,24 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp"
 import { PageHero } from '@/components/page-hero';
+import { format, parseISO } from 'date-fns';
+import { PaymentCalculator } from '@/lib/payment-config';
 
-
-export default function TicketsPageClient() {
+export default function MyPageClient() {
   const { user, loading: authLoading } = useAuth();
-  const { getUserTickets, loading: appLoading, getEventById } = useAppContext();
+  const { 
+    getUserTicketsByEmail, 
+    getUserSubscriptionRequests, 
+    loading: appLoading, 
+    getEventById 
+  } = useAppContext();
+  
   const [attendeeEmail, setAttendeeEmail] = useState<string | null>(null);
   const [emailInput, setEmailInput] = useState('');
   
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-
+  const [pendingTickets, setPendingTickets] = useState<Ticket[]>([]);
+  const [pendingSubscriptions, setPendingSubscriptions] = useState<SubscriptionRequest[]>([]);
+  
   const [isVerified, setIsVerified] = useState(false);
   const [otp, setOtp] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -44,7 +48,20 @@ export default function TicketsPageClient() {
     }
   }, [user]);
 
-  const handleShowTickets = () => {
+  useEffect(() => {
+    if (isVerified && attendeeEmail) {
+      const fetchPendingItems = async () => {
+        const tickets = await getUserTicketsByEmail(attendeeEmail);
+        setPendingTickets(tickets.filter(t => t.status === 'pending'));
+        
+        const subs = await getUserSubscriptionRequests(attendeeEmail);
+        setPendingSubscriptions(subs.filter(s => s.status === 'pending'));
+      };
+      fetchPendingItems();
+    }
+  }, [isVerified, attendeeEmail, getUserTicketsByEmail, getUserSubscriptionRequests]);
+
+  const handleShowItems = () => {
     if (emailInput) {
       setAttendeeEmail(emailInput);
       setIsVerified(false);
@@ -93,34 +110,20 @@ export default function TicketsPageClient() {
     }
   }
 
-  const handleViewTicket = async (ticket: Ticket) => {
-    const eventData = await getEventById(ticket.eventId);
-    if (eventData) {
-      setSelectedTicket(ticket);
-      setSelectedEvent(eventData);
-      setIsViewModalOpen(true);
-    }
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ description: "Booking code copied!" });
   };
-
-  if (authLoading || appLoading) {
-    return (
-        <div className="flex justify-center items-center h-screen">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-    );
-  }
   
-  const userTickets = attendeeEmail ? getUserTickets(attendeeEmail) : [];
-
   const renderContent = () => {
     if (!attendeeEmail) {
         return (
             <Card className="max-w-md mx-auto">
                 <CardContent className="p-8 text-center">
                     <TicketIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-medium text-foreground">Find Your Tickets</h3>
+                    <h3 className="mt-4 text-lg font-medium text-foreground">Find Your Pending Items</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Enter the email address you used during purchase to view your tickets.
+                        Enter the email address you used during purchase to view your pending tickets and subscriptions.
                     </p>
                     <div className="mt-6 flex flex-col sm:flex-row gap-2">
                         <Input 
@@ -128,9 +131,9 @@ export default function TicketsPageClient() {
                             placeholder="Enter your email" 
                             value={emailInput}
                             onChange={(e) => setEmailInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleShowTickets()}
+                            onKeyDown={(e) => e.key === 'Enter' && handleShowItems()}
                         />
-                        <Button onClick={handleShowTickets}>Show My Tickets</Button>
+                        <Button onClick={handleShowItems}>View My Items</Button>
                     </div>
                 </CardContent>
             </Card>
@@ -143,7 +146,7 @@ export default function TicketsPageClient() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2"><KeyRound/> Email Verification</CardTitle>
                   <CardDescription>
-                    {otpSent ? `We sent a code to ${attendeeEmail}. Please enter it below.` : "To protect your tickets, we need to verify your email."}
+                    {otpSent ? `We sent a code to ${attendeeEmail}. Please enter it below.` : "To protect your information, we need to verify your email."}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6 text-center space-y-4">
@@ -174,51 +177,93 @@ export default function TicketsPageClient() {
         )
     }
 
-    if (userTickets.length > 0) {
-        return (
-          <div className="space-y-6">
-            {userTickets.map(ticket => (
-              <TicketCard key={ticket.id} ticket={ticket} onViewTicket={() => handleViewTicket(ticket)} />
-            ))}
-          </div>
-        )
-    }
-
-    return (
+    if (pendingTickets.length === 0 && pendingSubscriptions.length === 0) {
+      return (
         <Card>
             <CardContent className="py-16 text-center">
-                <TicketIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium text-foreground">No Tickets Found for {attendeeEmail}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">You haven&apos;t purchased any tickets with this email yet.</p>
+                <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
+                <h3 className="mt-4 text-lg font-medium text-foreground">You're All Caught Up!</h3>
+                <p className="mt-1 text-sm text-muted-foreground">You have no items pending approval for {attendeeEmail}.</p>
                 <div className="mt-6">
                     <Button asChild>
-                    <Link href="/events">Browse Events</Link>
+                      <Link href="/events">Browse More Events</Link>
                     </Button>
                 </div>
             </CardContent>
         </Card>
+      );
+    }
+    
+    return (
+      <div className="space-y-8">
+        {pendingSubscriptions.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Star/> Pending Subscription</CardTitle>
+              <CardDescription>Your subscription upgrade is awaiting payment confirmation.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {pendingSubscriptions.map(sub => (
+                <div key={sub.id} className="p-4 border rounded-lg bg-muted/50 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-semibold text-lg">{sub.plan} Plan</h4>
+                    <p className="font-bold text-primary">{PaymentCalculator.formatCurrency(sub.price, 'GHS')}</p>
+                  </div>
+                   <p className="text-sm text-muted-foreground">Please complete the payment using the booking code below as your reference.</p>
+                   <div className="flex items-center gap-2">
+                      <Input readOnly value={sub.bookingCode} className="font-mono text-xs h-8"/>
+                      <Button type="button" size="icon" variant="ghost" onClick={() => copyToClipboard(sub.bookingCode)}><Copy className="h-4 w-4"/></Button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+        
+        {pendingTickets.length > 0 && (
+           <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Hourglass/> Pending Tickets</CardTitle>
+                <CardDescription>These tickets are awaiting payment confirmation.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {pendingTickets.map(ticket => (
+                  <div key={ticket.id} className="p-4 border rounded-lg bg-muted/50">
+                    <div className="flex justify-between items-start">
+                        <div>
+                           <p className="text-sm text-muted-foreground">Ticket for {ticket.attendeeName}</p>
+                           <h4 className="font-semibold text-lg">{ticket.event?.name || 'Loading event...'}</h4>
+                        </div>
+                        <p className="font-bold text-primary">{PaymentCalculator.formatCurrency(ticket.price * 100, 'GHS')}</p>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <p className="text-sm text-muted-foreground">Booking Code:</p>
+                      <Input readOnly value={ticket.bookingCode} className="font-mono text-xs h-8 w-32"/>
+                      <Button type="button" size="icon" variant="ghost" onClick={() => copyToClipboard(ticket.bookingCode)}><Copy className="h-4 w-4"/></Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+        )}
+      </div>
     );
   }
 
   return (
     <div className="min-h-screen">
       <PageHero
-        title="My Tickets"
+        title="My Page"
         backgroundImage = "/2.jpg"
-        description="Here are all the tickets you have purchased. Access your QR codes, event details, and manage your upcoming events."
+        description="Here you can find all your pending tickets and subscriptions that are awaiting approval."
       />
       <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        {renderContent()}
+        {appLoading || authLoading ? (
+            <div className="flex justify-center items-center h-48">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        ) : renderContent()}
       </div>
-
-      {selectedTicket && selectedEvent && (
-        <ViewTicketDialog
-          ticket={selectedTicket}
-          event={selectedEvent}
-          isOpen={isViewModalOpen}
-          onOpenChange={setIsViewModalOpen}
-        />
-      )}
     </div>
   );
 }

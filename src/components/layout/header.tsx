@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Ticket as TicketIcon, Menu, LogOut, LayoutDashboard, Shield, PlusCircle, Home, Newspaper, DollarSign } from 'lucide-react';
+import { Ticket as TicketIcon, Menu, LogOut, LayoutDashboard, Shield, PlusCircle, Home, Newspaper, DollarSign, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import {
@@ -111,7 +111,7 @@ export function Header() {
               <Link href="/news">News</Link>
             </Button>
             <Button variant="ghost" asChild>
-              <Link href="/tickets">Tickets</Link>
+              <Link href="/my-page">My Page</Link>
             </Button>
             <Button variant="ghost" asChild>
               <Link href="/pricing">Pricing</Link>
@@ -180,9 +180,9 @@ export function Header() {
                         <Newspaper className="h-5 w-5" />
                         <span>News</span>
                       </NavLink>
-                      <NavLink href="/tickets" onClick={closeMobileMenu}>
-                        <TicketIcon className="h-5 w-5" />
-                        <span>My Tickets</span>
+                      <NavLink href="/my-page" onClick={closeMobileMenu}>
+                        <User className="h-5 w-5" />
+                        <span>My Page</span>
                       </NavLink>
                       <NavLink href="/pricing" onClick={closeMobileMenu}>
                         <DollarSign className="h-5 w-5" />
