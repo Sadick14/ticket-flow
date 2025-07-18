@@ -178,7 +178,7 @@ export function PurchaseTicketDialog({ event, isOpen, onOpenChange }: PurchaseTi
               <Card className="text-left p-4 bg-muted/50">
                  <p className="text-sm font-semibold">Instructions:</p>
                  <ol className="text-sm list-decimal list-inside space-y-1 mt-2">
-                    <li>Send Mobile Money to: <strong className="text-primary">024 123 4567</strong></li>
+                    <li>Send Mobile Money to: <strong className="text-primary">0597479994</strong></li>
                     <li>Amount: <strong className="text-primary">{PaymentCalculator.formatCurrency(totalPrice * 100, 'GHS')}</strong></li>
                     <li>
                       Reference/Narration:

@@ -104,7 +104,7 @@ export default function PricingClientPage() {
   const paidPlans = [
     {
       name: 'Essential' as SubscriptionPlan,
-      priceGHS: 50,
+      priceGHS: 5000,
       price: 'GH₵50',
       priceDescription: 'per month',
       description: 'For paid events that need the core tools to succeed.',
@@ -120,7 +120,7 @@ export default function PricingClientPage() {
     },
     {
       name: 'Pro' as SubscriptionPlan,
-      priceGHS: 150,
+      priceGHS: 15000,
       price: 'GH₵150',
       priceDescription: 'per month',
       description: 'For organizers who want to maximize sales and engagement.',
@@ -289,7 +289,7 @@ export default function PricingClientPage() {
               <Card className="text-left p-4 bg-muted/50">
                  <p className="text-sm font-semibold">Instructions:</p>
                  <ol className="text-sm list-decimal list-inside space-y-1 mt-2">
-                    <li>Send Mobile Money to: <strong className="text-primary">024 123 4567</strong></li>
+                    <li>Send Mobile Money to: <strong className="text-primary">0597479994</strong></li>
                     <li>Amount: <strong className="text-primary">{PaymentCalculator.formatCurrency(selectedPlan?.priceGHS || 0, 'GHS')}</strong></li>
                     <li>
                       Reference/Narration:
