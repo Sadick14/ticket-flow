@@ -56,9 +56,17 @@ export default function AdminEmailManagement() {
   const selectedTemplate: EmailTemplate | undefined = emailTemplates[selectedTemplateId as TemplateId];
   
   useEffect(() => {
-    // Reset content when template changes
-    setTemplateContent({});
-  }, [selectedTemplateId]);
+    // When template changes, populate content with default values
+    if (selectedTemplate) {
+        const defaultContent: Record<string, string> = {};
+        for (const key in selectedTemplate.fields) {
+            defaultContent[key] = selectedTemplate.fields[key].defaultValue;
+        }
+        setTemplateContent(defaultContent);
+    } else {
+        setTemplateContent({});
+    }
+  }, [selectedTemplateId, selectedTemplate]);
 
   const handleContentChange = (field: string, value: string) => {
     setTemplateContent(prev => ({ ...prev, [field]: value }));
@@ -160,14 +168,19 @@ export default function AdminEmailManagement() {
                       <SelectValue placeholder="Select a template" />
                   </SelectTrigger>
                   <SelectContent>
-                      {Object.entries(emailTemplates).map(([id, template]) => (
-                          <SelectItem key={id} value={id}>
-                              <div className="flex items-center gap-2">
-                                  {template.category === 'newsletter' ? <FileText /> : <Megaphone />}
-                                  {template.name}
-                              </div>
-                          </SelectItem>
-                      ))}
+                      {Object.entries(emailTemplates).map(([id, template]) => {
+                        if(template.category === "announcement" || template.category === "newsletter") {
+                          return (
+                            <SelectItem key={id} value={id}>
+                                <div className="flex items-center gap-2">
+                                    {template.category === 'newsletter' ? <FileText /> : <Megaphone />}
+                                    {template.name}
+                                </div>
+                            </SelectItem>
+                          )
+                        }
+                        return null;
+                      })}
                   </SelectContent>
                 </Select>
             </CardContent>
@@ -193,6 +206,7 @@ export default function AdminEmailManagement() {
                         value={templateContent[key] || ''}
                         onChange={(e) => handleContentChange(key, e.target.value)}
                         className="mt-1"
+                        rows={5}
                       />
                     ) : (
                        <Input 

@@ -45,6 +45,7 @@ export interface EmailTemplate {
     [key: string]: {
       label: string;
       placeholder: string;
+      defaultValue: string;
       type: 'text' | 'textarea' | 'url';
     }
   };
@@ -56,9 +57,9 @@ export const emailTemplates = {
     name: 'Simple Announcement',
     category: 'announcement',
     fields: {
-      subject: { label: 'Subject', placeholder: 'A quick update from TicketFlow', type: 'text' },
-      headline: { label: 'Headline', placeholder: 'Important News!', type: 'text' },
-      message: { label: 'Message', placeholder: 'Here\'s what you need to know...', type: 'textarea' },
+      subject: { label: 'Subject', placeholder: 'A quick update from TicketFlow', defaultValue: 'Important Update from TicketFlow', type: 'text' },
+      headline: { label: 'Headline', placeholder: 'Important News!', defaultValue: 'An Update You Won\'t Want to Miss', type: 'text' },
+      message: { label: 'Message', placeholder: 'Here\'s what you need to know...', defaultValue: 'Hi everyone,\n\nWe wanted to share a quick but important update regarding our platform. [Explain the update here].\n\nThanks for being a part of our community!\n\nBest,\nThe TicketFlow Team', type: 'textarea' },
     },
     generate: (content) => {
       const { subject, headline, message } = content;
@@ -71,11 +72,11 @@ export const emailTemplates = {
     name: 'Call to Action',
     category: 'announcement',
     fields: {
-      subject: { label: 'Subject', placeholder: 'Don\'t Miss Out!', type: 'text' },
-      headline: { label: 'Headline', placeholder: 'An Exciting Opportunity', type: 'text' },
-      message: { label: 'Message', placeholder: 'We have something special for you...', type: 'textarea' },
-      buttonText: { label: 'Button Text', placeholder: 'Learn More', type: 'text' },
-      buttonUrl: { label: 'Button URL', placeholder: 'https://example.com/link', type: 'url' },
+      subject: { label: 'Subject', placeholder: 'Don\'t Miss Out!', defaultValue: 'A Special Invitation for You', type: 'text' },
+      headline: { label: 'Headline', placeholder: 'An Exciting Opportunity', defaultValue: 'You\'re Invited!', type: 'text' },
+      message: { label: 'Message', placeholder: 'We have something special for you...', defaultValue: 'We\'ve got something special just for our community members! We\'re launching a new [feature/event] and we want you to be the first to experience it.\n\nClick the button below to learn more and get involved.', type: 'textarea' },
+      buttonText: { label: 'Button Text', placeholder: 'Learn More', defaultValue: 'Learn More', type: 'text' },
+      buttonUrl: { label: 'Button URL', placeholder: 'https://ticket-flow.up.railway.app', defaultValue: 'https://ticket-flow.up.railway.app', type: 'url' },
     },
     generate: (content) => {
       const { subject, headline, message, buttonText, buttonUrl } = content;
@@ -88,13 +89,13 @@ export const emailTemplates = {
     name: 'Feature Newsletter',
     category: 'newsletter',
     fields: {
-      subject: { label: 'Subject', placeholder: 'This Month at TicketFlow', type: 'text' },
-      headline: { label: 'Main Headline', placeholder: 'New Features to Explore', type: 'text' },
-      intro: { label: 'Introduction', placeholder: 'We\'ve been busy building things...', type: 'textarea' },
-      feature1Title: { label: 'Feature 1 Title', placeholder: 'Awesome New Feature', type: 'text' },
-      feature1Desc: { label: 'Feature 1 Description', placeholder: 'Details about the feature...', type: 'textarea' },
-      buttonText: { label: 'Button Text', placeholder: 'Explore Now', type: 'text' },
-      buttonUrl: { label: 'Button URL', placeholder: 'https://example.com/features', type: 'url' },
+      subject: { label: 'Subject', placeholder: 'This Month at TicketFlow', defaultValue: 'What\'s New at TicketFlow - [Month] Edition', type: 'text' },
+      headline: { label: 'Main Headline', placeholder: 'New Features to Explore', defaultValue: 'This Month\'s Top New Features', type: 'text' },
+      intro: { label: 'Introduction', placeholder: 'We\'ve been busy building things...', defaultValue: 'Hello everyone,\n\nWe\'ve been working hard behind the scenes to bring you some powerful new tools to make your events even more successful. Here\'s what\'s new this month:', type: 'textarea' },
+      feature1Title: { label: 'Feature 1 Title', placeholder: 'Awesome New Feature', defaultValue: 'AI-Powered Event Descriptions', type: 'text' },
+      feature1Desc: { label: 'Feature 1 Description', placeholder: 'Details about the feature...', defaultValue: 'Struggling with what to write? Our new AI assistant can generate compelling, professional event descriptions for you in seconds. Just provide a few details and let the AI do the rest!', type: 'textarea' },
+      buttonText: { label: 'Button Text', placeholder: 'Explore Now', defaultValue: 'Explore All Features', type: 'text' },
+      buttonUrl: { label: 'Button URL', placeholder: 'https://ticket-flow.up.railway.app/features', defaultValue: 'https://ticket-flow.up.railway.app/home', type: 'url' },
     },
     generate: (content) => {
        const { subject, headline, intro, feature1Title, feature1Desc, buttonText, buttonUrl } = content;
@@ -115,8 +116,8 @@ export const emailTemplates = {
     name: "Email Verification",
     category: "announcement",
     fields: {
-      attendeeName: { label: 'Attendee Name', placeholder: '', type: 'text' },
-      otpCode: { label: 'OTP Code', placeholder: '', type: 'text' },
+      attendeeName: { label: 'Attendee Name', placeholder: '', defaultValue: '', type: 'text' },
+      otpCode: { label: 'OTP Code', placeholder: '', defaultValue: '', type: 'text' },
     },
     generate: (content) => {
       const { attendeeName, otpCode } = content;
@@ -135,10 +136,10 @@ export const emailTemplates = {
     name: 'Ticket Confirmation',
     category: 'announcement', // Not selectable in admin
     fields: {
-      eventName: { label: 'Event Name', placeholder: '', type: 'text'},
-      eventDate: { label: 'Event Date', placeholder: '', type: 'text'},
-      attendeeName: { label: 'Attendee Name', placeholder: '', type: 'text'},
-      ticketUrl: { label: 'Ticket URL', placeholder: '', type: 'url'},
+      eventName: { label: 'Event Name', placeholder: '', defaultValue: '', type: 'text'},
+      eventDate: { label: 'Event Date', placeholder: '', defaultValue: '', type: 'text'},
+      attendeeName: { label: 'Attendee Name', placeholder: '', defaultValue: '', type: 'text'},
+      ticketUrl: { label: 'Ticket URL', placeholder: '', defaultValue: '', type: 'url'},
     },
     generate: (content) => {
         const { eventName, eventDate, attendeeName, ticketUrl } = content;
@@ -158,11 +159,11 @@ export const emailTemplates = {
     name: 'Pending Payment Instructions',
     category: 'announcement',
     fields: {
-      eventName: { label: 'Event Name', type: 'text', placeholder: '' },
-      attendeeName: { label: 'Attendee Name', type: 'text', placeholder: '' },
-      totalPrice: { label: 'Total Price', type: 'text', placeholder: '' },
-      bookingCode: { label: 'Booking Code', type: 'text', placeholder: '' },
-      paymentNumber: { label: 'Payment Number', type: 'text', placeholder: '' },
+      eventName: { label: 'Event Name', type: 'text', placeholder: '', defaultValue: '' },
+      attendeeName: { label: 'Attendee Name', type: 'text', placeholder: '', defaultValue: '' },
+      totalPrice: { label: 'Total Price', type: 'text', placeholder: '', defaultValue: '' },
+      bookingCode: { label: 'Booking Code', type: 'text', placeholder: '', defaultValue: '' },
+      paymentNumber: { label: 'Payment Number', type: 'text', placeholder: '', defaultValue: '' },
     },
     generate: (content) => {
       const { eventName, attendeeName, totalPrice, bookingCode, paymentNumber } = content;
@@ -186,10 +187,10 @@ export const emailTemplates = {
     name: 'Event Reminder',
     category: 'announcement', // Not selectable in admin
     fields: {
-      eventName: { label: 'Event Name', placeholder: '', type: 'text'},
-      eventDate: { label: 'Event Date', placeholder: '', type: 'text'},
-      eventLocation: { label: 'Event Location', placeholder: '', type: 'text'},
-      optionalMessage: { label: 'Optional Message', placeholder: '', type: 'textarea'},
+      eventName: { label: 'Event Name', placeholder: '', defaultValue: '', type: 'text'},
+      eventDate: { label: 'Event Date', placeholder: '', defaultValue: '', type: 'text'},
+      eventLocation: { label: 'Event Location', placeholder: '', defaultValue: '', type: 'text'},
+      optionalMessage: { label: 'Optional Message', placeholder: '', defaultValue: '', type: 'textarea'},
     },
     generate: (content) => {
         const { eventName, eventDate, eventLocation, optionalMessage } = content;
@@ -209,8 +210,8 @@ export const emailTemplates = {
     name: 'Event Update',
     category: 'announcement', // Not selectable in admin
     fields: {
-        eventName: { label: 'Event Name', placeholder: '', type: 'text' },
-        updateMessage: { label: 'Update Message', placeholder: '', type: 'textarea' },
+        eventName: { label: 'Event Name', placeholder: '', defaultValue: '', type: 'text' },
+        updateMessage: { label: 'Update Message', placeholder: '', defaultValue: '', type: 'textarea' },
     },
     generate: (content) => {
         const { eventName, updateMessage } = content;
