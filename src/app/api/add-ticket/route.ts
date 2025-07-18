@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
               eventName: event.name,
               eventDate: format(eventDate, 'PPP p'),
               attendeeName: finalTicket.attendeeName,
-              ticketUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/tickets`,
+              ticketUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://ticket-flow.up.railway.app'}/my-page`,
           });
           
           await sendEmail({
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
           const emailContent = renderTemplate('pendingPaymentInstructions', {
               eventName: event.name,
               attendeeName: finalTicket.attendeeName,
-              totalPrice: PaymentCalculator.formatCurrency(totalPrice * 100, 'GHS'),
+              totalPrice: PaymentCalculator.formatCurrency(totalPrice, 'GHS'),
               bookingCode: bookingCode,
               paymentNumber: "0597479994"
           });

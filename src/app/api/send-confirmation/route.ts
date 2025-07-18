@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
         eventName: event.name,
         eventDate: format(eventDate, 'PPP p'),
         attendeeName: attendeeName,
-        ticketUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/tickets`,
+        ticketUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://ticket-flow.up.railway.app'}/my-page`,
     });
     
     const success = await sendEmail({

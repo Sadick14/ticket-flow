@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
             <p>The wait is over! TicketFlow, the event management platform you've been waiting for, is now live and ready for you.</p>
             <p>Start creating amazing events or find your next experience today.</p>
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/home" style="background-color: #1e40af; color: white; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://ticket-flow.up.railway.app'}/home" style="background-color: #1e40af; color: white; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold;">
                 Explore TicketFlow
               </a>
             </div>
