@@ -411,8 +411,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Subscribers
   const addSubscriber = async (email: string, name?: string) => {
     if (!email) throw new Error("Email is required.");
-    const existing = launchSubscribers.find(s => s.email === email);
-    if (existing) throw new Error("This email is already subscribed.");
+    const q = query(collection(db, 'launch_subscribers'), where('email', '==', email), limit(1));
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      // Email already exists, but we don't throw an error to avoid crashes.
+      console.log(`Email ${email} is already subscribed.`);
+      throw new Error("This email is already subscribed.");
+    }
     
     await addDoc(collection(db, 'launch_subscribers'), {
       email,
@@ -430,19 +435,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const bulkAddSubscribers = async (subscribers: { email: string; name?: string }[]) => {
     const batch = writeBatch(db);
     const subscribersRef = collection(db, "launch_subscribers");
+    const existingEmails = new Set(launchSubscribers.map(s => s.email));
 
     for (const sub of subscribers) {
-        // Simple check to avoid duplicates in the same batch, more robust check would query DB first
-        const docRef = doc(subscribersRef, sub.email.toLowerCase()); // Use email as doc id for easy upsert
-        batch.set(docRef, {
-            email: sub.email,
-            name: sub.name || '',
-            subscribedAt: serverTimestamp()
-        }, { merge: true });
+        if (sub.email && !existingEmails.has(sub.email)) {
+            const docRef = doc(subscribersRef);
+            batch.set(docRef, {
+                email: sub.email,
+                name: sub.name || '',
+                subscribedAt: serverTimestamp()
+            });
+            existingEmails.add(sub.email); // Prevent duplicates within the same batch
+        }
     }
     await batch.commit();
     await fetchAllData();
   };
+
 
   // Subscription Requests
   const createSubscriptionRequest = async (userId: string, plan: SubscriptionPlan, price: number, bookingCode: string) => {
