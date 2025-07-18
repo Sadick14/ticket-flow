@@ -96,7 +96,7 @@ export default function AttendeesPage() {
   const getStatusBadge = (status: 'pending' | 'confirmed' | undefined) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="destructive"><Hourglass className="mr-1 h-3 w-3" />Pending</Badge>;
+        return <Badge variant="destructive"><Hourglass className="mr-1 h-3 w-3" />Pending Payment</Badge>;
       case 'confirmed':
         return <Badge className="bg-green-100 text-green-700"><CheckCircle className="mr-1 h-3 w-3" />Confirmed</Badge>;
       default:
@@ -272,7 +272,6 @@ export default function AttendeesPage() {
                       </TableCell>
                        <TableCell>
                         {getStatusBadge(attendee.status)}
-                        {attendee.status === 'pending' && <p className="text-xs text-muted-foreground">Code: {attendee.bookingCode}</p>}
                       </TableCell>
                        <TableCell className="text-center">
                         {checkingIn === attendee.id ? (
