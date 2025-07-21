@@ -48,7 +48,7 @@ interface AppContextType {
   updateNewsArticle: (id: string, articleData: Partial<Omit<NewsArticle, 'id' | 'publishedDate'>>) => Promise<void>;
   deleteNewsArticle: (id: string) => Promise<void>;
   // Courses
-  addCourseWithLessons: (courseData: Omit<Course, 'id'>, lessonsData: Omit<Lesson, 'id'>[]) => Promise<void>;
+  addCourse: (courseData: Omit<Course, 'id'>) => Promise<void>;
   updateCourse: (id: string, courseData: Partial<Omit<Course, 'id'>>) => Promise<void>;
   deleteCourse: (id: string) => Promise<void>;
   // Featured Article
@@ -117,11 +117,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             getDocs(query(collection(db, 'subscription_requests'), orderBy('requestedAt', 'desc'))),
         ]);
 
+        const fetchedCourses = coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
+        // Enrich courses with lessons subcollection
+        for (const course of fetchedCourses) {
+          const lessonsSnapshot = await getDocs(query(collection(db, 'courses', course.id, 'lessons')));
+          course.lessons = lessonsSnapshot.docs.map(lessonDoc => ({ id: lessonDoc.id, ...lessonDoc.data() } as Lesson));
+        }
+
         setEvents(removeDuplicates(eventsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event))));
         setTickets(removeDuplicates(ticketsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket))));
         setNews(removeDuplicates(newsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NewsArticle))));
         setUsers(usersSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile)));
-        setCourses(coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course)));
+        setCourses(fetchedCourses);
         setLaunchSubscribers(launchSubscribersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LaunchSubscriber)));
         setContactSubmissions(contactSubmissionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ContactSubmission)));
         setSubscriptionRequests(subscriptionRequestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SubscriptionRequest)));
@@ -145,19 +152,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchAllData]);
 
   // --- Course Functions ---
-  const addCourseWithLessons = async (courseData: Omit<Course, 'id'>, lessonsData: Omit<Lesson, 'id'>[]) => {
-      const batch = writeBatch(db);
-      const courseRef = doc(collection(db, 'courses'));
-      
-      batch.set(courseRef, courseData);
+  const addCourse = async (courseData: Omit<Course, 'id'>) => {
+    const { lessons, ...mainCourseData } = courseData;
+    const batch = writeBatch(db);
+    const courseRef = doc(collection(db, 'courses'));
+    
+    batch.set(courseRef, mainCourseData);
 
-      lessonsData.forEach(lesson => {
-          const lessonRef = doc(collection(db, 'courses', courseRef.id, 'lessons'));
-          batch.set(lessonRef, lesson);
-      });
-      
-      await batch.commit();
-      await fetchAllData();
+    if (lessons) {
+        lessons.forEach(lesson => {
+            const lessonRef = doc(collection(db, 'courses', courseRef.id, 'lessons'));
+            batch.set(lessonRef, lesson);
+        });
+    }
+    
+    await batch.commit();
+    await fetchAllData();
   };
 
   const updateCourse = async (id: string, courseData: Partial<Omit<Course, 'id'>>) => {
@@ -173,8 +183,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteCourse = async (id: string) => {
     try {
-      // In a real app, you might want to delete subcollections too, which is more complex.
-      // For now, we just delete the main course document.
       await deleteDoc(doc(db, 'courses', id));
       await fetchAllData();
     } catch (error) {
@@ -620,7 +628,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addNewsArticle,
       updateNewsArticle,
       deleteNewsArticle,
-      addCourseWithLessons,
+      addCourse,
       updateCourse,
       deleteCourse,
       saveFeaturedArticle,
