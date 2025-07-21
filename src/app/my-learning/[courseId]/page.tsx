@@ -227,6 +227,9 @@ export default function CoursePlayerPage() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-80 p-0 flex flex-col">
+                  <SheetHeader>
+                      <SheetTitle className="sr-only">Course Navigation</SheetTitle>
+                  </SheetHeader>
                   <SidebarContent />
               </SheetContent>
             </Sheet>
