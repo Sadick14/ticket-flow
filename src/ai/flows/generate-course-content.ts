@@ -7,7 +7,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { Readable }from "stream";
 
 // --- INPUT/OUTPUT SCHEMAS ---
 
@@ -65,7 +64,7 @@ export async function generateCourseContent(
     return await generateCourseContentFlow(input);
   } catch (error) {
     console.error('Course generation flow failed:', error);
-    throw new Error('Failed to generate course content due to an internal error.');
+    throw new Error(`Failed to generate course content. Details: ${error instanceof Error ? error.message : 'An unknown error occurred.'}`);
   }
 }
 
@@ -101,8 +100,8 @@ const courseContentPrompt = ai.definePrompt({
   output: { schema: CourseTextOnlySchema },
   system: `You are an expert instructional designer. Your task is to generate a comprehensive and detailed course based on the provided title.
 The course must contain:
-- A course title and a short description.
-- A minimum of 10 lesson titles.
+- A course title and a short, one-paragraph overview.
+- A minimum of 5 lesson titles.
 - For each lesson, you must provide:
     - A unique slug-like ID.
     - A recommended, highly relevant YouTube video URL.
@@ -125,12 +124,12 @@ const generateCourseContentFlow = ai.defineFlow(
   async (input) => {
     // 1. Generate the course text content and all image prompts
     const { output: courseTextData } = await courseContentPrompt(input);
-    if (!courseTextData) {
-      throw new Error('Failed to generate course text content.');
+    if (!courseTextData || !courseTextData.lessons || courseTextData.lessons.length === 0) {
+      throw new Error('AI failed to generate the initial course text content or structure.');
     }
     const { courseImagePrompt, lessons, ...courseContent } = courseTextData;
 
-    // 2. Generate the main course cover image
+    // Helper to generate an image with a fallback
     const generateImage = async (prompt: string, fallback: string) => {
         try {
             const { media } = await ai.generate({
@@ -140,11 +139,12 @@ const generateCourseContentFlow = ai.defineFlow(
             });
             return media?.url || fallback;
         } catch (e) {
-            console.warn(`Image generation failed for prompt: "${prompt}". Using placeholder.`, e);
+            console.warn(`Image generation failed for prompt: "${prompt}". Using placeholder. Error:`, e);
             return fallback;
         }
     };
     
+    // 2. Generate the main course cover image
     const courseImageUrl = await generateImage(courseImagePrompt, 'https://placehold.co/1200x800.png');
 
     // 3. Generate images for each page in parallel
@@ -159,7 +159,15 @@ const generateCourseContentFlow = ai.defineFlow(
                     };
                 })
             );
-            return { ...lesson, pages: pagesWithImages };
+            // Re-structure the lesson to match the output schema, which does not include imagePrompt
+            return {
+                id: lesson.id,
+                title: lesson.title,
+                duration: lesson.duration,
+                videoUrl: lesson.videoUrl,
+                quiz: lesson.quiz,
+                pages: pagesWithImages,
+            };
         })
     );
     
@@ -168,6 +176,7 @@ const generateCourseContentFlow = ai.defineFlow(
         ...courseContent,
         imageUrl: courseImageUrl,
         lessons: lessonsWithImages,
+        project: courseContent.project
     };
   }
 );
