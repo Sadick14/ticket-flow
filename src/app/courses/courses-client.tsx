@@ -6,57 +6,21 @@ import { useAppContext } from '@/context/app-context';
 import { PageHero } from '@/components/page-hero';
 import { CourseCard } from '@/components/course-card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
-import { Search, BookOpen, ArrowRight, User, Star, TrendingUp, BarChart, Users, Megaphone, Calendar } from 'lucide-react';
-import type { Course } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
+import { Users as UsersIcon, Star, TrendingUp, BookOpen, ChevronRight, ArrowRight } from 'lucide-react';
+import type { Course } from '@/lib/types';
 
-const courseCategories = ["All Courses", "Event Marketing", "Audience Growth", "Sponsorship", "Event Production", "Community Building"];
-const categoryIcons = {
-  "Event Marketing": Megaphone,
-  "Audience Growth": Users,
-  "Sponsorship": Star,
-  "Event Production": Calendar,
-  "Community Building": BarChart,
-};
 
 export default function CoursesClient() {
   const { courses, loading } = useAppContext();
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const publishedCourses = useMemo(() => courses.filter(c => c.status === 'published'), [courses]);
   
-  const featuredCourses = useMemo(() => publishedCourses.slice(0, 3), [publishedCourses]);
-  const trendingCourses = useMemo(() => publishedCourses.slice(3, 8), [publishedCourses]);
-  const growingTopics = useMemo(() => publishedCourses.slice(8, 12), [publishedCourses]);
-
-  const testimonials = [
-    {
-        name: "Aisha Mohammed",
-        role: "Conference Organizer",
-        quote: "The Sponsorship Mastery course tripled my event's funding. The practical strategies are a game-changer for any organizer.",
-        image: "https://placehold.co/100x100.png",
-        "data-ai-hint": "woman portrait"
-    },
-    {
-        name: "David Lee",
-        role: "Community Manager",
-        quote: "I thought I knew community building, but the Audience Growth course provided insights that helped me double my attendee list.",
-        image: "https://placehold.co/100x100.png",
-        "data-ai-hint": "man portrait"
-    },
-    {
-        name: "Priya Sharma",
-        role: "Freelance Event Planner",
-        quote: "TicketFlow's courses gave me the confidence to go from small meetups to planning major corporate events. Invaluable!",
-        image: "https://placehold.co/100x100.png",
-        "data-ai-hint": "woman portrait"
-    }
-  ]
+  const publishedCourses = useMemo(() => courses.filter(c => c.status === 'published'), [courses]);
+  const featuredCourses = useMemo(() => publishedCourses.filter(c => c.isFeatured).slice(0, 3), [publishedCourses]);
+  const popularCourses = useMemo(() => publishedCourses.filter(c => c.isPopular).slice(0, 8), [publishedCourses]);
+  const trendingCourses = useMemo(() => publishedCourses.filter(c => c.isTrending).slice(0, 4), [publishedCourses]);
 
   const renderCourseGrid = (eventsToShow: Course[], noEventsMessage: string) => {
     if (loading) {
@@ -82,7 +46,7 @@ export default function CoursesClient() {
     }
     
     return (
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {eventsToShow.map((course) => (
           <CourseCard key={course.id} course={course} />
         ))}
@@ -92,110 +56,94 @@ export default function CoursesClient() {
   
   return (
     <div className="min-h-screen bg-muted/40">
-      <section className="bg-primary/5 border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-foreground">Master Your Events</h1>
-            <p className="mt-4 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-              Level up your skills with expert-led courses on event marketing, sponsorship, production, and more.
-            </p>
-            <div className="mt-8">
-                <Button asChild size="lg">
-                    <Link href="#courses">Explore Courses</Link>
-                </Button>
-            </div>
-        </div>
+      <section className="py-20 text-center bg-background">
+        <h1 className="text-4xl md:text-5xl font-bold text-foreground">Master Your Events. Elevate Your Career.</h1>
+        <p className="mt-4 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
+          Gain in-demand skills with expert-led courses on event marketing, sponsorship, and production.
+        </p>
       </section>
 
-      <div id="courses" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-24">
-        {/* Featured Courses Section */}
-        <section>
-            <h2 className="text-3xl font-bold mb-8">Featured Courses</h2>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-24">
+        {/* Featured Courses / Roles Section */}
+        {featuredCourses.length > 0 && (
+          <section>
+            <div className="text-left mb-8">
+                <h2 className="text-3xl font-bold">Featured Courses</h2>
+                <p className="text-muted-foreground mt-1">Gain the knowledge and skills you need to advance.</p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {loading ? Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-64 w-full"/>) : 
+                {loading ? Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-80 w-full"/>) : 
                 featuredCourses.map(course => (
-                    <Card key={course.id} className="overflow-hidden hover:shadow-xl transition-shadow">
-                        <CardHeader className="flex-row items-center gap-4">
-                            <Avatar className="w-16 h-16">
-                                <AvatarFallback>{course.instructor.charAt(0)}</AvatarFallback>
-                            </Avatar>
+                    <Card key={course.id} className="overflow-hidden hover:shadow-xl transition-shadow flex flex-col">
+                        <CardHeader className="flex-row items-start gap-4 p-6">
+                            <Image src={course.imageUrl} alt={course.title} width={80} height={80} className="rounded-lg object-cover w-20 h-20"/>
                             <div>
                                 <CardTitle>{course.title}</CardTitle>
-                                <CardDescription>{course.instructor}</CardDescription>
+                                <CardDescription className="mt-2 line-clamp-2">{course.description}</CardDescription>
                             </div>
                         </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{course.description}</p>
-                            <Button variant="secondary" asChild className="w-full">
-                                <Link href={`/courses/${course.id}`}>Learn More</Link>
-                            </Button>
+                        <CardContent className="p-6 pt-0 flex-grow">
+                            <p className="text-sm font-semibold mb-2">Lessons include:</p>
+                             <ul className="space-y-1 text-sm text-muted-foreground">
+                                {course.lessons.slice(0, 3).map((lesson, i) => (
+                                    <li key={i} className="flex items-center gap-2">
+                                        <ChevronRight className="h-4 w-4 text-primary"/>
+                                        <span>{lesson.title}</span>
+                                    </li>
+                                ))}
+                            </ul>
                         </CardContent>
+                        <div className="p-6 pt-0 mt-auto">
+                             <Button variant="outline" asChild className="w-full">
+                                <Link href={`/courses/${course.id}`}>Explore Course</Link>
+                            </Button>
+                        </div>
                     </Card>
                 ))}
             </div>
-        </section>
+          </section>
+        )}
 
-        {/* Trending Courses Section */}
-        <section>
-            <h2 className="text-3xl font-bold mb-8">Trending Courses</h2>
-            {renderCourseGrid(trendingCourses, "No trending courses available.")}
-             <div className="mt-12 text-center">
-                <Button variant="outline" asChild>
-                    <Link href="/events">View All Courses</Link>
-                </Button>
-            </div>
-        </section>
-
-        {/* Growing in Popularity Section */}
-        <section>
-            <h2 className="text-3xl font-bold mb-2">What's growing in popularity</h2>
-            <p className="text-muted-foreground mb-8">Explore the topics your peers are learning about.</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                 {loading ? Array.from({length: 4}).map((_, i) => <Skeleton key={i} className="h-48 w-full"/>) :
-                 growingTopics.map(course => (
-                    <Link key={course.id} href={`/courses/${course.id}`}>
-                        <Card className="relative h-48 flex items-end p-6 text-white overflow-hidden group">
-                           <Image src={course.imageUrl} alt={course.title} layout="fill" objectFit="cover" className="absolute inset-0 transition-transform duration-300 group-hover:scale-105"/>
-                           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"/>
-                           <div className="relative z-10">
-                                <h3 className="text-xl font-bold">{course.title}</h3>
-                                <p className="text-sm">{course.lessons.length} lessons</p>
-                           </div>
-                        </Card>
-                    </Link>
-                 ))}
-            </div>
-        </section>
-
-        {/* Explore Categories Section */}
-        <section>
-            <h2 className="text-3xl font-bold mb-8">Explore Categories</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Object.entries(categoryIcons).map(([category, Icon]) => (
-                    <Button key={category} variant="outline" className="h-20 text-lg justify-start p-4 gap-3">
-                        <Icon className="h-6 w-6 text-primary"/>
-                        <span>{category}</span>
+        {/* Most Popular Courses Section */}
+        {popularCourses.length > 0 && (
+            <section>
+                <div className="text-left mb-8">
+                    <h2 className="text-3xl font-bold">Most Popular Courses</h2>
+                    <p className="text-muted-foreground mt-1">Explore our most popular programs, get job-ready for an in-demand career.</p>
+                </div>
+                {renderCourseGrid(popularCourses, "No popular courses available.")}
+                <div className="mt-12 text-center">
+                    <Button variant="outline" asChild>
+                        <Link href="/courses/all">View All Courses <ArrowRight className="ml-2 h-4 w-4" /></Link>
                     </Button>
-                ))}
-            </div>
-        </section>
+                </div>
+            </section>
+        )}
 
-        {/* Community Testimonials */}
-        <section className="bg-background rounded-lg p-12">
-            <h2 className="text-3xl font-bold text-center mb-12">From the TicketFlow Community</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                {testimonials.map((t,i) => (
-                    <div key={i}>
-                        <Avatar className="w-24 h-24 mx-auto mb-4">
-                            <AvatarImage src={t.image} data-ai-hint={t['data-ai-hint']} />
-                            <AvatarFallback>{t.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <p className="text-muted-foreground italic">"{t.quote}"</p>
-                        <p className="font-bold mt-4">{t.name}</p>
-                        <p className="text-sm text-muted-foreground">{t.role}</p>
-                    </div>
-                ))}
-            </div>
-        </section>
+        {/* Trending Now Section */}
+        {trendingCourses.length > 0 && (
+            <section>
+                <div className="text-left mb-8">
+                    <h2 className="text-3xl font-bold">Trending Now</h2>
+                    <p className="text-muted-foreground mt-1">Discover the courses and programs that learners are enrolling in the most right now.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {loading ? Array.from({length: 4}).map((_, i) => <Skeleton key={i} className="h-48 w-full"/>) :
+                    trendingCourses.map(course => (
+                        <Link key={course.id} href={`/courses/${course.id}`}>
+                            <Card className="relative h-48 flex items-end p-6 text-white overflow-hidden group">
+                               <Image src={course.imageUrl} alt={course.title} layout="fill" objectFit="cover" className="absolute inset-0 transition-transform duration-300 group-hover:scale-105"/>
+                               <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"/>
+                               <div className="relative z-10">
+                                    <h3 className="text-xl font-bold">{course.title}</h3>
+                                    <p className="text-sm">{course.instructor}</p>
+                               </div>
+                            </Card>
+                        </Link>
+                    ))}
+                </div>
+            </section>
+        )}
       </div>
     </div>
   );

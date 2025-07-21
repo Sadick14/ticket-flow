@@ -102,6 +102,9 @@ export interface Course {
   duration: string;
   price: number; // in cents
   status: 'published' | 'draft';
+  isFeatured?: boolean;
+  isPopular?: boolean;
+  isTrending?: boolean;
   lessons: {
     title: string;
     duration: string;

@@ -31,11 +31,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { PlusCircle, Edit, Trash2, Loader2, BookOpen, ToggleLeft, ToggleRight } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, BookOpen, ToggleLeft, ToggleRight, Star, TrendingUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUploader } from '@/components/image-uploader';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 
 const courseCategories = ["Event Marketing", "Audience Growth", "Sponsorship", "Event Production", "Community Building"];
 const courseLevels = ["Beginner", "Intermediate", "Advanced"];
@@ -56,6 +57,9 @@ const courseSchema = z.object({
   duration: z.string().min(1, 'Course duration is required.'),
   price: z.coerce.number().min(0, 'Price must be 0 or more.'),
   status: z.enum(['published', 'draft']).default('published'),
+  isFeatured: z.boolean().default(false),
+  isPopular: z.boolean().default(false),
+  isTrending: z.boolean().default(false),
   lessons: z.array(lessonSchema).min(1, 'At least one lesson is required.'),
 });
 
@@ -82,6 +86,9 @@ function CourseForm({ course, onFinished }: { course?: Course, onFinished: () =>
       duration: '',
       price: 0,
       status: 'published',
+      isFeatured: false,
+      isPopular: false,
+      isTrending: false,
       lessons: [{ title: '', duration: '', isFreePreview: false }],
     },
   });
@@ -145,6 +152,54 @@ function CourseForm({ course, onFinished }: { course?: Course, onFinished: () =>
             )}/>
         </div>
         
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+          <FormField
+            control={form.control}
+            name="isFeatured"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <FormLabel>Featured</FormLabel>
+                  <FormDescription>Show on homepage</FormDescription>
+                </div>
+                <FormControl>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="isPopular"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <FormLabel>Popular</FormLabel>
+                  <FormDescription>Mark as popular</FormDescription>
+                </div>
+                <FormControl>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="isTrending"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <FormLabel>Trending</FormLabel>
+                  <FormDescription>Mark as trending now</FormDescription>
+                </div>
+                <FormControl>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+
         <div>
           <FormLabel>Lessons</FormLabel>
           <div className="space-y-4 mt-2">
@@ -237,18 +292,34 @@ export default function AdminCoursesPage() {
         <CardContent>
           <div className="rounded-md border">
             <Table>
-              <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Category</TableHead><TableHead>Status</TableHead><TableHead>Price</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+              <TableHeader>
+                <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Flags</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={5} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin"/></TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin"/></TableCell></TableRow>
                 ) : courses.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-8"><BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4"/>No courses found.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center py-8"><BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4"/>No courses found.</TableCell></TableRow>
                 ) : (
                   courses.map(course => (
                     <TableRow key={course.id}>
                       <TableCell><div className="flex items-center gap-3"><Image src={course.imageUrl} alt={course.title} width={40} height={40} className="rounded-md object-cover"/><div className="font-medium">{course.title}</div></div></TableCell>
                       <TableCell><Badge variant="outline">{course.category}</Badge></TableCell>
                       <TableCell><Button variant="ghost" size="sm" onClick={() => handleToggleStatus(course)} className="flex items-center gap-1">{course.status === 'published' ? <ToggleRight className="h-5 w-5 text-green-500"/> : <ToggleLeft className="h-5 w-5 text-muted-foreground"/>}<span className="capitalize">{course.status}</span></Button></TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          {course.isFeatured && <Badge variant="secondary" title="Featured"><Star className="h-3 w-3"/></Badge>}
+                          {course.isPopular && <Badge variant="secondary" title="Popular"><UsersIcon className="h-3 w-3"/></Badge>}
+                          {course.isTrending && <Badge variant="secondary" title="Trending"><TrendingUp className="h-3 w-3"/></Badge>}
+                        </div>
+                      </TableCell>
                       <TableCell><Badge variant="secondary">{course.price === 0 ? 'Free' : `GH₵${(course.price/100).toFixed(2)}`}</Badge></TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => handleOpenForm(course)}><Edit className="h-4 w-4"/></Button>
