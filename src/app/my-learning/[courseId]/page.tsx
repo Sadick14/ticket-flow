@@ -9,12 +9,14 @@ import type { Course, Lesson, Page } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { PlayCircle, Award, Circle, CheckCircle2, Lock, Loader2, ArrowLeft, Youtube } from 'lucide-react';
+import { PlayCircle, Award, Circle, CheckCircle2, Lock, Loader2, ArrowLeft, Youtube, Menu } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+
 
 type ActiveContent = {
   type: 'lesson';
@@ -37,6 +39,7 @@ export default function CoursePlayerPage() {
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
   const [pageLoading, setPageLoading] = useState(true);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isEnrolled = user?.enrolledCourseIds?.includes(courseId as string);
 
@@ -75,7 +78,9 @@ export default function CoursePlayerPage() {
         setPageLoading(false); // Finish loading page-specific data
     }
     
-    fetchCourseData();
+    if (isEnrolled) {
+      fetchCourseData();
+    }
 
   }, [courseId, user, isEnrolled, authLoading, appLoading, getCourseById, router, toast]);
 
@@ -94,6 +99,7 @@ export default function CoursePlayerPage() {
     }
     setActiveContent({ type: 'lesson', lesson, pageIndex });
     setQuizAnswers({}); // Reset quiz answers when starting a new lesson
+    setIsMenuOpen(false); // Close mobile menu on selection
   };
   
   const handleQuizSubmit = (lesson: Lesson, answers: Record<string, string>) => {
@@ -142,67 +148,92 @@ export default function CoursePlayerPage() {
   const currentLessonPage = activeContent.type === 'lesson' ? activeContent.lesson.pages[activeContent.pageIndex] : null;
   const isLastPage = activeContent.type === 'lesson' && activeContent.pageIndex === activeContent.lesson.pages.length - 1;
 
+  const SidebarContent = () => (
+    <>
+      <div className="p-4 border-b">
+        <Button variant="ghost" asChild className="mb-2 -ml-2">
+            <Link href="/my-learning"><ArrowLeft className="h-4 w-4 mr-2"/> Back to My Learning</Link>
+        </Button>
+        <h2 className="font-bold text-lg truncate">{course.title}</h2>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+          <Progress value={progressPercentage} className="h-2"/>
+          <span>{Math.round(progressPercentage)}%</span>
+        </div>
+      </div>
+      <Accordion type="multiple" defaultValue={['lessons-item']} className="w-full flex-grow overflow-y-auto">
+        <AccordionItem value="lessons-item">
+            <AccordionTrigger className="px-4 py-3 font-semibold">Lessons</AccordionTrigger>
+            <AccordionContent>
+                <ul className="space-y-1">
+                    {lessons.map((lesson, index) => {
+                        const isLocked = index > 0 && !completedLessons.has(lessons[index-1].id);
+                        return (
+                            <li key={lesson.id}>
+                                <button 
+                                    onClick={() => handleLessonSelect(lesson)}
+                                    className={`w-full text-left px-4 py-3 text-sm flex items-start gap-3 transition-colors ${activeContent.type === 'lesson' && activeContent.lesson.id === lesson.id ? 'bg-primary/10 text-primary' : 'hover:bg-muted'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    disabled={isLocked}
+                                >
+                                    {completedLessons.has(lesson.id) 
+                                        ? <CheckCircle2 className="h-5 w-5 mt-0.5 text-green-500 flex-shrink-0"/> 
+                                        : isLocked ? <Lock className="h-5 w-5 mt-0.5 text-muted-foreground flex-shrink-0"/> : <Circle className="h-5 w-5 mt-0.5 text-muted-foreground flex-shrink-0"/>
+                                    }
+                                    <div className="flex-grow">
+                                        <span className="font-medium">{lesson.title}</span>
+                                        <p className="text-xs text-muted-foreground">{lesson.duration}</p>
+                                    </div>
+                                </button>
+                            </li>
+                        )
+                    })}
+                </ul>
+            </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="project-item">
+            <AccordionTrigger className="px-4 py-3 font-semibold">Final Project</AccordionTrigger>
+            <AccordionContent>
+                  <button 
+                    onClick={() => {
+                        setActiveContent({ type: 'project' });
+                        setIsMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-3 text-sm flex items-center gap-3 transition-colors ${activeContent.type === 'project' ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+                >
+                    <Award className="h-5 w-5 mt-0.5 flex-shrink-0"/> 
+                    <span className="font-medium">{course.project.title}</span>
+                </button>
+            </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    </>
+  );
+
   return (
     <div className="min-h-screen">
       <div className="flex flex-col lg:flex-row h-screen">
-        {/* Sidebar */}
-        <aside className="w-full lg:w-80 xl:w-96 border-r flex-shrink-0 bg-background flex flex-col">
-          <div className="p-4 border-b">
-            <Button variant="ghost" asChild className="mb-2 -ml-2">
-                <Link href="/my-learning"><ArrowLeft className="h-4 w-4 mr-2"/> Back to My Learning</Link>
-            </Button>
-            <h2 className="font-bold text-lg truncate">{course.title}</h2>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-              <Progress value={progressPercentage} className="h-2"/>
-              <span>{Math.round(progressPercentage)}%</span>
-            </div>
-          </div>
-          <Accordion type="multiple" defaultValue={['lessons-item']} className="w-full flex-grow overflow-y-auto">
-            <AccordionItem value="lessons-item">
-                <AccordionTrigger className="px-4 py-3 font-semibold">Lessons</AccordionTrigger>
-                <AccordionContent>
-                    <ul className="space-y-1">
-                        {lessons.map((lesson, index) => {
-                            const isLocked = index > 0 && !completedLessons.has(lessons[index-1].id);
-                            return (
-                                <li key={lesson.id}>
-                                    <button 
-                                        onClick={() => handleLessonSelect(lesson)}
-                                        className={`w-full text-left px-4 py-3 text-sm flex items-start gap-3 transition-colors ${activeContent.type === 'lesson' && activeContent.lesson.id === lesson.id ? 'bg-primary/10 text-primary' : 'hover:bg-muted'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        disabled={isLocked}
-                                    >
-                                        {completedLessons.has(lesson.id) 
-                                            ? <CheckCircle2 className="h-5 w-5 mt-0.5 text-green-500 flex-shrink-0"/> 
-                                            : isLocked ? <Lock className="h-5 w-5 mt-0.5 text-muted-foreground flex-shrink-0"/> : <Circle className="h-5 w-5 mt-0.5 text-muted-foreground flex-shrink-0"/>
-                                        }
-                                        <div className="flex-grow">
-                                            <span className="font-medium">{lesson.title}</span>
-                                            <p className="text-xs text-muted-foreground">{lesson.duration}</p>
-                                        </div>
-                                    </button>
-                                </li>
-                            )
-                        })}
-                    </ul>
-                </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="project-item">
-                <AccordionTrigger className="px-4 py-3 font-semibold">Final Project</AccordionTrigger>
-                <AccordionContent>
-                     <button 
-                        onClick={() => setActiveContent({ type: 'project' })}
-                        className={`w-full text-left px-4 py-3 text-sm flex items-center gap-3 transition-colors ${activeContent.type === 'project' ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
-                    >
-                        <Award className="h-5 w-5 mt-0.5 flex-shrink-0"/> 
-                        <span className="font-medium">{course.project.title}</span>
-                    </button>
-                </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+        {/* Desktop Sidebar */}
+        <aside className="w-full lg:w-80 xl:w-96 border-r flex-shrink-0 bg-background flex-col hidden lg:flex">
+          <SidebarContent />
         </aside>
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto">
+          {/* Mobile Header */}
+          <div className="lg:hidden p-4 border-b flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm z-10">
+            <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-80 p-0 flex flex-col">
+                  <SidebarContent />
+              </SheetContent>
+            </Sheet>
+            <h3 className="font-semibold text-sm truncate mx-4">{course.title}</h3>
+            <div className="w-8"></div>
+          </div>
+
           <div className="p-6 md:p-8 lg:p-12">
             {activeContent.type === 'lesson' ? (
               <div>
