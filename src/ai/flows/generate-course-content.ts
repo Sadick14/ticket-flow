@@ -6,7 +6,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 // --- INPUT/OUTPUT SCHEMAS ---
 
@@ -69,8 +69,8 @@ export async function generateCourseContent(
 
 // --- GENKIT PROMPT ---
 const PageGenerationSchema = z.object({
-    content: z.string().describe('The detailed content for this page of the lesson, in Markdown format. Be professional, detailed, and thorough.'),
-    imagePrompt: z.string().describe('A simple, descriptive prompt (3-5 keywords) for an image generator to create a relevant, professional image for this page.'),
+    content: z.string().describe('The detailed content for this page of the lesson, in Markdown format. Be professional, detailed, and thorough. Aim for approximately 6 paragraphs.'),
+    imagePrompt: z.string().describe('A simple, descriptive prompt (3-5 keywords) for an image generator to create a relevant, professional vector illustration for this page.'),
 });
 
 const LessonGenerationSchema = z.object({
@@ -99,8 +99,8 @@ The course must be broken down into logical lessons. Each lesson must:
 - Have a unique slug-like ID.
 - Have a clear title and estimated duration.
 - Be further broken down into 2-4 detailed pages to ensure comprehensive coverage of the topic.
-- For each page, provide detailed, expert-level content in Markdown format.
-- For each page, also provide a simple, descriptive image prompt (3-5 keywords) that an AI image generator can use to create a relevant illustration.
+- For each page, provide very detailed, expert-level content in Markdown format, aiming for approximately 6 paragraphs per page to ensure depth.
+- For each page, also provide a simple, descriptive image prompt (3-5 keywords) that an AI image generator can use to create a relevant vector illustration.
 - Conclude with a short quiz (2-3 multiple-choice questions) to test understanding.
 
 The entire course must also include a final project that requires the student to apply what they've learned.
@@ -133,7 +133,7 @@ const generateCourseContentFlow = ai.defineFlow(
                     try {
                         const { media } = await ai.generate({
                             model: 'googleai/gemini-2.0-flash-preview-image-generation',
-                            prompt: `A professional, clean, abstract illustration for a business course, representing: ${page.imagePrompt}`,
+                            prompt: `A modern, professional vector illustration in a clean, cartoon-like style for a business course, representing: ${page.imagePrompt}`,
                             config: { responseModalities: ['TEXT', 'IMAGE'] },
                         });
                         return {
