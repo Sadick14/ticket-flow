@@ -22,7 +22,7 @@ export default function NewsPageClient() {
     const publishedNews = news.filter(n => n.status === 'published');
     
     return publishedNews.filter((article: NewsArticle) => {
-      const matchesCategory = activeCategory === 'All' || article.category === activeCategory;
+      const matchesCategory = activeCategory === 'All' || (article.category && article.category === activeCategory);
       const matchesSearch =
         article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         article.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
