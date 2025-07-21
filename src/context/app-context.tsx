@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission, Message, FeaturedArticle, SubscriptionRequest, SubscriptionPlan, Course, Lesson } from '@/lib/types';
+import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission, Message, FeaturedArticle, SubscriptionRequest, SubscriptionPlan, Course, Lesson, CourseEnrollmentRequest } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy, serverTimestamp, writeBatch, documentId, setDoc } from 'firebase/firestore';
 
@@ -16,6 +16,7 @@ interface AppContextType {
   contactSubmissions: ContactSubmission[];
   featuredArticle: FeaturedArticle | null;
   subscriptionRequests: SubscriptionRequest[];
+  courseEnrollmentRequests: CourseEnrollmentRequest[];
   loading: boolean;
   // Events
   addEvent: (event: Omit<Event, 'id' | 'collaboratorIds' | 'status'>) => Promise<void>;
@@ -43,6 +44,7 @@ interface AppContextType {
   addCollaborator: (eventId: string, email: string) => Promise<{success: boolean, message: string}>;
   removeCollaborator: (eventId: string, userId: string) => Promise<void>;
   getUsersByUids: (uids: string[]) => Promise<UserProfile[]>;
+  addEnrolledCourse: (userId: string, courseId: string) => Promise<void>;
   // News
   addNewsArticle: (article: Omit<NewsArticle, 'id'>) => Promise<void>;
   updateNewsArticle: (id: string, articleData: Partial<Omit<NewsArticle, 'id' | 'publishedDate'>>) => Promise<void>;
@@ -51,6 +53,7 @@ interface AppContextType {
   addCourse: (courseData: Omit<Course, 'id'>) => Promise<void>;
   updateCourse: (id: string, courseData: Partial<Omit<Course, 'id'>>) => Promise<void>;
   deleteCourse: (id: string) => Promise<void>;
+  getCourseById: (courseId: string) => Promise<Course | undefined>;
   // Featured Article
   saveFeaturedArticle: (article: Omit<FeaturedArticle, 'id' | 'updatedAt'>) => Promise<void>;
   // Subscribers
@@ -61,6 +64,9 @@ interface AppContextType {
   createSubscriptionRequest: (userId: string, plan: SubscriptionPlan, price: number, bookingCode: string) => Promise<void>;
   approveSubscriptionRequest: (requestId: string, userId: string, plan: SubscriptionPlan) => Promise<void>;
   getUserSubscriptionRequests: (email: string) => Promise<SubscriptionRequest[]>;
+  // Course Enrollment Requests
+  createCourseEnrollmentRequest: (userId: string, courseId: string, courseTitle: string, price: number, bookingCode: string) => Promise<void>;
+  approveCourseEnrollment: (requestId: string, userId: string, courseId: string) => Promise<void>;
   // Contact Submissions
   replyToSubmission: (submission: ContactSubmission, replyMessage: string) => Promise<void>;
   // AI Chat
@@ -91,6 +97,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
   const [featuredArticle, setFeaturedArticle] = useState<FeaturedArticle | null>(null);
   const [subscriptionRequests, setSubscriptionRequests] = useState<SubscriptionRequest[]>([]);
+  const [courseEnrollmentRequests, setCourseEnrollmentRequests] = useState<CourseEnrollmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchAllData = useCallback(async () => {
@@ -105,6 +112,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             contactSubmissionsSnapshot,
             featuredArticleDoc,
             subscriptionRequestsSnapshot,
+            courseEnrollmentRequestsSnapshot,
         ] = await Promise.all([
             getDocs(query(collection(db, 'events'))),
             getDocs(query(collection(db, 'tickets'))),
@@ -115,6 +123,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             getDocs(query(collection(db, 'contact_submissions'), orderBy('submittedAt', 'desc'))),
             getDoc(doc(db, 'featured_content', 'current')),
             getDocs(query(collection(db, 'subscription_requests'), orderBy('requestedAt', 'desc'))),
+            getDocs(query(collection(db, 'course_enrollment_requests'), orderBy('requestedAt', 'desc'))),
         ]);
 
         const fetchedCourses = coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
@@ -132,6 +141,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setLaunchSubscribers(launchSubscribersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LaunchSubscriber)));
         setContactSubmissions(contactSubmissionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ContactSubmission)));
         setSubscriptionRequests(subscriptionRequestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SubscriptionRequest)));
+        setCourseEnrollmentRequests(courseEnrollmentRequestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CourseEnrollmentRequest)));
         
         if (featuredArticleDoc.exists()) {
             setFeaturedArticle({ id: featuredArticleDoc.id, ...featuredArticleDoc.data() } as FeaturedArticle);
@@ -190,6 +200,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       throw error;
     }
   };
+
+  const getCourseById = async (id: string): Promise<Course | undefined> => {
+    try {
+      const courseRef = doc(db, 'courses', id);
+      const courseSnap = await getDoc(courseRef);
+      if (courseSnap.exists()) {
+          const course = { id: courseSnap.id, ...courseSnap.data() } as Course;
+          const lessonsSnapshot = await getDocs(query(collection(db, 'courses', course.id, 'lessons')));
+          course.lessons = lessonsSnapshot.docs.map(lessonDoc => ({ id: lessonDoc.id, ...lessonDoc.data() } as Lesson));
+          return course;
+      }
+      return undefined;
+    } catch (error) {
+        console.error("Error getting course by id", error);
+        return undefined;
+    }
+  }
 
 
   const addEvent = async (eventData: Omit<Event, 'id' | 'collaboratorIds' | 'status'>) => {
@@ -377,6 +404,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       throw error;
     }
   };
+  
+  const addEnrolledCourse = async (userId: string, courseId: string) => {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      enrolledCourseIds: arrayUnion(courseId)
+    });
+    await fetchAllData();
+  }
 
   const addCollaborator = async (eventId: string, email: string): Promise<{success: boolean, message: string}> => {
     const q = query(collection(db, "users"), where("email", "==", email), limit(1));
@@ -536,6 +571,32 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await batch.commit();
     await fetchAllData();
   };
+  
+  // Course Enrollment
+  const createCourseEnrollmentRequest = async (userId: string, courseId: string, courseTitle: string, price: number, bookingCode: string) => {
+      await addDoc(collection(db, "course_enrollment_requests"), {
+          userId,
+          courseId,
+          courseTitle,
+          price,
+          bookingCode,
+          status: 'pending',
+          requestedAt: serverTimestamp(),
+      });
+      await fetchAllData();
+  };
+
+  const approveCourseEnrollment = async (requestId: string, userId: string, courseId: string) => {
+    const batch = writeBatch(db);
+    const requestRef = doc(db, 'course_enrollment_requests', requestId);
+    batch.update(requestRef, { status: 'approved' });
+
+    const userRef = doc(db, 'users', userId);
+    batch.update(userRef, { enrolledCourseIds: arrayUnion(courseId) });
+
+    await batch.commit();
+    await fetchAllData();
+  };
 
 
   const replyToSubmission = async (submission: ContactSubmission, replyMessage: string) => {
@@ -606,6 +667,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       contactSubmissions,
       featuredArticle,
       subscriptionRequests,
+      courseEnrollmentRequests,
       loading, 
       addEvent, 
       updateEvent, 
@@ -622,6 +684,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       getCollaboratedEvents,
       getEventStats,
       updateUser,
+      addEnrolledCourse,
       addCollaborator,
       removeCollaborator,
       getUsersByUids,
@@ -631,6 +694,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addCourse,
       updateCourse,
       deleteCourse,
+      getCourseById,
       saveFeaturedArticle,
       addSubscriber,
       deleteSubscriber,
@@ -638,6 +702,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       createSubscriptionRequest,
       approveSubscriptionRequest,
       getUserSubscriptionRequests,
+      createCourseEnrollmentRequest,
+      approveCourseEnrollment,
       replyToSubmission,
       getChatHistory,
       saveChatMessage

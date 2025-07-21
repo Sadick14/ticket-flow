@@ -7,6 +7,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { Readable }from "stream";
 
 // --- INPUT/OUTPUT SCHEMAS ---
 
@@ -149,9 +150,9 @@ const generateCourseContentFlow = ai.defineFlow(
     let imageUrl = 'https://placehold.co/1200x800.png'; // Fallback
     try {
         const { media } = await ai.generate({
-            model: 'googleai/gemini-pro-vision',
-            prompt: `A high-quality photograph of people engaging with technology in a modern event setting, representing: ${courseOutline.imagePrompt}`,
-            config: { responseModalities: ['IMAGE'] },
+            model: 'googleai/gemini-2.0-flash-preview-image-generation',
+            prompt: `A vibrant, minimalist vector illustration, cartoon style, representing: ${courseOutline.imagePrompt}`,
+            config: { responseModalities: ['TEXT', 'IMAGE'] },
         });
 
         if (media?.url) {

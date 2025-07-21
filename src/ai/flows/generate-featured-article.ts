@@ -77,7 +77,7 @@ const generateFeaturedArticleFlow = ai.defineFlow(
     // 2. Generate the image
     const { media } = await ai.generate({
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
-      prompt: `A vibrant, abstract, professional image representing: ${imagePrompt}`,
+      prompt: `A vibrant, minimalist vector illustration, cartoon style, representing: ${imagePrompt}`,
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
       },
