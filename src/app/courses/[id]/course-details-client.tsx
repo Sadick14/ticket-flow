@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { PaymentCalculator } from '@/lib/payment-config';
+import Link from 'next/link';
 
 interface CourseDetailsClientProps {
   course: Course;
@@ -147,7 +148,7 @@ export default function CourseDetailsClient({ course }: CourseDetailsClientProps
                     <CardContent>
                         {isEnrolled ? (
                             <Button size="lg" className="w-full" asChild>
-                                <a href={`/my-learning/${course.id}`}>Go to Course</a>
+                                <Link href={`/my-learning/${course.id}`}>Go to Course</Link>
                             </Button>
                         ) : (
                             <Button size="lg" className="w-full" onClick={handleEnroll} disabled={isEnrolling}>
