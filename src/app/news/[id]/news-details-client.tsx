@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import type { NewsArticle } from '@/lib/types';
 import { generateArticleStructuredData } from '@/lib/metadata';
 import { PageHero } from '@/components/page-hero';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 
 interface NewsDetailsClientProps {
     article: NewsArticle | null;
@@ -20,7 +21,6 @@ export default function NewsDetailsClient({ article }: NewsDetailsClientProps) {
     const { toast } = useToast();
 
     if (!article) {
-        // This case should ideally be handled by the parent server component with notFound()
         return (
           <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -128,23 +128,25 @@ export default function NewsDetailsClient({ article }: NewsDetailsClientProps) {
                             <CardTitle>Gallery</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Carousel className="w-full">
-                                <CarouselContent>
-                                    {article.gallery.map((image, index) => (
-                                    <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
-                                        <div className="p-1">
-                                            <Card className="overflow-hidden">
-                                                <div className="relative aspect-square w-full">
-                                                    <Image src={image.url} alt={`Gallery image ${index + 1}`} fill className="object-cover" />
-                                                </div>
-                                            </Card>
+                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {article.gallery.map((image, index) => (
+                                <Dialog key={index}>
+                                    <DialogTrigger asChild>
+                                        <div className="relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg group">
+                                            <Image 
+                                                src={image.url} 
+                                                alt={`Gallery image ${index + 1}`} 
+                                                fill 
+                                                className="object-cover transition-transform duration-300 group-hover:scale-110" 
+                                            />
                                         </div>
-                                    </CarouselItem>
-                                    ))}
-                                </CarouselContent>
-                                <CarouselPrevious className="ml-12" />
-                                <CarouselNext className="mr-12" />
-                            </Carousel>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-4xl h-[80vh]">
+                                         <Image src={image.url} alt={`Gallery image ${index + 1}`} fill className="object-contain" />
+                                    </DialogContent>
+                                </Dialog>
+                                ))}
+                            </div>
                         </CardContent>
                     </Card>
                 )}

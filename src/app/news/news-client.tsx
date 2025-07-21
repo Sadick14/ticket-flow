@@ -9,22 +9,29 @@ import { Input } from '@/components/ui/input';
 import { Search, Newspaper } from 'lucide-react';
 import type { NewsArticle } from '@/lib/types';
 import { PageHero } from '@/components/page-hero';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const newsCategories = ["All", "Industry News", "Event Spotlights", "Platform Updates", "Community Stories"];
 
 export default function NewsPageClient() {
   const { news, loading } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
 
   const filteredNews = useMemo(() => {
-    return news.filter((article: NewsArticle) => {
+    const publishedNews = news.filter(n => n.status === 'published');
+    
+    return publishedNews.filter((article: NewsArticle) => {
+      const matchesCategory = activeCategory === 'All' || article.category === activeCategory;
       const matchesSearch =
         article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         article.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         article.source.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesSearch;
+      return matchesCategory && matchesSearch;
     });
-  }, [news, searchTerm]);
+  }, [news, searchTerm, activeCategory]);
 
-  const renderNewsList = (newsList: NewsArticle[]) => {
+  const renderNewsList = () => {
     if (loading) {
       return (
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -41,10 +48,10 @@ export default function NewsPageClient() {
       );
     }
 
-    if (newsList.length > 0) {
+    if (filteredNews.length > 0) {
       return (
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {newsList.map((article) => (
+          {filteredNews.map((article) => (
             <NewsCard key={article.id} article={article} />
           ))}
         </div>
@@ -56,7 +63,7 @@ export default function NewsPageClient() {
         <Newspaper className="mx-auto h-12 w-12 text-muted-foreground" />
         <h3 className="mt-4 text-lg font-medium text-foreground">No News Found</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Try adjusting your search terms.
+          Try adjusting your search or category filters.
         </p>
       </div>
     );
@@ -66,7 +73,7 @@ export default function NewsPageClient() {
     <div className="min-h-screen">
       <PageHero
         title="In The News"
-        backgroundImage = "/news.jpg"
+        backgroundImage="/news.jpg"
         description="Stay up-to-date with the latest trends, stories, and announcements from the event world."
       />
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -91,7 +98,17 @@ export default function NewsPageClient() {
           </div>
         </div>
         
-        {renderNewsList(filteredNews)}
+        <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
+          <TabsList>
+            {newsCategories.map(category => (
+              <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
+            ))}
+          </TabsList>
+          <TabsContent value={activeCategory} className="mt-8">
+            {renderNewsList()}
+          </TabsContent>
+        </Tabs>
+
       </div>
     </div>
   );

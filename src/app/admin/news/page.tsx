@@ -19,6 +19,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -31,11 +32,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import Image from 'next/image';
-import { PlusCircle, Edit, Trash2, Loader2, Newspaper } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Newspaper, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUploader } from '@/components/image-uploader';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+const newsCategories = ["Industry News", "Event Spotlights", "Platform Updates", "Community Stories"];
 
 const articleSchema = z.object({
   title: z.string().min(3, 'Title is required.'),
@@ -43,6 +46,8 @@ const articleSchema = z.object({
   articleUrl: z.string().url('Must be a valid URL.'),
   imageUrl: z.string().min(1, 'Image is required.'),
   description: z.string().min(10, 'Description is required.'),
+  category: z.string({ required_error: 'Please select a category.' }),
+  status: z.enum(['published', 'draft']).default('published'),
   gallery: z.array(z.object({
     url: z.string().min(1, 'Image is required.')
   })).optional(),
@@ -64,6 +69,8 @@ function NewsArticleForm({ article, onFinished }: { article?: NewsArticle, onFin
       articleUrl: article?.articleUrl || '',
       imageUrl: article?.imageUrl || '',
       description: article?.description || '',
+      category: article?.category || newsCategories[0],
+      status: article?.status || 'published',
       gallery: article?.gallery || [],
     },
   });
@@ -77,7 +84,7 @@ function NewsArticleForm({ article, onFinished }: { article?: NewsArticle, onFin
     setIsSubmitting(true);
     const payload = {
       ...data,
-      publishedDate: new Date().toISOString(),
+      publishedDate: isEditMode && article?.publishedDate ? article.publishedDate : new Date().toISOString(),
       gallery: data.gallery || [],
     };
     try {
@@ -110,17 +117,39 @@ function NewsArticleForm({ article, onFinished }: { article?: NewsArticle, onFin
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="source"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Source (e.g., TechCrunch)</FormLabel>
-              <FormControl><Input {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="source"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Source (e.g., TechCrunch)</FormLabel>
+                <FormControl><Input {...field} /></FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                        <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        {newsCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                    </SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+        </div>
         <FormField
           control={form.control}
           name="articleUrl"
@@ -195,7 +224,7 @@ function NewsArticleForm({ article, onFinished }: { article?: NewsArticle, onFin
 }
 
 export default function AdminNewsPage() {
-  const { news, loading, deleteNewsArticle } = useAppContext();
+  const { news, loading, deleteNewsArticle, updateNewsArticle } = useAppContext();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<NewsArticle | undefined>(undefined);
   const { toast } = useToast();
@@ -219,6 +248,16 @@ export default function AdminNewsPage() {
     }
   }
 
+  const handleToggleStatus = async (article: NewsArticle) => {
+    const newStatus = article.status === 'published' ? 'draft' : 'published';
+    try {
+      await updateNewsArticle(article.id, { status: newStatus });
+      toast({ title: "Status Updated", description: `Article is now a ${newStatus}.` });
+    } catch {
+      toast({ variant: 'destructive', title: "Error", description: "Failed to update status." });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -226,7 +265,7 @@ export default function AdminNewsPage() {
           <h1 className="text-2xl font-bold">News Management</h1>
           <p className="text-muted-foreground">Create and manage news articles for the homepage.</p>
         </div>
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <Dialog open={isFormOpen} onOpenChange={handleCloseForm}>
           <DialogTrigger asChild>
             <Button onClick={() => handleOpenForm()}>
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -246,7 +285,7 @@ export default function AdminNewsPage() {
         <CardHeader>
           <CardTitle>Published Articles</CardTitle>
           <CardDescription>
-            {news.length} articles currently published.
+            {news.length} articles currently on the platform.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -254,11 +293,11 @@ export default function AdminNewsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[80px]">Image</TableHead>
                   <TableHead>Title</TableHead>
-                  <TableHead>Source</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Published</TableHead>
-                  <TableHead className="w-[100px] text-right">Actions</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -273,11 +312,24 @@ export default function AdminNewsPage() {
                   news.map(article => (
                     <TableRow key={article.id}>
                       <TableCell>
-                        <Image src={article.imageUrl} alt={article.title} width={50} height={50} className="rounded-md object-cover aspect-square" />
+                        <div className="flex items-center gap-3">
+                           <Image src={article.imageUrl} alt={article.title} width={40} height={40} className="rounded-md object-cover aspect-square" />
+                           <div className="font-medium">{article.title}</div>
+                        </div>
                       </TableCell>
-                      <TableCell className="font-medium">{article.title}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{article.source}</Badge>
+                       <TableCell>
+                        <Badge variant="outline">{article.category}</Badge>
+                      </TableCell>
+                       <TableCell>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleToggleStatus(article)} 
+                          className="flex items-center gap-1"
+                        >
+                          {article.status === 'published' ? <ToggleRight className="h-5 w-5 text-green-500"/> : <ToggleLeft className="h-5 w-5 text-muted-foreground"/>}
+                          <span className="capitalize">{article.status}</span>
+                        </Button>
                       </TableCell>
                       <TableCell>{format(new Date(article.publishedDate), 'MMM dd, yyyy')}</TableCell>
                       <TableCell className="text-right">
