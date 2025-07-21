@@ -122,8 +122,9 @@ export interface LaunchSubscriber {
     id: string;
     name: string;
     email: string;
-    subscribedAt: string; // ISO String
+    subscribedAt: any; // Can be a server timestamp or an ISO string
 }
+
 
 export interface ContactSubmission {
   id: string;

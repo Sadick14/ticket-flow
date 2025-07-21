@@ -82,7 +82,7 @@ function CourseForm({ course, onFinished }: { course?: Course, onFinished: () =>
       duration: '',
       price: 0,
       status: 'published',
-      lessons: [],
+      lessons: [{ title: '', duration: '', isFreePreview: false }],
     },
   });
 
