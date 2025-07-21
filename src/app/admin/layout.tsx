@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import * as React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
-import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users, Archive, Users2, MessageSquare, Calendar, CreditCard, Image as ImageIcon, Star, BookOpen } from 'lucide-react';
+import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users, Archive, Users2, MessageSquare, Calendar, CreditCard, Image as ImageIcon, Star, BookOpen, UserCheck } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -152,6 +153,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
+                  isActive={isActive('/admin/course-enrollments')}
+                  tooltip={{ children: 'Course Enrollments' }}
+                >
+                  <Link href="/admin/course-enrollments">
+                    <UserCheck />
+                    <span>Course Enrollments</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
                   isActive={isActive('/admin/news')}
                   tooltip={{ children: 'News Management' }}
                 >
@@ -277,6 +290,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   {pathname.startsWith('/admin/contact-messages') && 'Contact Messages'}
                   {pathname.startsWith('/admin/news') && 'News Management'}
                   {pathname.startsWith('/admin/courses') && 'Course Management'}
+                  {pathname.startsWith('/admin/course-enrollments') && 'Course Enrollments'}
                   {pathname.startsWith('/admin/featured-article') && 'Featured Article'}
                   {pathname.startsWith('/admin/subscribers') && 'Subscriber Management'}
                   {pathname.startsWith('/admin/emails') && 'Email Management'}

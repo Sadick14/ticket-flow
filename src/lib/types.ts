@@ -1,4 +1,5 @@
 
+
 export type SubscriptionPlan = 'Free' | 'Essential' | 'Pro' | 'Custom';
 
 export interface Speaker {
@@ -75,6 +76,7 @@ export interface UserProfile {
   status: 'active' | 'deactivated';
   subscriptionPlan: SubscriptionPlan;
   lastSeen?: string; // ISO String
+  enrolledCourseIds?: string[];
 }
 
 export interface NewsArticle {
@@ -170,7 +172,7 @@ export interface Message {
 }
 
 export interface SubscriptionRequest {
-    id: string;
+    id:string;
     userId: string;
     plan: SubscriptionPlan;
     price: number;
@@ -178,4 +180,15 @@ export interface SubscriptionRequest {
     status: 'pending' | 'approved';
     requestedAt: string; // ISO string
     approvedAt?: string; // ISO string
+}
+
+export interface CourseEnrollmentRequest {
+  id: string;
+  userId: string;
+  courseId: string;
+  courseTitle: string;
+  price: number;
+  bookingCode: string;
+  status: 'pending' | 'approved';
+  requestedAt: string; // ISO string
 }

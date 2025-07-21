@@ -1,223 +1,203 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { PlayCircle, Award, Circle, CheckCircle2, Youtube, Lock } from 'lucide-react';
-import type { Course, Lesson, Page } from '@/lib/types';
+import { PlayCircle, Award, Circle, CheckCircle2, Youtube, Lock, BookOpen, Clock, BarChart, Info, Shield, Copy } from 'lucide-react';
+import type { Course } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/context/auth-context';
+import { useAppContext } from '@/context/app-context';
+import { useRouter } from 'next/navigation';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogContent, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { PaymentCalculator } from '@/lib/payment-config';
 
 interface CourseDetailsClientProps {
   course: Course;
-  lessons: Lesson[];
 }
 
-type ActiveContent = {
-  type: 'lesson';
-  lesson: Lesson;
-  pageIndex: number;
-} | {
-  type: 'project';
-};
-
-export default function CourseDetailsClient({ course, lessons }: CourseDetailsClientProps) {
+export default function CourseDetailsClient({ course }: CourseDetailsClientProps) {
+  const { user, signInWithGoogle } = useAuth();
+  const { createCourseEnrollmentRequest, addEnrolledCourse } = useAppContext();
   const { toast } = useToast();
-  const [activeContent, setActiveContent] = useState<ActiveContent>({ type: 'lesson', lesson: lessons[0], pageIndex: 0 });
-  const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
+  const router = useRouter();
   
-  const handleEnroll = () => {
-    toast({
-      title: "Enrollment Coming Soon!",
-      description: "This feature is currently under development. Stay tuned!",
-    });
-  };
+  const [isEnrolling, setIsEnrolling] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [bookingCode, setBookingCode] = useState('');
+  
+  const isEnrolled = user?.enrolledCourseIds?.includes(course.id);
+  const isFree = course.price === 0;
 
-  const handleLessonSelect = (lesson: Lesson, pageIndex: number = 0) => {
-    const lessonIndex = lessons.findIndex(l => l.id === lesson.id);
-    const isLocked = lessonIndex > 0 && !completedLessons.has(lessons[lessonIndex - 1].id);
-    
-    if (isLocked) {
-        toast({
-            variant: 'destructive',
-            title: "Lesson Locked",
-            description: "Please complete the previous lesson's quiz to unlock this one."
-        });
-        return;
+  const handleEnroll = async () => {
+    if (!user) {
+      signInWithGoogle();
+      return;
     }
-    setActiveContent({ type: 'lesson', lesson, pageIndex });
+    setIsEnrolling(true);
+    
+    try {
+      if (isFree) {
+        await addEnrolledCourse(user.uid, course.id);
+        toast({ title: 'Enrollment Successful!', description: `You can now start learning ${course.title}.` });
+        router.push(`/my-learning/${course.id}`);
+      } else {
+        const newBookingCode = `ENROLL-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+        setBookingCode(newBookingCode);
+        await createCourseEnrollmentRequest(user.uid, course.id, course.title, course.price, newBookingCode);
+        setShowPaymentDialog(true);
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Enrollment Failed', description: 'Could not process your enrollment request.' });
+    } finally {
+      setIsEnrolling(false);
+    }
   };
   
-  const handleQuizSubmit = (lesson: Lesson, answers: Record<string, string>) => {
-    let correctCount = 0;
-    lesson.quiz.forEach((q, index) => {
-        if(answers[`q${index}`] === q.correctAnswer) {
-            correctCount++;
-        }
-    });
-
-    if(correctCount === lesson.quiz.length) {
-        toast({ title: "Quiz Passed!", description: "Great job! You've unlocked the next lesson."});
-        setCompletedLessons(prev => new Set(prev).add(lesson.id));
-        
-        const currentIndex = lessons.findIndex(l => l.id === lesson.id);
-        if (currentIndex < lessons.length - 1) {
-          setActiveContent({type: 'lesson', lesson: lessons[currentIndex+1], pageIndex: 0});
-        } else {
-          setActiveContent({ type: 'project' });
-        }
-    } else {
-        toast({ variant: 'destructive', title: "Quiz Failed", description: "Not quite! Review the material and try the quiz again."});
-    }
-  }
-
-  const handlePageNavigation = (direction: 'next' | 'prev') => {
-    if (activeContent.type !== 'lesson') return;
-    
-    const { lesson, pageIndex } = activeContent;
-    const newPageIndex = direction === 'next' ? pageIndex + 1 : pageIndex - 1;
-
-    if (newPageIndex >= 0 && newPageIndex < lesson.pages.length) {
-      handleLessonSelect(lesson, newPageIndex);
-    }
-  }
-
-  const progressPercentage = (completedLessons.size / lessons.length) * 100;
-  const currentLessonPage = activeContent.type === 'lesson' ? activeContent.lesson.pages[activeContent.pageIndex] : null;
-
-  // State for the current quiz answers
-  const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
-
-  const isLastPage = activeContent.type === 'lesson' && activeContent.pageIndex === activeContent.lesson.pages.length - 1;
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ description: "Copied to clipboard!" });
+  };
 
   return (
-    <div className="min-h-screen">
-      <div className="flex flex-col lg:flex-row h-screen">
-        {/* Sidebar */}
-        <aside className="w-full lg:w-80 xl:w-96 border-r flex-shrink-0 bg-background flex flex-col">
-          <div className="p-4 border-b">
-            <h2 className="font-bold text-lg truncate">{course.title}</h2>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-              <Progress value={progressPercentage} className="h-2"/>
-              <span>{Math.round(progressPercentage)}%</span>
-            </div>
-          </div>
-          <Accordion type="multiple" defaultValue={['item-0']} className="w-full flex-grow overflow-y-auto">
-            <AccordionItem value="item-0">
-                <AccordionTrigger className="px-4 py-3 font-semibold">Lessons</AccordionTrigger>
-                <AccordionContent>
-                    <ul className="space-y-1">
-                        {lessons.map((lesson, index) => {
-                            const isLocked = index > 0 && !completedLessons.has(lessons[index-1].id);
-                            return (
-                                <li key={lesson.id}>
-                                    <button 
-                                        onClick={() => handleLessonSelect(lesson)}
-                                        className={`w-full text-left px-4 py-3 text-sm flex items-start gap-3 transition-colors ${activeContent.type === 'lesson' && activeContent.lesson.id === lesson.id ? 'bg-primary/10 text-primary' : 'hover:bg-muted'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        disabled={isLocked}
-                                    >
-                                        {completedLessons.has(lesson.id) 
-                                            ? <CheckCircle2 className="h-5 w-5 mt-0.5 text-green-500 flex-shrink-0"/> 
-                                            : isLocked ? <Lock className="h-5 w-5 mt-0.5 text-muted-foreground flex-shrink-0"/> : <Circle className="h-5 w-5 mt-0.5 text-muted-foreground flex-shrink-0"/>
-                                        }
-                                        <div className="flex-grow">
-                                            <span className="font-medium">{lesson.title}</span>
-                                            <p className="text-xs text-muted-foreground">{lesson.duration}</p>
-                                        </div>
-                                    </button>
-                                </li>
-                            )
-                        })}
-                    </ul>
-                </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-1">
-                <AccordionTrigger className="px-4 py-3 font-semibold">Final Project</AccordionTrigger>
-                <AccordionContent>
-                     <button 
-                        onClick={() => setActiveContent({ type: 'project' })}
-                        className={`w-full text-left px-4 py-3 text-sm flex items-center gap-3 transition-colors ${activeContent.type === 'project' ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
-                    >
-                        <Award className="h-5 w-5 mt-0.5 flex-shrink-0"/> 
-                        <span className="font-medium">{course.project.title}</span>
-                    </button>
-                </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-6 md:p-8 lg:p-12">
-            {activeContent.type === 'lesson' ? (
-              // Lesson View
-              <div>
-                <Badge variant="secondary" className="mb-4">{activeContent.lesson.duration}</Badge>
-                <h1 className="text-3xl md:text-4xl font-bold mb-2">{activeContent.lesson.title}</h1>
-                <p className="text-muted-foreground mb-6">Page {activeContent.pageIndex + 1} of {activeContent.lesson.pages.length}</p>
-
-                {activeContent.lesson.videoUrl && (
-                    <Button asChild variant="outline" className="mb-8">
-                        <a href={activeContent.lesson.videoUrl} target="_blank" rel="noopener noreferrer">
-                            <Youtube className="mr-2 h-5 w-5"/> Watch on YouTube
-                        </a>
-                    </Button>
-                )}
-                
-                <div className="prose prose-lg max-w-none mb-12">
-                  <ReactMarkdown>{currentLessonPage?.content}</ReactMarkdown>
-                </div>
-
-                <div className="flex justify-between items-center mb-12">
-                    <Button variant="outline" onClick={() => handlePageNavigation('prev')} disabled={activeContent.pageIndex === 0}>Previous Page</Button>
-                    {!isLastPage && <Button onClick={() => handlePageNavigation('next')}>Next Page</Button>}
-                </div>
-
-                {isLastPage && activeContent.lesson.quiz && activeContent.lesson.quiz.length > 0 && (
-                  <Card className="mb-12 bg-muted/50">
-                    <CardHeader><CardTitle>Check Your Knowledge</CardTitle></CardHeader>
-                    <CardContent className="space-y-6">
-                      {activeContent.lesson.quiz.map((q, index) => (
-                        <div key={index}>
-                          <p className="font-semibold mb-2">{index + 1}. {q.question}</p>
-                          <div className="space-y-2">
-                            {q.options.map((opt, i) => (
-                                <Button 
-                                    key={i} 
-                                    variant={quizAnswers[`q${index}`] === opt ? 'default' : 'outline'}
-                                    className="w-full justify-start"
-                                    onClick={() => setQuizAnswers(prev => ({...prev, [`q${index}`]: opt}))}
-                                >
-                                    {opt}
-                                </Button>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                       <Button onClick={() => handleQuizSubmit(activeContent.lesson, quizAnswers)} className="w-full" size="lg">Submit Quiz</Button>
+    <>
+    <div className="bg-muted/40">
+       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+                <Card className="overflow-hidden">
+                    <div className="relative h-64 md:h-96 w-full">
+                        <Image src={course.imageUrl} alt={course.title} layout="fill" objectFit="cover" />
+                    </div>
+                    <CardHeader>
+                        <Badge variant="secondary" className="w-fit mb-2">{course.category}</Badge>
+                        <CardTitle className="text-3xl md:text-4xl">{course.title}</CardTitle>
+                        <CardDescription className="text-lg">{course.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                       <div className="flex items-center gap-6 text-muted-foreground text-sm">
+                           <div className="flex items-center gap-2"><Clock/><span>{course.duration}</span></div>
+                           <div className="flex items-center gap-2"><BarChart/><span>{course.level}</span></div>
+                           <div className="flex items-center gap-2"><span>By <strong>{course.instructor}</strong></span></div>
+                       </div>
                     </CardContent>
-                  </Card>
-                )}
-              </div>
-            ) : (
-              // Project View
-              <div>
-                <Badge variant="secondary" className="mb-4">Final Project</Badge>
-                <h1 className="text-3xl md:text-4xl font-bold mb-6">{course.project.title}</h1>
-                 <div className="prose prose-lg max-w-none mb-12">
-                  <ReactMarkdown>{course.project.description}</ReactMarkdown>
-                </div>
-                <Button size="lg">Submit Project</Button>
-              </div>
-            )}
-          </div>
-        </main>
-      </div>
+                </Card>
+                
+                <Card>
+                    <CardHeader><CardTitle>What You'll Learn</CardTitle></CardHeader>
+                    <CardContent>
+                        <div className="prose max-w-none">
+                            <ReactMarkdown>{course.description}</ReactMarkdown>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader><CardTitle>Course Curriculum</CardTitle></CardHeader>
+                    <CardContent>
+                        <Accordion type="single" collapsible className="w-full">
+                            {course.lessons.map((lesson, index) => (
+                                <AccordionItem key={lesson.id} value={`item-${index}`}>
+                                    <AccordionTrigger>
+                                        <div className="flex items-center gap-3">
+                                            <PlayCircle className="h-5 w-5 text-primary"/>
+                                            <span className="font-semibold">{lesson.title}</span>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="pl-8 text-muted-foreground">
+                                        <ul className="list-disc pl-5 space-y-2">
+                                            <li>{lesson.pages.length} pages of content</li>
+                                            <li>Recommended video: <a href={lesson.videoUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Watch on YouTube</a></li>
+                                            <li>Includes a {lesson.quiz.length}-question quiz</li>
+                                        </ul>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                            {course.project && (
+                                <AccordionItem value="project">
+                                    <AccordionTrigger>
+                                        <div className="flex items-center gap-3">
+                                            <Award className="h-5 w-5 text-primary"/>
+                                            <span className="font-semibold">Final Project: {course.project.title}</span>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="pl-8 text-muted-foreground">
+                                        <ReactMarkdown>{course.project.description}</ReactMarkdown>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            )}
+                        </Accordion>
+                    </CardContent>
+                </Card>
+            </div>
+            
+            <aside className="space-y-6">
+                <Card className="sticky top-8">
+                    <CardHeader>
+                        <CardTitle className="text-2xl">
+                          {isFree ? 'Enroll for Free' : `Price: ${PaymentCalculator.formatCurrency(course.price, 'GHS')}`}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {isEnrolled ? (
+                            <Button size="lg" className="w-full" asChild>
+                                <a href={`/my-learning/${course.id}`}>Go to Course</a>
+                            </Button>
+                        ) : (
+                            <Button size="lg" className="w-full" onClick={handleEnroll} disabled={isEnrolling}>
+                                {isEnrolling ? 'Processing...' : 'Enroll Now'}
+                            </Button>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-4 text-center">Full lifetime access. Certificate of completion.</p>
+                    </CardContent>
+                </Card>
+            </aside>
+        </div>
+       </div>
     </div>
+    <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Complete Your Enrollment</DialogTitle>
+                <DialogDescription>
+                    Your enrollment is pending. Please complete the payment to get access.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-4 text-center">
+              <Shield className="h-12 w-12 mx-auto text-primary" />
+              <h3 className="text-xl font-semibold">Manual Payment Required</h3>
+              <p className="text-muted-foreground">
+                Follow the instructions below. Your enrollment will be approved by an admin upon confirmation.
+              </p>
+              <Card className="text-left p-4 bg-muted/50">
+                 <p className="text-sm font-semibold">Instructions:</p>
+                 <ol className="text-sm list-decimal list-inside space-y-1 mt-2">
+                    <li>Send Mobile Money to: <strong className="text-primary">0597479994</strong></li>
+                    <li>Amount: <strong className="text-primary">{PaymentCalculator.formatCurrency(course.price, 'GHS')}</strong></li>
+                    <li>
+                      Reference/Narration:
+                      <div className="flex items-center gap-2 mt-1">
+                        <Input readOnly value={bookingCode} className="font-mono text-xs h-8"/>
+                        <Button type="button" size="icon" variant="ghost" onClick={() => copyToClipboard(bookingCode)}><Copy className="h-4 w-4"/></Button>
+                      </div>
+                    </li>
+                 </ol>
+                 <p className="text-xs text-muted-foreground mt-4">You will be notified once your enrollment is approved.</p>
+              </Card>
+            </div>
+            <DialogFooter>
+                <Button onClick={() => setShowPaymentDialog(false)} className="w-full">
+                    Done
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }

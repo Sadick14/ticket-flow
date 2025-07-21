@@ -1,4 +1,5 @@
 
+
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { collection, doc, getDoc, getDocs, query, orderBy } from "firebase/firestore";
@@ -22,6 +23,7 @@ async function getCourseData(id: string): Promise<{ course: Course; lessons: Les
     const lessonsQuery = query(lessonsRef, orderBy('title')); // Assuming you want them ordered
     const lessonsSnap = await getDocs(lessonsQuery);
     const lessons = lessonsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lesson));
+    course.lessons = lessons; // Attach lessons to course object
 
     return { course, lessons };
 }
@@ -51,5 +53,5 @@ export default async function CourseDetailsPage({ params }: { params: { id:strin
         notFound();
     }
 
-    return <CourseDetailsClient course={data.course} lessons={data.lessons} />;
+    return <CourseDetailsClient course={data.course} />;
 }
