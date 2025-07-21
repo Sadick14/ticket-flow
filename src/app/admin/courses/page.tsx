@@ -39,6 +39,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { generateCourseContent } from '@/ai/flows/generate-course-content';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Separator } from '@/components/ui/separator';
 
 
 const lessonSchema = z.object({
@@ -270,7 +271,7 @@ export default function AdminCoursesPage() {
           <h1 className="text-2xl font-bold">Course Management</h1>
           <p className="text-muted-foreground">Create and manage courses for your users.</p>
         </div>
-        <Dialog open={isFormOpen} onOpenChange={handleCloseForm}>
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => handleOpenForm()}><PlusCircle className="mr-2 h-4 w-4" /> Add Course</Button>
           </DialogTrigger>
