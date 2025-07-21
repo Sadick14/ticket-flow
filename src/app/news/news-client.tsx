@@ -22,11 +22,15 @@ export default function NewsPageClient() {
     const publishedNews = news.filter(n => n.status === 'published');
     
     return publishedNews.filter((article: NewsArticle) => {
-      const matchesCategory = activeCategory === 'All' || (article.category && article.category === activeCategory);
+      // Category check: show if 'All' is selected, OR if the article's category matches the active one.
+      const matchesCategory = activeCategory === 'All' || article.category === activeCategory;
+      
+      // Search check
       const matchesSearch =
         article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         article.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         article.source.toLowerCase().includes(searchTerm.toLowerCase());
+        
       return matchesCategory && matchesSearch;
     });
   }, [news, searchTerm, activeCategory]);
