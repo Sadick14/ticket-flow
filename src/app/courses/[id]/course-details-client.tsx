@@ -11,6 +11,7 @@ import type { Course, Lesson, Page } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 
 interface CourseDetailsClientProps {
   course: Course;
