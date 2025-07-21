@@ -91,12 +91,31 @@ export interface NewsArticle {
   gallery: { url: string }[];
 }
 
+export interface QuizQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: string;
+}
+
+export interface Lesson {
+  id: string;
+  title: string;
+  content: string; // Markdown
+  duration: string; // e.g., "15 mins"
+  quiz: QuizQuestion[];
+}
+
+export interface Project {
+    title: string;
+    description: string; // Markdown
+}
+
 export interface Course {
   id: string;
   title: string;
+  description: string;
   instructor: string;
   imageUrl: string;
-  description: string;
   category: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   duration: string;
@@ -105,11 +124,8 @@ export interface Course {
   isFeatured?: boolean;
   isPopular?: boolean;
   isTrending?: boolean;
-  lessons: {
-    title: string;
-    duration: string;
-    isFreePreview: boolean;
-  }[];
+  lessons: Lesson[];
+  project: Project;
 }
 
 

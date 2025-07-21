@@ -2,11 +2,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAppContext } from '@/context/app-context';
-import type { Course } from '@/lib/types';
+import type { Course, Lesson as LessonType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,11 +15,11 @@ import {
   DialogFooter,
   DialogTitle,
   DialogTrigger,
+  DialogDescription
 } from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -31,20 +31,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { PlusCircle, Edit, Trash2, Loader2, BookOpen, ToggleLeft, ToggleRight, Star, TrendingUp } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, BookOpen, ToggleLeft, ToggleRight, Star, TrendingUp, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUploader } from '@/components/image-uploader';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { generateCourseContent } from '@/ai/flows/generate-course-content';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
-const courseCategories = ["Event Marketing", "Audience Growth", "Sponsorship", "Event Production", "Community Building"];
-const courseLevels = ["Beginner", "Intermediate", "Advanced"];
 
 const lessonSchema = z.object({
+    id: z.string(),
     title: z.string().min(3, 'Title is required.'),
+    content: z.string().min(10, 'Content is required'),
     duration: z.string().min(1, 'Duration is required.'),
-    isFreePreview: z.boolean().default(false),
+    quiz: z.array(z.object({
+        question: z.string(),
+        options: z.array(z.string()),
+        correctAnswer: z.string(),
+    })).optional(),
+});
+
+const projectSchema = z.object({
+    title: z.string().min(3, 'Title is required.'),
+    description: z.string().min(10, 'Description is required.'),
 });
 
 const courseSchema = z.object({
@@ -61,6 +72,7 @@ const courseSchema = z.object({
   isPopular: z.boolean().default(false),
   isTrending: z.boolean().default(false),
   lessons: z.array(lessonSchema).min(1, 'At least one lesson is required.'),
+  project: projectSchema.optional(),
 });
 
 type CourseFormValues = z.infer<typeof courseSchema>;
@@ -68,6 +80,7 @@ type CourseFormValues = z.infer<typeof courseSchema>;
 function CourseForm({ course, onFinished }: { course?: Course, onFinished: () => void }) {
   const { addCourse, updateCourse } = useAppContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const isEditMode = !!course;
 
@@ -81,7 +94,7 @@ function CourseForm({ course, onFinished }: { course?: Course, onFinished: () =>
       instructor: '',
       imageUrl: '',
       description: '',
-      category: courseCategories[0],
+      category: "Event Marketing",
       level: 'Beginner',
       duration: '',
       price: 0,
@@ -89,20 +102,48 @@ function CourseForm({ course, onFinished }: { course?: Course, onFinished: () =>
       isFeatured: false,
       isPopular: false,
       isTrending: false,
-      lessons: [{ title: '', duration: '', isFreePreview: false }],
+      lessons: [],
+      project: { title: '', description: '' },
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: 'lessons'
-  });
+  const handleGenerateCourse = async () => {
+    const title = form.getValues('title');
+    if (!title) {
+        toast({ variant: 'destructive', title: 'Title is required', description: 'Please enter a course title before generating.' });
+        return;
+    }
+    setIsGenerating(true);
+    try {
+        const result = await generateCourseContent({ title });
+        form.setValue('description', result.description);
+        form.setValue('lessons', result.lessons as any); // Type assertion might be needed
+        form.setValue('project', result.project);
+        
+        // Calculate total duration
+        const totalMinutes = result.lessons.reduce((acc, lesson) => {
+          const duration = parseInt(lesson.duration.split(' ')[0]) || 0;
+          return acc + duration;
+        }, 0);
+        form.setValue('duration', `${Math.round(totalMinutes / 60)} hours`);
+
+
+        toast({ title: "Course Content Generated!", description: "Review the generated lessons and project below." });
+    } catch (error) {
+        toast({ variant: 'destructive', title: "AI Generation Failed", description: "Could not generate course content." });
+    } finally {
+        setIsGenerating(false);
+    }
+  };
+
 
   const onSubmit = async (data: CourseFormValues) => {
     setIsSubmitting(true);
-    const payload = {
+    const payload: Omit<Course, 'id'> = {
       ...data,
       price: data.price * 100, // Convert to cents
+      lessons: data.lessons as LessonType[], // Ensure type compatibility
+      project: data.project!,
     };
     try {
       if (isEditMode) {
@@ -124,23 +165,29 @@ function CourseForm({ course, onFinished }: { course?: Course, onFinished: () =>
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField name="title" control={form.control} render={({ field }) => (
-            <FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Course Title</FormLabel><FormControl><Input {...field} placeholder="e.g., Advanced Event Sponsorship Techniques"/></FormControl><FormMessage /></FormItem>
+        )}/>
+        <Button type="button" onClick={handleGenerateCourse} disabled={isGenerating} className="w-full">
+            <Wand2 className="mr-2 h-4 w-4"/> {isGenerating ? <Loader2 className="animate-spin"/> : "Generate Course Content with AI"}
+        </Button>
+        <Separator/>
+
+        <FormField name="description" control={form.control} render={({ field }) => (
+            <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem>
         )}/>
         <FormField name="instructor" control={form.control} render={({ field }) => (
             <FormItem><FormLabel>Instructor</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
         )}/>
         <FormField name="imageUrl" control={form.control} render={({ field }) => (
-            <FormItem><FormLabel>Image</FormLabel><FormControl><ImageUploader onUpload={field.onChange} value={field.value} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Cover Image</FormLabel><FormControl><ImageUploader onUpload={field.onChange} value={field.value} /></FormControl><FormMessage /></FormItem>
         )}/>
-        <FormField name="description" control={form.control} render={({ field }) => (
-            <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} rows={5} /></FormControl><FormMessage /></FormItem>
-        )}/>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField name="category" control={form.control} render={({ field }) => (
-                <FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{courseCategories.map(c=><SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage/></FormItem>
+                <FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{["Event Marketing", "Audience Growth", "Sponsorship", "Event Production", "Community Building"].map(c=><SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage/></FormItem>
             )}/>
             <FormField name="level" control={form.control} render={({ field }) => (
-                <FormItem><FormLabel>Level</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{courseLevels.map(l=><SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select><FormMessage/></FormItem>
+                <FormItem><FormLabel>Level</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{["Beginner", "Intermediate", "Advanced"].map(l=><SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select><FormMessage/></FormItem>
             )}/>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -152,74 +199,26 @@ function CourseForm({ course, onFinished }: { course?: Course, onFinished: () =>
             )}/>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-          <FormField
-            control={form.control}
-            name="isFeatured"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                <div className="space-y-0.5">
-                  <FormLabel>Featured</FormLabel>
-                  <FormDescription>Show on homepage</FormDescription>
-                </div>
-                <FormControl>
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="isPopular"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                <div className="space-y-0.5">
-                  <FormLabel>Popular</FormLabel>
-                  <FormDescription>Mark as popular</FormDescription>
-                </div>
-                <FormControl>
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="isTrending"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                <div className="space-y-0.5">
-                  <FormLabel>Trending</FormLabel>
-                  <FormDescription>Mark as trending now</FormDescription>
-                </div>
-                <FormControl>
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div>
-          <FormLabel>Lessons</FormLabel>
-          <div className="space-y-4 mt-2">
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex items-end gap-2 p-3 border rounded-md">
-                <FormField name={`lessons.${index}.title`} control={form.control} render={({ field }) => (
-                    <FormItem className="flex-grow"><FormLabel>Title</FormLabel><FormControl><Input {...field}/></FormControl><FormMessage/></FormItem>
-                )}/>
-                <FormField name={`lessons.${index}.duration`} control={form.control} render={({ field }) => (
-                    <FormItem><FormLabel>Duration</FormLabel><FormControl><Input {...field} placeholder="e.g., 15 mins"/></FormControl><FormMessage/></FormItem>
-                )}/>
-                <FormField name={`lessons.${index}.isFreePreview`} control={form.control} render={({ field }) => (
-                    <FormItem className="flex flex-col items-center"><FormLabel>Free?</FormLabel><FormControl><input type="checkbox" checked={field.value} onChange={field.onChange} className="h-5 w-5"/></FormControl></FormItem>
-                )}/>
-                <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4"/></Button>
-              </div>
-            ))}
-          </div>
-           <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ title: '', duration: '', isFreePreview: false })}>Add Lesson</Button>
-        </div>
+        <Accordion type="single" collapsible>
+            <AccordionItem value="lessons">
+                <AccordionTrigger>View/Edit Lessons ({form.watch('lessons')?.length || 0})</AccordionTrigger>
+                <AccordionContent className="p-1">
+                   {form.watch('lessons')?.map((lesson, index) => (
+                     <div key={index} className="p-2 border-b">
+                       <p className="font-semibold">{index + 1}. {lesson.title}</p>
+                       <p className="text-xs text-muted-foreground">{lesson.duration}</p>
+                     </div>
+                   ))}
+                </AccordionContent>
+            </AccordionItem>
+             <AccordionItem value="project">
+                <AccordionTrigger>View/Edit Final Project</AccordionTrigger>
+                <AccordionContent className="p-1">
+                   <p className="font-semibold">{form.watch('project')?.title}</p>
+                   <p className="text-xs text-muted-foreground line-clamp-2">{form.watch('project')?.description}</p>
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
 
         <DialogFooter>
           <Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}{isEditMode ? 'Save Changes' : 'Create Course'}</Button>
@@ -271,13 +270,16 @@ export default function AdminCoursesPage() {
           <h1 className="text-2xl font-bold">Course Management</h1>
           <p className="text-muted-foreground">Create and manage courses for your users.</p>
         </div>
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <Dialog open={isFormOpen} onOpenChange={handleCloseForm}>
           <DialogTrigger asChild>
             <Button onClick={() => handleOpenForm()}><PlusCircle className="mr-2 h-4 w-4" /> Add Course</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingCourse ? 'Edit Course' : 'Add New Course'}</DialogTitle>
+               <DialogDescription>
+                {editingCourse ? "Edit the course details." : "Enter a title and use AI to generate the full course content."}
+               </DialogDescription>
             </DialogHeader>
             <CourseForm course={editingCourse} onFinished={handleCloseForm} />
           </DialogContent>
@@ -297,7 +299,7 @@ export default function AdminCoursesPage() {
                     <TableHead>Title</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Flags</TableHead>
+                    <TableHead>Lessons</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -313,13 +315,7 @@ export default function AdminCoursesPage() {
                       <TableCell><div className="flex items-center gap-3"><Image src={course.imageUrl} alt={course.title} width={40} height={40} className="rounded-md object-cover"/><div className="font-medium">{course.title}</div></div></TableCell>
                       <TableCell><Badge variant="outline">{course.category}</Badge></TableCell>
                       <TableCell><Button variant="ghost" size="sm" onClick={() => handleToggleStatus(course)} className="flex items-center gap-1">{course.status === 'published' ? <ToggleRight className="h-5 w-5 text-green-500"/> : <ToggleLeft className="h-5 w-5 text-muted-foreground"/>}<span className="capitalize">{course.status}</span></Button></TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          {course.isFeatured && <Badge variant="secondary" title="Featured"><Star className="h-3 w-3"/></Badge>}
-                          {course.isPopular && <Badge variant="secondary" title="Popular"><UsersIcon className="h-3 w-3"/></Badge>}
-                          {course.isTrending && <Badge variant="secondary" title="Trending"><TrendingUp className="h-3 w-3"/></Badge>}
-                        </div>
-                      </TableCell>
+                      <TableCell>{course.lessons.length}</TableCell>
                       <TableCell><Badge variant="secondary">{course.price === 0 ? 'Free' : `GH₵${(course.price/100).toFixed(2)}`}</Badge></TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => handleOpenForm(course)}><Edit className="h-4 w-4"/></Button>
