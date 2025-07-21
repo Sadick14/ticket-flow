@@ -80,7 +80,7 @@ const LessonTextSchema = z.object({
     id: z.string().describe("A unique slug-like ID for the lesson, e.g., 'introduction-to-marketing'."),
     title: z.string().describe('The title of the lesson.'),
     duration: z.string().describe('Estimated time to complete the lesson, e.g., "15 mins".'),
-    videoUrl: z.string().url().describe('A recommended YouTube video URL for this lesson.'),
+    videoUrl: z.string().describe('A recommended YouTube video URL for this lesson.'),
     quiz: z.array(QuizQuestionSchema).describe('An array of quiz questions for the lesson.'),
     pages: z.array(PageTextSchema).describe('An array of pages that make up the lesson content.'),
 });
