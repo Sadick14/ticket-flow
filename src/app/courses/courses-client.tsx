@@ -108,7 +108,7 @@ export default function CoursesClient() {
                   <Star className="mx-auto h-12 w-12 text-muted-foreground" />
                   <h3 className="mt-4 text-lg font-medium text-foreground">No Featured Courses Yet</h3>
                    <p className="mt-1 text-sm text-muted-foreground">
-                        Featured courses will appear here.
+                        Admin can set featured courses in the dashboard.
                     </p>
                 </div>
             )}
@@ -158,7 +158,7 @@ export default function CoursesClient() {
                   <TrendingUp className="mx-auto h-12 w-12 text-muted-foreground" />
                   <h3 className="mt-4 text-lg font-medium text-foreground">No Trending Courses</h3>
                    <p className="mt-1 text-sm text-muted-foreground">
-                       Trending courses will be shown here.
+                       Admin can set trending courses in the dashboard.
                     </p>
                 </div>
             )}

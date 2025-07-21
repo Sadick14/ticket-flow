@@ -20,6 +20,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -31,7 +32,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { PlusCircle, Edit, Trash2, Loader2, BookOpen, ToggleLeft, ToggleRight, Wand2, ChevronDown } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, BookOpen, ToggleLeft, ToggleRight, Wand2, ChevronDown, Star, TrendingUp, Award } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUploader } from '@/components/image-uploader';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -46,13 +47,13 @@ import { Label } from '@/components/ui/label';
 
 const pageSchema = z.object({
   content: z.string().min(1, 'Page content cannot be empty.'),
-  imageUrl: z.string().optional(),
 });
 
 const lessonSchema = z.object({
     id: z.string(),
     title: z.string().min(3, 'Title is required.'),
     duration: z.string().min(1, 'Duration is required.'),
+    videoUrl: z.string().url().optional(),
     quiz: z.array(z.object({
         question: z.string(),
         options: z.array(z.string()),
@@ -132,6 +133,7 @@ function CourseForm({ course, onFinished }: { course?: Course, onFinished: () =>
         form.setValue('description', result.description);
         form.setValue('lessons', result.lessons as any); // Type assertion might be needed
         form.setValue('project', result.project);
+        form.setValue('imageUrl', result.imageUrl);
         
         // Calculate total duration
         const totalMinutes = result.lessons.reduce((acc, lesson) => {
@@ -152,7 +154,7 @@ function CourseForm({ course, onFinished }: { course?: Course, onFinished: () =>
 
   const onSubmit = async (data: CourseFormValues) => {
     setIsSubmitting(true);
-    const payload: Omit<Course, 'id'> = {
+    const payload: Omit<Course, 'id' | 'lessons'> & { lessons: LessonType[] } = {
       ...data,
       price: data.price * 100, // Convert to cents
       lessons: data.lessons as LessonType[], // Ensure type compatibility
@@ -211,6 +213,51 @@ function CourseForm({ course, onFinished }: { course?: Course, onFinished: () =>
                 <FormItem><FormLabel>Price (GH₵)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
             )}/>
         </div>
+
+        <div className="space-y-4 pt-4">
+            <Label>Visibility Settings</Label>
+            <div className="flex flex-wrap gap-4 items-center">
+                 <FormField
+                    control={form.control}
+                    name="isFeatured"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm w-full sm:w-auto">
+                            <div className="space-y-0.5 mr-4">
+                                <FormLabel>Featured</FormLabel>
+                                <FormDescription>Show on homepage featured section.</FormDescription>
+                            </div>
+                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="isPopular"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm w-full sm:w-auto">
+                            <div className="space-y-0.5 mr-4">
+                                <FormLabel>Popular</FormLabel>
+                                <FormDescription>Mark as a popular course.</FormDescription>
+                            </div>
+                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="isTrending"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm w-full sm:w-auto">
+                            <div className="space-y-0.5 mr-4">
+                                <FormLabel>Trending</FormLabel>
+                                <FormDescription>Highlight as currently trending.</FormDescription>
+                            </div>
+                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                        </FormItem>
+                    )}
+                />
+            </div>
+        </div>
         
         <Card>
             <CardHeader>
@@ -238,7 +285,6 @@ function CourseForm({ course, onFinished }: { course?: Course, onFinished: () =>
                                         {lesson.pages.map((page, pageIndex) => (
                                            <div key={pageIndex} className="p-3 border rounded-md bg-muted/50">
                                              <Label className="text-sm font-semibold">Page {pageIndex + 1}</Label>
-                                             {page.imageUrl && <Image src={page.imageUrl} alt={`Illustration for page ${pageIndex+1}`} width={300} height={200} className="my-2 rounded-md object-cover"/>}
                                              <FormField control={form.control} name={`lessons.${lessonIndex}.pages.${pageIndex}.content`} render={({field}) => (
                                                 <FormItem><FormLabel>Page Content</FormLabel><FormControl><Textarea {...field} rows={8}/></FormControl><FormMessage/></FormItem>
                                              )}/>
@@ -344,7 +390,7 @@ export default function AdminCoursesPage() {
                     <TableHead>Title</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Lessons</TableHead>
+                    <TableHead>Visibility</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -360,7 +406,13 @@ export default function AdminCoursesPage() {
                       <TableCell><div className="flex items-center gap-3"><Image src={course.imageUrl} alt={course.title} width={40} height={40} className="rounded-md object-cover"/><div className="font-medium">{course.title}</div></div></TableCell>
                       <TableCell><Badge variant="outline">{course.category}</Badge></TableCell>
                       <TableCell><Button variant="ghost" size="sm" onClick={() => handleToggleStatus(course)} className="flex items-center gap-1">{course.status === 'published' ? <ToggleRight className="h-5 w-5 text-green-500"/> : <ToggleLeft className="h-5 w-5 text-muted-foreground"/>}<span className="capitalize">{course.status}</span></Button></TableCell>
-                      <TableCell>{course.lessons.length}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                            {course.isFeatured && <Badge variant="secondary"><Award className="h-3 w-3 mr-1"/>Featured</Badge>}
+                            {course.isPopular && <Badge variant="secondary"><Star className="h-3 w-3 mr-1"/>Popular</Badge>}
+                            {course.isTrending && <Badge variant="secondary"><TrendingUp className="h-3 w-3 mr-1"/>Trending</Badge>}
+                        </div>
+                      </TableCell>
                       <TableCell><Badge variant="secondary">{course.price === 0 ? 'Free' : `GH₵${(course.price/100).toFixed(2)}`}</Badge></TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => handleOpenForm(course)}><Edit className="h-4 w-4"/></Button>

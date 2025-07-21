@@ -129,7 +129,7 @@ export interface Course {
   isPopular?: boolean;
   isTrending?: boolean;
   project: Project;
-  // Lessons will be fetched from a subcollection
+  lessons: Lesson[];
 }
 
 
