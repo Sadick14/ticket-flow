@@ -9,14 +9,14 @@ import type { Course, Lesson, Page } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { PlayCircle, Award, Circle, CheckCircle2, Lock, Loader2, ArrowLeft, Youtube, Menu } from 'lucide-react';
+import { PlayCircle, Award, Circle, CheckCircle2, Lock, Loader2, ArrowLeft, Youtube, Menu, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
+import Image from 'next/image';
 
 type ActiveContent = {
   type: 'lesson';
@@ -44,15 +44,13 @@ export default function CoursePlayerPage() {
   const isEnrolled = user?.enrolledCourseIds?.includes(courseId as string);
 
   useEffect(() => {
-    // Wait for all loading to complete before running checks
     if (authLoading || appLoading) return;
 
     if (!user) {
-      router.push('/home'); // Redirect unauthenticated users
+      router.push('/home'); 
       return;
     }
     
-    // Check enrollment *after* we're sure the user object is up-to-date
     if (!isEnrolled) {
         toast({ variant: 'destructive', title: "Not Enrolled", description: "You must enroll in this course to view it." });
         router.push(`/courses/${courseId}`);
@@ -60,12 +58,11 @@ export default function CoursePlayerPage() {
     }
 
     const fetchCourseData = async () => {
-        setPageLoading(true); // Start loading page-specific data
+        setPageLoading(true);
         const courseData = await getCourseById(courseId as string);
         if (courseData) {
             setCourse(courseData);
             setLessons(courseData.lessons || []);
-            // Set the first lesson as active content if it exists
             if (courseData.lessons && courseData.lessons.length > 0) {
               setActiveContent({ type: 'lesson', lesson: courseData.lessons[0], pageIndex: 0 });
             } else if (courseData.project) {
@@ -75,7 +72,7 @@ export default function CoursePlayerPage() {
             toast({ variant: 'destructive', title: "Course Not Found" });
             router.push('/courses');
         }
-        setPageLoading(false); // Finish loading page-specific data
+        setPageLoading(false);
     }
     
     if (isEnrolled) {
@@ -98,8 +95,8 @@ export default function CoursePlayerPage() {
         return;
     }
     setActiveContent({ type: 'lesson', lesson, pageIndex });
-    setQuizAnswers({}); // Reset quiz answers when starting a new lesson
-    setIsMenuOpen(false); // Close mobile menu on selection
+    setQuizAnswers({});
+    setIsMenuOpen(false);
   };
   
   const handleQuizSubmit = (lesson: Lesson, answers: Record<string, string>) => {
@@ -227,8 +224,9 @@ export default function CoursePlayerPage() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-80 p-0 flex flex-col">
-                  <SheetHeader>
-                      <SheetTitle className="sr-only">Course Navigation</SheetTitle>
+                  <SheetHeader className="sr-only">
+                      <SheetTitle>Course Navigation</SheetTitle>
+                       <SheetDescription>Navigate through the course lessons and project.</SheetDescription>
                   </SheetHeader>
                   <SidebarContent />
               </SheetContent>
@@ -244,6 +242,12 @@ export default function CoursePlayerPage() {
                 <h1 className="text-3xl md:text-4xl font-bold mb-2">{activeContent.lesson.title}</h1>
                 <p className="text-muted-foreground mb-6">Page {activeContent.pageIndex + 1} of {activeContent.lesson.pages.length}</p>
 
+                {currentLessonPage?.imageUrl && (
+                  <div className="relative h-60 w-full rounded-lg overflow-hidden mb-8">
+                      <Image src={currentLessonPage.imageUrl} alt={activeContent.lesson.title} layout="fill" objectFit="cover" />
+                  </div>
+                )}
+                
                 {activeContent.lesson.videoUrl && (
                     <Button asChild variant="outline" className="mb-8">
                         <a href={activeContent.lesson.videoUrl} target="_blank" rel="noopener noreferrer">

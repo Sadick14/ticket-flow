@@ -100,6 +100,7 @@ export interface QuizQuestion {
 
 export interface Page {
   content: string; // Markdown content for one page of a lesson
+  imageUrl?: string; // A unique illustration for this page
 }
 
 export interface Lesson {
