@@ -9,7 +9,7 @@ import type { Course, Lesson, Page } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { PlayCircle, Award, Circle, CheckCircle2, Lock, Loader2, ArrowLeft } from 'lucide-react';
+import { PlayCircle, Award, Circle, CheckCircle2, Lock, Loader2, ArrowLeft, Youtube } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import { Progress } from '@/components/ui/progress';
@@ -41,6 +41,7 @@ export default function CoursePlayerPage() {
   const isEnrolled = user?.enrolledCourseIds?.includes(courseId as string);
 
   useEffect(() => {
+    // Wait for all loading to complete before running checks
     if (authLoading || appLoading) return;
 
     if (!user) {
@@ -48,6 +49,7 @@ export default function CoursePlayerPage() {
       return;
     }
     
+    // Check enrollment *after* we're sure the user object is up-to-date
     if (!isEnrolled) {
         toast({ variant: 'destructive', title: "Not Enrolled", description: "You must enroll in this course to view it." });
         router.push(`/courses/${courseId}`);
@@ -55,16 +57,22 @@ export default function CoursePlayerPage() {
     }
 
     const fetchCourseData = async () => {
+        setPageLoading(true); // Start loading page-specific data
         const courseData = await getCourseById(courseId as string);
         if (courseData) {
             setCourse(courseData);
             setLessons(courseData.lessons || []);
-            setActiveContent({ type: 'lesson', lesson: courseData.lessons[0], pageIndex: 0 });
+            // Set the first lesson as active content if it exists
+            if (courseData.lessons && courseData.lessons.length > 0) {
+              setActiveContent({ type: 'lesson', lesson: courseData.lessons[0], pageIndex: 0 });
+            } else if (courseData.project) {
+              setActiveContent({ type: 'project' });
+            }
         } else {
             toast({ variant: 'destructive', title: "Course Not Found" });
             router.push('/courses');
         }
-        setPageLoading(false);
+        setPageLoading(false); // Finish loading page-specific data
     }
     
     fetchCourseData();
@@ -262,4 +270,3 @@ export default function CoursePlayerPage() {
     </div>
   );
 }
-
