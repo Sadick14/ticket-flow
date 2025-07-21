@@ -84,7 +84,7 @@ const LessonGenerationSchema = z.object({
 const CourseGenerationSchema = z.object({
     title: z.string(),
     description: z.string().describe('A short, one-paragraph overview of the course.'),
-    lessons: z.array(LessonGenerationSchema).describe('An array of lessons that make up the course.'),
+    lessons: z.array(LessonGenerationSchema).describe('An array of lessons that make up the course. It should contain 10 or more lessons.'),
     project: ProjectSchema.describe('A final project for the course.'),
 });
 
@@ -95,12 +95,12 @@ const coursePrompt = ai.definePrompt({
   system: `You are an expert instructional designer specializing in creating professional, detailed courses for event organizers.
 Your task is to generate a complete, high-quality online course based on the provided title. The course should be structured for professionals, with in-depth content.
 
-The course must be broken down into logical lessons. Each lesson must:
+The course must be broken down into a minimum of 10 logical lessons. Each lesson must:
 - Have a unique slug-like ID.
 - Have a clear title and estimated duration.
 - Be further broken down into 2-4 detailed pages to ensure comprehensive coverage of the topic.
 - For each page, provide very detailed, expert-level content in Markdown format, aiming for approximately 6 paragraphs per page to ensure depth.
-- For each page, also provide a simple, descriptive image prompt (3-5 keywords) that an AI image generator can use to create a relevant vector illustration.
+- For each page, also provide a simple, descriptive image prompt (3-5 keywords) that an AI image generator can use to create a relevant, professional vector illustration.
 - Conclude with a short quiz (2-3 multiple-choice questions) to test understanding.
 
 The entire course must also include a final project that requires the student to apply what they've learned.
