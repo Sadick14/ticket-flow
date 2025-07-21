@@ -1,5 +1,4 @@
 
-
 export type SubscriptionPlan = 'Free' | 'Essential' | 'Pro' | 'Custom';
 
 export interface Speaker {
@@ -99,13 +98,13 @@ export interface QuizQuestion {
 
 export interface Page {
   content: string; // Markdown content for one page of a lesson
-  imageUrl?: string; // URL for an illustrative image
 }
 
 export interface Lesson {
   id: string;
   title: string;
   duration: string; // e.g., "15 mins"
+  videoUrl: string;
   pages: Page[]; // A lesson can have multiple pages
   quiz: QuizQuestion[];
 }
@@ -129,8 +128,8 @@ export interface Course {
   isFeatured?: boolean;
   isPopular?: boolean;
   isTrending?: boolean;
-  lessons: Lesson[];
   project: Project;
+  // Lessons will be fetched from a subcollection
 }
 
 

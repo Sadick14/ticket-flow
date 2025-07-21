@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission, Message, FeaturedArticle, SubscriptionRequest, SubscriptionPlan, Course } from '@/lib/types';
+import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission, Message, FeaturedArticle, SubscriptionRequest, SubscriptionPlan, Course, Lesson } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy, serverTimestamp, writeBatch, documentId, setDoc } from 'firebase/firestore';
 
@@ -48,7 +48,7 @@ interface AppContextType {
   updateNewsArticle: (id: string, articleData: Partial<Omit<NewsArticle, 'id' | 'publishedDate'>>) => Promise<void>;
   deleteNewsArticle: (id: string) => Promise<void>;
   // Courses
-  addCourse: (course: Omit<Course, 'id'>) => Promise<void>;
+  addCourseWithLessons: (courseData: Omit<Course, 'id'>, lessonsData: Omit<Lesson, 'id'>[]) => Promise<void>;
   updateCourse: (id: string, courseData: Partial<Omit<Course, 'id'>>) => Promise<void>;
   deleteCourse: (id: string) => Promise<void>;
   // Featured Article
@@ -145,14 +145,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchAllData]);
 
   // --- Course Functions ---
-  const addCourse = async (courseData: Omit<Course, 'id'>) => {
-    try {
-      await addDoc(collection(db, 'courses'), courseData);
+  const addCourseWithLessons = async (courseData: Omit<Course, 'id'>, lessonsData: Omit<Lesson, 'id'>[]) => {
+      const batch = writeBatch(db);
+      const courseRef = doc(collection(db, 'courses'));
+      
+      batch.set(courseRef, courseData);
+
+      lessonsData.forEach(lesson => {
+          const lessonRef = doc(collection(db, 'courses', courseRef.id, 'lessons'));
+          batch.set(lessonRef, lesson);
+      });
+      
+      await batch.commit();
       await fetchAllData();
-    } catch (error) {
-      console.error("Error adding course:", error);
-      throw error;
-    }
   };
 
   const updateCourse = async (id: string, courseData: Partial<Omit<Course, 'id'>>) => {
@@ -168,6 +173,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteCourse = async (id: string) => {
     try {
+      // In a real app, you might want to delete subcollections too, which is more complex.
+      // For now, we just delete the main course document.
       await deleteDoc(doc(db, 'courses', id));
       await fetchAllData();
     } catch (error) {
@@ -613,7 +620,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addNewsArticle,
       updateNewsArticle,
       deleteNewsArticle,
-      addCourse,
+      addCourseWithLessons,
       updateCourse,
       deleteCourse,
       saveFeaturedArticle,

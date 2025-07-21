@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Check, PlayCircle, Award, Circle, CheckCircle2 } from 'lucide-react';
+import { PlayCircle, Award, Circle, CheckCircle2, Youtube, Lock } from 'lucide-react';
 import type { Course, Lesson, Page } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
@@ -14,6 +14,7 @@ import { Progress } from '@/components/ui/progress';
 
 interface CourseDetailsClientProps {
   course: Course;
+  lessons: Lesson[];
 }
 
 interface ActiveContent {
@@ -24,9 +25,9 @@ interface ActiveContent {
   type: 'project';
 }
 
-export default function CourseDetailsClient({ course }: CourseDetailsClientProps) {
+export default function CourseDetailsClient({ course, lessons }: CourseDetailsClientProps) {
   const { toast } = useToast();
-  const [activeContent, setActiveContent] = useState<ActiveContent>({ type: 'lesson', lesson: course.lessons[0], pageIndex: 0 });
+  const [activeContent, setActiveContent] = useState<ActiveContent>({ type: 'lesson', lesson: lessons[0], pageIndex: 0 });
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
   
   const handleEnroll = () => {
@@ -37,22 +38,40 @@ export default function CourseDetailsClient({ course }: CourseDetailsClientProps
   };
 
   const handleLessonSelect = (lesson: Lesson, pageIndex: number = 0) => {
+    const lessonIndex = lessons.findIndex(l => l.id === lesson.id);
+    const isLocked = lessonIndex > 0 && !completedLessons.has(lessons[lessonIndex - 1].id);
+    
+    if (isLocked) {
+        toast({
+            variant: 'destructive',
+            title: "Lesson Locked",
+            description: "Please complete the previous lesson's quiz to unlock this one."
+        });
+        return;
+    }
     setActiveContent({ type: 'lesson', lesson, pageIndex });
   };
   
-  const handleCompleteLesson = (lessonId: string) => {
-    setCompletedLessons(prev => new Set(prev).add(lessonId));
-    
-    // Find next lesson and make it active
-    const currentIndex = course.lessons.findIndex(l => l.id === lessonId);
-    if (currentIndex < course.lessons.length - 1) {
-      handleLessonSelect(course.lessons[currentIndex + 1]);
+  const handleQuizSubmit = (lesson: Lesson, answers: Record<string, string>) => {
+    let correctCount = 0;
+    lesson.quiz.forEach((q, index) => {
+        if(answers[`q${index}`] === q.correctAnswer) {
+            correctCount++;
+        }
+    });
+
+    if(correctCount === lesson.quiz.length) {
+        toast({ title: "Quiz Passed!", description: "Great job! You've unlocked the next lesson."});
+        setCompletedLessons(prev => new Set(prev).add(lesson.id));
+        
+        const currentIndex = lessons.findIndex(l => l.id === lesson.id);
+        if (currentIndex < lessons.length - 1) {
+          setActiveContent({type: 'lesson', lesson: lessons[currentIndex+1], pageIndex: 0});
+        } else {
+          setActiveContent({ type: 'project' });
+        }
     } else {
-       toast({
-        title: "Section Complete!",
-        description: "Great job! Move on to the final project.",
-      });
-      setActiveContent({ type: 'project' });
+        toast({ variant: 'destructive', title: "Quiz Failed", description: "Not quite! Review the material and try the quiz again."});
     }
   }
 
@@ -64,15 +83,16 @@ export default function CourseDetailsClient({ course }: CourseDetailsClientProps
 
     if (newPageIndex >= 0 && newPageIndex < lesson.pages.length) {
       handleLessonSelect(lesson, newPageIndex);
-    } else if (direction === 'next' && newPageIndex >= lesson.pages.length) {
-        // If it's the last page, mark lesson as complete and go to next
-        handleCompleteLesson(lesson.id);
     }
   }
 
-  const progressPercentage = (completedLessons.size / course.lessons.length) * 100;
-
+  const progressPercentage = (completedLessons.size / lessons.length) * 100;
   const currentLessonPage = activeContent.type === 'lesson' ? activeContent.lesson.pages[activeContent.pageIndex] : null;
+
+  // State for the current quiz answers
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
+
+  const isLastPage = activeContent.type === 'lesson' && activeContent.pageIndex === activeContent.lesson.pages.length - 1;
 
   return (
     <div className="min-h-screen">
@@ -91,23 +111,27 @@ export default function CourseDetailsClient({ course }: CourseDetailsClientProps
                 <AccordionTrigger className="px-4 py-3 font-semibold">Lessons</AccordionTrigger>
                 <AccordionContent>
                     <ul className="space-y-1">
-                        {course.lessons.map((lesson) => (
-                        <li key={lesson.id}>
-                            <button 
-                                onClick={() => handleLessonSelect(lesson)}
-                                className={`w-full text-left px-4 py-3 text-sm flex items-start gap-3 transition-colors ${activeContent.type === 'lesson' && activeContent.lesson.id === lesson.id ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
-                            >
-                                {completedLessons.has(lesson.id) 
-                                    ? <CheckCircle2 className="h-5 w-5 mt-0.5 text-green-500 flex-shrink-0"/> 
-                                    : <Circle className="h-5 w-5 mt-0.5 text-muted-foreground flex-shrink-0"/>
-                                }
-                                <div className="flex-grow">
-                                    <span className="font-medium">{lesson.title}</span>
-                                    <p className="text-xs text-muted-foreground">{lesson.duration}</p>
-                                </div>
-                            </button>
-                        </li>
-                        ))}
+                        {lessons.map((lesson, index) => {
+                            const isLocked = index > 0 && !completedLessons.has(lessons[index-1].id);
+                            return (
+                                <li key={lesson.id}>
+                                    <button 
+                                        onClick={() => handleLessonSelect(lesson)}
+                                        className={`w-full text-left px-4 py-3 text-sm flex items-start gap-3 transition-colors ${activeContent.type === 'lesson' && activeContent.lesson.id === lesson.id ? 'bg-primary/10 text-primary' : 'hover:bg-muted'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        disabled={isLocked}
+                                    >
+                                        {completedLessons.has(lesson.id) 
+                                            ? <CheckCircle2 className="h-5 w-5 mt-0.5 text-green-500 flex-shrink-0"/> 
+                                            : isLocked ? <Lock className="h-5 w-5 mt-0.5 text-muted-foreground flex-shrink-0"/> : <Circle className="h-5 w-5 mt-0.5 text-muted-foreground flex-shrink-0"/>
+                                        }
+                                        <div className="flex-grow">
+                                            <span className="font-medium">{lesson.title}</span>
+                                            <p className="text-xs text-muted-foreground">{lesson.duration}</p>
+                                        </div>
+                                    </button>
+                                </li>
+                            )
+                        })}
                     </ul>
                 </AccordionContent>
             </AccordionItem>
@@ -136,10 +160,12 @@ export default function CourseDetailsClient({ course }: CourseDetailsClientProps
                 <h1 className="text-3xl md:text-4xl font-bold mb-2">{activeContent.lesson.title}</h1>
                 <p className="text-muted-foreground mb-6">Page {activeContent.pageIndex + 1} of {activeContent.lesson.pages.length}</p>
 
-                {currentLessonPage?.imageUrl && (
-                    <div className="relative w-full h-64 md:h-80 mb-8 rounded-lg overflow-hidden">
-                        <Image src={currentLessonPage.imageUrl} alt={`Illustration for ${activeContent.lesson.title}`} layout="fill" objectFit="cover" />
-                    </div>
+                {activeContent.lesson.videoUrl && (
+                    <Button asChild variant="outline" className="mb-8">
+                        <a href={activeContent.lesson.videoUrl} target="_blank" rel="noopener noreferrer">
+                            <Youtube className="mr-2 h-5 w-5"/> Watch on YouTube
+                        </a>
+                    </Button>
                 )}
                 
                 <div className="prose prose-lg max-w-none mb-12">
@@ -147,24 +173,32 @@ export default function CourseDetailsClient({ course }: CourseDetailsClientProps
                 </div>
 
                 <div className="flex justify-between items-center mb-12">
-                    <Button variant="outline" onClick={() => handlePageNavigation('prev')} disabled={activeContent.pageIndex === 0}>Previous</Button>
-                    <Button onClick={() => handlePageNavigation('next')}>
-                        {activeContent.pageIndex === activeContent.lesson.pages.length - 1 ? 'Finish Lesson' : 'Next Page'}
-                    </Button>
+                    <Button variant="outline" onClick={() => handlePageNavigation('prev')} disabled={activeContent.pageIndex === 0}>Previous Page</Button>
+                    {!isLastPage && <Button onClick={() => handlePageNavigation('next')}>Next Page</Button>}
                 </div>
 
-                {activeContent.lesson.quiz && activeContent.lesson.quiz.length > 0 && activeContent.pageIndex === activeContent.lesson.pages.length -1 && (
-                  <Card className="mb-12">
+                {isLastPage && activeContent.lesson.quiz && activeContent.lesson.quiz.length > 0 && (
+                  <Card className="mb-12 bg-muted/50">
                     <CardHeader><CardTitle>Check Your Knowledge</CardTitle></CardHeader>
                     <CardContent className="space-y-6">
                       {activeContent.lesson.quiz.map((q, index) => (
                         <div key={index}>
                           <p className="font-semibold mb-2">{index + 1}. {q.question}</p>
-                          <ul className="space-y-2">
-                            {q.options.map((opt, i) => <li key={i}><Button variant="outline" className="w-full justify-start">{opt}</Button></li>)}
-                          </ul>
+                          <div className="space-y-2">
+                            {q.options.map((opt, i) => (
+                                <Button 
+                                    key={i} 
+                                    variant={quizAnswers[`q${index}`] === opt ? 'default' : 'outline'}
+                                    className="w-full justify-start"
+                                    onClick={() => setQuizAnswers(prev => ({...prev, [`q${index}`]: opt}))}
+                                >
+                                    {opt}
+                                </Button>
+                            ))}
+                          </div>
                         </div>
                       ))}
+                       <Button onClick={() => handleQuizSubmit(activeContent.lesson, quizAnswers)} className="w-full" size="lg">Submit Quiz</Button>
                     </CardContent>
                   </Card>
                 )}

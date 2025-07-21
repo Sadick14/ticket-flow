@@ -12,6 +12,7 @@ export default function RootLayoutClient({ children }: { children: React.ReactNo
     const pathname = usePathname();
     const isLaunchPage = pathname === '/';
     const isAdminOrDashboard = pathname.startsWith('/admin') || pathname.startsWith('/dashboard');
+    const isCoursesPlatform = pathname.startsWith('/courses') || pathname.startsWith('/my-learning');
 
     // For admin or dashboard, the layout is handled by their own layout files.
     if (isAdminOrDashboard) {
@@ -23,6 +24,16 @@ export default function RootLayoutClient({ children }: { children: React.ReactNo
         );
     }
     
+    // For the new courses platform, let its own layout handle everything.
+    if (isCoursesPlatform) {
+        return (
+             <>
+                {children}
+                <Toaster />
+            </>
+        );
+    }
+
     // Show only the launch page content if countdown is active
     if (isLaunchPage && shouldShowCountdown()) {
         return (
