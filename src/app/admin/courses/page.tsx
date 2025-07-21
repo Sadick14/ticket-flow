@@ -47,6 +47,7 @@ import { Label } from '@/components/ui/label';
 
 const pageSchema = z.object({
   content: z.string().min(1, 'Page content cannot be empty.'),
+  imageUrl: z.string().url().optional(),
 });
 
 const lessonSchema = z.object({
@@ -145,7 +146,12 @@ function CourseForm({ course, onFinished }: { course?: Course, onFinished: () =>
 
         toast({ title: "Course Content Generated!", description: "Review the generated lessons and project below." });
     } catch (error) {
-        toast({ variant: 'destructive', title: "AI Generation Failed", description: "Could not generate course content." });
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+        toast({ 
+            variant: 'destructive', 
+            title: "AI Generation Failed", 
+            description: errorMessage
+        });
     } finally {
         setIsGenerating(false);
     }
