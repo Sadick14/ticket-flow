@@ -15,9 +15,9 @@ import { PageHero } from '@/components/page-hero';
 export default function MyLearningPage() {
   const { courses, loading } = useAppContext();
 
-  // For now, we'll assume the user is enrolled in all courses for demonstration.
-  // In a real app, this would come from the user's profile.
-  const enrolledCourses = useMemo(() => courses.filter(c => c.status === 'published'), [courses]);
+  // For now, we'll assume the user is enrolled in some courses for demonstration.
+  // In a real app, this would come from the user's profile and enrollment data.
+  const enrolledCourses = useMemo(() => courses.filter(c => c.status === 'published' && c.isFeatured), [courses]);
   const continueLearningCourse = enrolledCourses[0]; // Placeholder for the last viewed course
 
   const achievements = [ // Placeholder data

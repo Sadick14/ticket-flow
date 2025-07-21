@@ -17,13 +17,13 @@ interface CourseDetailsClientProps {
   lessons: Lesson[];
 }
 
-interface ActiveContent {
+type ActiveContent = {
   type: 'lesson';
   lesson: Lesson;
   pageIndex: number;
 } | {
   type: 'project';
-}
+};
 
 export default function CourseDetailsClient({ course, lessons }: CourseDetailsClientProps) {
   const { toast } = useToast();
