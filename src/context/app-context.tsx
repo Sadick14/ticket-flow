@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission, Message, FeaturedArticle, SubscriptionRequest, SubscriptionPlan } from '@/lib/types';
+import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission, Message, FeaturedArticle, SubscriptionRequest, SubscriptionPlan, Course } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy, serverTimestamp, writeBatch, documentId, setDoc } from 'firebase/firestore';
 
@@ -11,6 +11,7 @@ interface AppContextType {
   tickets: Ticket[];
   news: NewsArticle[];
   users: UserProfile[];
+  courses: Course[];
   launchSubscribers: LaunchSubscriber[];
   contactSubmissions: ContactSubmission[];
   featuredArticle: FeaturedArticle | null;
@@ -46,6 +47,10 @@ interface AppContextType {
   addNewsArticle: (article: Omit<NewsArticle, 'id'>) => Promise<void>;
   updateNewsArticle: (id: string, articleData: Partial<Omit<NewsArticle, 'id' | 'publishedDate'>>) => Promise<void>;
   deleteNewsArticle: (id: string) => Promise<void>;
+  // Courses
+  addCourse: (course: Omit<Course, 'id'>) => Promise<void>;
+  updateCourse: (id: string, courseData: Partial<Omit<Course, 'id'>>) => Promise<void>;
+  deleteCourse: (id: string) => Promise<void>;
   // Featured Article
   saveFeaturedArticle: (article: Omit<FeaturedArticle, 'id' | 'updatedAt'>) => Promise<void>;
   // Subscribers
@@ -81,6 +86,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [launchSubscribers, setLaunchSubscribers] = useState<LaunchSubscriber[]>([]);
   const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
   const [featuredArticle, setFeaturedArticle] = useState<FeaturedArticle | null>(null);
@@ -94,6 +100,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             ticketsSnapshot, 
             newsSnapshot, 
             usersSnapshot,
+            coursesSnapshot,
             launchSubscribersSnapshot,
             contactSubmissionsSnapshot,
             featuredArticleDoc,
@@ -103,6 +110,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             getDocs(query(collection(db, 'tickets'))),
             getDocs(query(collection(db, 'news'), orderBy('publishedDate', 'desc'))),
             getDocs(query(collection(db, 'users'))),
+            getDocs(query(collection(db, 'courses'), orderBy('title'))),
             getDocs(query(collection(db, 'launch_subscribers'), orderBy('subscribedAt', 'desc'))),
             getDocs(query(collection(db, 'contact_submissions'), orderBy('submittedAt', 'desc'))),
             getDoc(doc(db, 'featured_content', 'current')),
@@ -113,6 +121,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setTickets(removeDuplicates(ticketsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket))));
         setNews(removeDuplicates(newsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NewsArticle))));
         setUsers(usersSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile)));
+        setCourses(coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course)));
         setLaunchSubscribers(launchSubscribersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LaunchSubscriber)));
         setContactSubmissions(contactSubmissionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ContactSubmission)));
         setSubscriptionRequests(subscriptionRequestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SubscriptionRequest)));
@@ -134,6 +143,39 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
     loadData();
   }, [fetchAllData]);
+
+  // --- Course Functions ---
+  const addCourse = async (courseData: Omit<Course, 'id'>) => {
+    try {
+      await addDoc(collection(db, 'courses'), courseData);
+      await fetchAllData();
+    } catch (error) {
+      console.error("Error adding course:", error);
+      throw error;
+    }
+  };
+
+  const updateCourse = async (id: string, courseData: Partial<Omit<Course, 'id'>>) => {
+    try {
+      const courseRef = doc(db, 'courses', id);
+      await updateDoc(courseRef, courseData);
+      await fetchAllData();
+    } catch (error) {
+      console.error("Error updating course:", error);
+      throw error;
+    }
+  };
+
+  const deleteCourse = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'courses', id));
+      await fetchAllData();
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      throw error;
+    }
+  };
+
 
   const addEvent = async (eventData: Omit<Event, 'id' | 'collaboratorIds' | 'status'>) => {
     try {
@@ -428,8 +470,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const deleteSubscriber = async (id: string) => {
+    const subToDelete = launchSubscribers.find(s => s.id === id);
+    if (!subToDelete) return;
     await deleteDoc(doc(db, 'launch_subscribers', id));
-    await fetchAllData();
+    setLaunchSubscribers(prev => prev.filter(s => s.id !== id));
   };
   
   const bulkAddSubscribers = async (subscribers: { email: string; name?: string }[]) => {
@@ -514,7 +558,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const data = doc.data();
         return {
           ...data,
-          timestamp: data.timestamp?.toDate()?.toISOString() || new Date().toISOString()
+          timestamp: data.timestamp?.toDate?.()?.toISOString() || new Date().toISOString()
         } as Message
       });
     } catch (error) {
@@ -542,6 +586,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       tickets, 
       news,
       users,
+      courses,
       launchSubscribers,
       contactSubmissions,
       featuredArticle,
@@ -568,6 +613,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addNewsArticle,
       updateNewsArticle,
       deleteNewsArticle,
+      addCourse,
+      updateCourse,
+      deleteCourse,
       saveFeaturedArticle,
       addSubscriber,
       deleteSubscriber,

@@ -91,6 +91,25 @@ export interface NewsArticle {
   gallery: { url: string }[];
 }
 
+export interface Course {
+  id: string;
+  title: string;
+  instructor: string;
+  imageUrl: string;
+  description: string;
+  category: string;
+  level: 'Beginner' | 'Intermediate' | 'Advanced';
+  duration: string;
+  price: number; // in cents
+  status: 'published' | 'draft';
+  lessons: {
+    title: string;
+    duration: string;
+    isFreePreview: boolean;
+  }[];
+}
+
+
 export interface FeaturedArticle {
   id: string; // Usually a singleton doc, e.g., 'current'
   title: string;
