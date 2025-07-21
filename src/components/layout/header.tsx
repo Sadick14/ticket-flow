@@ -87,7 +87,7 @@ export function Header() {
   };
 
   return (
-    <header className="fixed top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm safe-area-top">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm safe-area-top">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center h-14 sm:h-16">
           {/* Logo */}
@@ -128,21 +128,24 @@ export function Header() {
                     <UserMenu />
                 </>
              ) : (
-                <Button onClick={signInWithGoogle} size="sm">Sign In</Button>
+                <div className="flex items-center gap-2">
+                    <Button onClick={signInWithGoogle} size="sm" variant="ghost">Sign In</Button>
+                    <Button asChild size="sm">
+                        <Link href="/signup">Sign Up</Link>
+                    </Button>
+                </div>
              )}
           </div>
           
           {/* Mobile Navigation */}
           <div className="flex lg:hidden items-center gap-2">
-            {user ? (
+            {user && (
               <Button asChild size="sm" variant="outline" className="px-3">
                 <Link href="/dashboard/create">
                   <PlusCircle className="h-4 w-4" />
                   <span className="ml-1 inline">Create</span>
                 </Link>
               </Button>
-            ) : (
-               <Button onClick={signInWithGoogle} size="sm">Sign In</Button>
             )}
             <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
@@ -225,12 +228,20 @@ export function Header() {
                         </Button>
                       </div>
                     ) : (
-                      <div className="mt-auto">
+                      <div className="mt-auto space-y-2">
                         <Button 
                           className="w-full" 
                           onClick={handleSignIn}
                         >
-                          Sign In with Google
+                          Sign In
+                        </Button>
+                         <Button 
+                          className="w-full"
+                          variant="outline"
+                          asChild
+                          onClick={closeMobileMenu}
+                        >
+                          <Link href="/signup">Sign Up</Link>
                         </Button>
                       </div>
                     )}

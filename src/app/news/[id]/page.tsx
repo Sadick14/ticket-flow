@@ -6,6 +6,8 @@ import { generateNewsMetadata } from '@/lib/metadata';
 import type { NewsArticle } from '@/lib/types';
 import NewsDetailsClient from './news-details-client';
 
+// Force dynamic rendering to ensure fresh data on every request
+export const dynamic = 'force-dynamic';
 
 async function getArticleData(id: string): Promise<NewsArticle | null> {
     const docRef = doc(db, 'news', id);
@@ -37,13 +39,4 @@ export default async function NewsArticlePage({ params }: { params: { id: string
     }
 
     return <NewsDetailsClient article={article} />;
-}
-
-// Optional: For better performance, you can generate static paths if you have a limited number of articles.
-export async function generateStaticParams() {
-    const newsQuery = query(collection(db, 'news'), limit(20)); // Limit to most recent 20 for build performance
-    const querySnapshot = await getDocs(newsQuery);
-    return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-    }));
 }

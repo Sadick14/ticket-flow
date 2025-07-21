@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Toaster } from '@/components/ui/toaster';
 import { shouldShowCountdown } from '@/lib/launch';
+import { SubscriptionPopup } from '@/components/subscription-popup';
 
 export default function RootLayoutClient({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -39,6 +40,7 @@ export default function RootLayoutClient({ children }: { children: React.ReactNo
             <main className="flex-grow">{children}</main>
             <Footer />
             <Toaster />
+            <SubscriptionPopup />
         </div>
     )
 }

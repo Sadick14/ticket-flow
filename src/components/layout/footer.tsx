@@ -1,6 +1,8 @@
 
 import Link from 'next/link';
 import { Ticket, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 
 export function Footer() {
   return (
@@ -22,7 +24,7 @@ export function Footer() {
               <li><Link href="/events" className="text-sm sm:text-base text-gray-400 hover:text-white transition-colors">Browse Events</Link></li>
               <li><Link href="/news" className="text-sm sm:text-base text-gray-400 hover:text-white transition-colors">News</Link></li>
               <li><Link href="/pricing" className="text-sm sm:text-base text-gray-400 hover:text-white transition-colors">Pricing</Link></li>
-              <li><Link href="/tickets" className="text-sm sm:text-base text-gray-400 hover:text-white transition-colors">My Tickets</Link></li>
+              <li><Link href="/my-page" className="text-sm sm:text-base text-gray-400 hover:text-white transition-colors">My Page</Link></li>
             </ul>
           </div>
           <div>
