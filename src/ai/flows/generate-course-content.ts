@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview A flow for generating a complete course structure, including lessons, quizzes, and a project, from a single topic.
+ * @fileOverview A flow for generating a complete course structure, including lessons with illustrated pages, quizzes, and a project.
  */
 
 import { ai } from '@/ai/genkit';
@@ -21,12 +21,17 @@ const QuizQuestionSchema = z.object({
     correctAnswer: z.string(),
 });
 
+const PageSchema = z.object({
+    content: z.string().describe('The detailed content for this page of the lesson, in Markdown format.'),
+    imageUrl: z.string().url().describe('A data URI of a generated image that visually represents the page content.'),
+});
+
 const LessonSchema = z.object({
     id: z.string().describe("A unique slug-like ID for the lesson, e.g., 'introduction-to-marketing'."),
     title: z.string().describe('The title of the lesson.'),
-    content: z.string().describe('The full lesson content in Markdown format.'),
     duration: z.string().describe('Estimated time to complete the lesson, e.g., "15 mins".'),
     quiz: z.array(QuizQuestionSchema).describe('An array of quiz questions for the lesson.'),
+    pages: z.array(PageSchema).describe('An array of pages that make up the lesson content.'),
 });
 
 const ProjectSchema = z.object({
@@ -63,23 +68,42 @@ export async function generateCourseContent(
 
 
 // --- GENKIT PROMPT ---
+const PageGenerationSchema = z.object({
+    content: z.string().describe('The detailed content for this page of the lesson, in Markdown format. Be professional, detailed, and thorough.'),
+    imagePrompt: z.string().describe('A simple, descriptive prompt (3-5 keywords) for an image generator to create a relevant, professional image for this page.'),
+});
+
+const LessonGenerationSchema = z.object({
+    id: z.string().describe("A unique slug-like ID for the lesson, e.g., 'introduction-to-marketing'."),
+    title: z.string().describe('The title of the lesson.'),
+    duration: z.string().describe('Estimated time to complete the lesson, e.g., "15 mins".'),
+    quiz: z.array(QuizQuestionSchema).describe('An array of quiz questions for the lesson.'),
+    pages: z.array(PageGenerationSchema).describe('An array of pages that make up the lesson content. Each lesson should have 2-4 pages to cover the topic in detail.'),
+});
+
+const CourseGenerationSchema = z.object({
+    title: z.string(),
+    description: z.string().describe('A short, one-paragraph overview of the course.'),
+    lessons: z.array(LessonGenerationSchema).describe('An array of lessons that make up the course.'),
+    project: ProjectSchema.describe('A final project for the course.'),
+});
 
 const coursePrompt = ai.definePrompt({
-  name: 'generateCourseContentPrompt',
+  name: 'generateCourseStructurePrompt',
   input: { schema: GenerateCourseContentInputSchema },
-  output: { schema: GenerateCourseContentOutputSchema },
-  system: `You are an expert instructional designer specializing in event management. Your task is to generate a complete, high-quality online course based on the provided title.
+  output: { schema: CourseGenerationSchema },
+  system: `You are an expert instructional designer specializing in creating professional, detailed courses for event organizers.
+Your task is to generate a complete, high-quality online course based on the provided title. The course should be structured for professionals, with in-depth content.
 
-The course should be structured logically, starting with fundamentals and progressing to more advanced topics.
+The course must be broken down into logical lessons. Each lesson must:
+- Have a unique slug-like ID.
+- Have a clear title and estimated duration.
+- Be further broken down into 2-4 detailed pages to ensure comprehensive coverage of the topic.
+- For each page, provide detailed, expert-level content in Markdown format.
+- For each page, also provide a simple, descriptive image prompt (3-5 keywords) that an AI image generator can use to create a relevant illustration.
+- Conclude with a short quiz (2-3 multiple-choice questions) to test understanding.
 
-For each lesson, you must provide:
-- A unique, slug-like ID (e.g., 'introduction', 'sponsorship-basics').
-- A clear title.
-- Comprehensive content in Markdown format. Use headings, lists, and bold text to structure the information.
-- An estimated duration (e.g., "15 mins", "1 hour").
-- A short quiz with 2-3 multiple-choice questions to test understanding. Each question must have several options and a clearly indicated correct answer.
-
-The entire course must also include a final project that requires the student to apply what they've learned. The project should have a title and a detailed description of the requirements.
+The entire course must also include a final project that requires the student to apply what they've learned.
 
 Ensure the final output is a single, valid JSON object that adheres strictly to the output schema.`,
   prompt: `Generate a complete online course for the topic: {{{title}}}`,
@@ -95,10 +119,44 @@ const generateCourseContentFlow = ai.defineFlow(
     outputSchema: GenerateCourseContentOutputSchema,
   },
   async (input) => {
-    const { output } = await coursePrompt(input);
-    if (!output) {
-      throw new Error('Failed to get a valid response from the AI model.');
+    // 1. Generate the course structure and text content
+    const { output: courseStructure } = await coursePrompt(input);
+    if (!courseStructure) {
+      throw new Error('Failed to generate course structure from the AI model.');
     }
-    return output;
+
+    // 2. Generate images for each page of each lesson in parallel
+    const illustratedLessons = await Promise.all(
+        courseStructure.lessons.map(async (lesson) => {
+            const illustratedPages = await Promise.all(
+                lesson.pages.map(async (page) => {
+                    try {
+                        const { media } = await ai.generate({
+                            model: 'googleai/gemini-2.0-flash-preview-image-generation',
+                            prompt: `A professional, clean, abstract illustration for a business course, representing: ${page.imagePrompt}`,
+                            config: { responseModalities: ['TEXT', 'IMAGE'] },
+                        });
+                        return {
+                            content: page.content,
+                            imageUrl: media?.url || 'https://placehold.co/600x400.png',
+                        };
+                    } catch (e) {
+                        console.warn(`Image generation failed for prompt: "${page.imagePrompt}". Using placeholder.`);
+                        return {
+                            content: page.content,
+                            imageUrl: 'https://placehold.co/600x400.png', // Fallback placeholder
+                        };
+                    }
+                })
+            );
+            return { ...lesson, pages: illustratedPages };
+        })
+    );
+
+    // 3. Assemble the final course object
+    return {
+        ...courseStructure,
+        lessons: illustratedLessons,
+    };
   }
 );

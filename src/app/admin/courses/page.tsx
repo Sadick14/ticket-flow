@@ -2,11 +2,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAppContext } from '@/context/app-context';
-import type { Course, Lesson as LessonType } from '@/lib/types';
+import type { Course, Lesson as LessonType, Page as PageType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -31,7 +31,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { PlusCircle, Edit, Trash2, Loader2, BookOpen, ToggleLeft, ToggleRight, Star, TrendingUp, Wand2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, BookOpen, ToggleLeft, ToggleRight, Wand2, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUploader } from '@/components/image-uploader';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -40,18 +40,24 @@ import { Switch } from '@/components/ui/switch';
 import { generateCourseContent } from '@/ai/flows/generate-course-content';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Separator } from '@/components/ui/separator';
+import ReactMarkdown from 'react-markdown';
 
+
+const pageSchema = z.object({
+  content: z.string().min(1, 'Page content cannot be empty.'),
+  imageUrl: z.string().optional(),
+});
 
 const lessonSchema = z.object({
     id: z.string(),
     title: z.string().min(3, 'Title is required.'),
-    content: z.string().min(10, 'Content is required'),
     duration: z.string().min(1, 'Duration is required.'),
     quiz: z.array(z.object({
         question: z.string(),
         options: z.array(z.string()),
         correctAnswer: z.string(),
     })).optional(),
+    pages: z.array(pageSchema).min(1, 'Lesson must have at least one page.'),
 });
 
 const projectSchema = z.object({
@@ -106,6 +112,11 @@ function CourseForm({ course, onFinished }: { course?: Course, onFinished: () =>
       lessons: [],
       project: { title: '', description: '' },
     },
+  });
+
+  const { fields: lessonFields, append: appendLesson, remove: removeLesson } = useFieldArray({
+    control: form.control,
+    name: 'lessons'
   });
 
   const handleGenerateCourse = async () => {
@@ -200,26 +211,58 @@ function CourseForm({ course, onFinished }: { course?: Course, onFinished: () =>
             )}/>
         </div>
         
-        <Accordion type="single" collapsible>
-            <AccordionItem value="lessons">
-                <AccordionTrigger>View/Edit Lessons ({form.watch('lessons')?.length || 0})</AccordionTrigger>
-                <AccordionContent className="p-1">
-                   {form.watch('lessons')?.map((lesson, index) => (
-                     <div key={index} className="p-2 border-b">
-                       <p className="font-semibold">{index + 1}. {lesson.title}</p>
-                       <p className="text-xs text-muted-foreground">{lesson.duration}</p>
-                     </div>
-                   ))}
-                </AccordionContent>
-            </AccordionItem>
-             <AccordionItem value="project">
-                <AccordionTrigger>View/Edit Final Project</AccordionTrigger>
-                <AccordionContent className="p-1">
-                   <p className="font-semibold">{form.watch('project')?.title}</p>
-                   <p className="text-xs text-muted-foreground line-clamp-2">{form.watch('project')?.description}</p>
-                </AccordionContent>
-            </AccordionItem>
-        </Accordion>
+        <Card>
+            <CardHeader>
+                <CardTitle>Curriculum</CardTitle>
+                <CardDescription>Manage the lessons and final project for this course.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Accordion type="multiple" className="w-full">
+                    <AccordionItem value="lessons">
+                        <AccordionTrigger>Lessons ({lessonFields.length})</AccordionTrigger>
+                        <AccordionContent className="p-1 space-y-4">
+                           {lessonFields.map((lesson, lessonIndex) => (
+                             <Accordion key={lesson.id} type="single" collapsible className="border rounded-md px-4">
+                                <AccordionItem value={`lesson-${lessonIndex}`}>
+                                    <AccordionTrigger>
+                                        <div className="flex justify-between items-center w-full pr-4">
+                                            <span className="font-semibold">{lessonIndex + 1}. {form.watch(`lessons.${lessonIndex}.title`)}</span>
+                                            <Badge variant="outline">{form.watch(`lessons.${lessonIndex}.duration`)}</Badge>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="space-y-4 pt-4">
+                                       <FormField control={form.control} name={`lessons.${lessonIndex}.title`} render={({field}) => (
+                                         <FormItem><FormLabel>Lesson Title</FormLabel><FormControl><Input {...field}/></FormControl><FormMessage/></FormItem>
+                                       )}/>
+                                        {lesson.pages.map((page, pageIndex) => (
+                                           <div key={pageIndex} className="p-3 border rounded-md bg-muted/50">
+                                             <Label className="text-sm font-semibold">Page {pageIndex + 1}</Label>
+                                             {page.imageUrl && <Image src={page.imageUrl} alt={`Illustration for page ${pageIndex+1}`} width={300} height={200} className="my-2 rounded-md object-cover"/>}
+                                             <FormField control={form.control} name={`lessons.${lessonIndex}.pages.${pageIndex}.content`} render={({field}) => (
+                                                <FormItem><FormLabel>Page Content</FormLabel><FormControl><Textarea {...field} rows={8}/></FormControl><FormMessage/></FormItem>
+                                             )}/>
+                                           </div>
+                                        ))}
+                                    </AccordionContent>
+                                </AccordionItem>
+                             </Accordion>
+                           ))}
+                        </AccordionContent>
+                    </AccordionItem>
+                     <AccordionItem value="project">
+                        <AccordionTrigger>Final Project</AccordionTrigger>
+                        <AccordionContent className="p-1 pt-4 space-y-4">
+                           <FormField control={form.control} name="project.title" render={({field}) => (
+                             <FormItem><FormLabel>Project Title</FormLabel><FormControl><Input {...field}/></FormControl><FormMessage/></FormItem>
+                           )}/>
+                            <FormField control={form.control} name="project.description" render={({field}) => (
+                             <FormItem><FormLabel>Project Description</FormLabel><FormControl><Textarea {...field} rows={6}/></FormControl><FormMessage/></FormItem>
+                           )}/>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
+            </CardContent>
+        </Card>
 
         <DialogFooter>
           <Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}{isEditMode ? 'Save Changes' : 'Create Course'}</Button>
@@ -275,7 +318,7 @@ export default function AdminCoursesPage() {
           <DialogTrigger asChild>
             <Button onClick={() => handleOpenForm()}><PlusCircle className="mr-2 h-4 w-4" /> Add Course</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingCourse ? 'Edit Course' : 'Add New Course'}</DialogTitle>
                <DialogDescription>

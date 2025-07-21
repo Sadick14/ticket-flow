@@ -97,11 +97,16 @@ export interface QuizQuestion {
   correctAnswer: string;
 }
 
+export interface Page {
+  content: string; // Markdown content for one page of a lesson
+  imageUrl?: string; // URL for an illustrative image
+}
+
 export interface Lesson {
   id: string;
   title: string;
-  content: string; // Markdown
   duration: string; // e.g., "15 mins"
+  pages: Page[]; // A lesson can have multiple pages
   quiz: QuizQuestion[];
 }
 
