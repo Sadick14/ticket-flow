@@ -41,6 +41,7 @@ import { generateCourseContent } from '@/ai/flows/generate-course-content';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Separator } from '@/components/ui/separator';
 import ReactMarkdown from 'react-markdown';
+import { Label } from '@/components/ui/label';
 
 
 const pageSchema = z.object({
