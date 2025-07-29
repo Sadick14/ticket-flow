@@ -15,7 +15,8 @@ import {
   DialogFooter,
   DialogTitle,
   DialogTrigger,
-  DialogDescription
+  DialogDescription,
+  DialogClose
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -318,7 +319,12 @@ function CourseForm({ course, onFinished }: { course?: Course, onFinished: () =>
         </Card>
 
         <DialogFooter>
-          <Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}{isEditMode ? 'Save Changes' : 'Create Course'}</Button>
+          <DialogClose asChild>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+              {isEditMode ? 'Save Changes' : 'Create Course'}
+            </Button>
+          </DialogClose>
         </DialogFooter>
       </form>
     </Form>
@@ -327,17 +333,14 @@ function CourseForm({ course, onFinished }: { course?: Course, onFinished: () =>
 
 export default function AdminCoursesPage() {
   const { courses, loading, deleteCourse, updateCourse } = useAppContext();
-  const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | undefined>(undefined);
   const { toast } = useToast();
 
   const handleOpenForm = (course?: Course) => {
     setEditingCourse(course);
-    setIsFormOpen(true);
   };
 
   const handleCloseForm = () => {
-    setIsFormOpen(false);
     setEditingCourse(undefined);
   };
 
@@ -367,7 +370,7 @@ export default function AdminCoursesPage() {
           <h1 className="text-2xl font-bold">Course Management</h1>
           <p className="text-muted-foreground">Create and manage courses for your users.</p>
         </div>
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <Dialog onOpenChange={(isOpen) => !isOpen && handleCloseForm()}>
           <DialogTrigger asChild>
             <Button onClick={() => handleOpenForm()}><PlusCircle className="mr-2 h-4 w-4" /> Add Course</Button>
           </DialogTrigger>
@@ -421,7 +424,18 @@ export default function AdminCoursesPage() {
                       </TableCell>
                       <TableCell><Badge variant="secondary">{course.price === 0 ? 'Free' : `GH₵${(course.price/100).toFixed(2)}`}</Badge></TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenForm(course)}><Edit className="h-4 w-4"/></Button>
+                        <Dialog onOpenChange={(isOpen) => !isOpen && handleCloseForm()}>
+                           <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => handleOpenForm(course)}><Edit className="h-4 w-4"/></Button>
+                           </DialogTrigger>
+                           <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle>Edit Course</DialogTitle>
+                                <DialogDescription>Edit the course details.</DialogDescription>
+                              </DialogHeader>
+                              <CourseForm course={course} onFinished={handleCloseForm} />
+                           </DialogContent>
+                        </Dialog>
                         <AlertDialog>
                           <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
                           <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the course.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(course.id)}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent>

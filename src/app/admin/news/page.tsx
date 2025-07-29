@@ -15,6 +15,7 @@ import {
   DialogFooter,
   DialogTitle,
   DialogTrigger,
+  DialogClose
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -213,10 +214,12 @@ function NewsArticleForm({ article, onFinished }: { article?: NewsArticle, onFin
           </Button>
         </div>
         <DialogFooter>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isEditMode ? 'Save Changes' : 'Create Article'}
-          </Button>
+          <DialogClose asChild>
+            <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isEditMode ? 'Save Changes' : 'Create Article'}
+            </Button>
+          </DialogClose>
         </DialogFooter>
       </form>
     </Form>
@@ -225,17 +228,14 @@ function NewsArticleForm({ article, onFinished }: { article?: NewsArticle, onFin
 
 export default function AdminNewsPage() {
   const { news, loading, deleteNewsArticle, updateNewsArticle } = useAppContext();
-  const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<NewsArticle | undefined>(undefined);
   const { toast } = useToast();
 
   const handleOpenForm = (article?: NewsArticle) => {
     setEditingArticle(article);
-    setIsFormOpen(true);
   };
 
   const handleCloseForm = () => {
-    setIsFormOpen(false);
     setEditingArticle(undefined);
   };
 
@@ -265,14 +265,14 @@ export default function AdminNewsPage() {
           <h1 className="text-2xl font-bold">News Management</h1>
           <p className="text-muted-foreground">Create and manage news articles for the homepage.</p>
         </div>
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <Dialog>
           <DialogTrigger asChild>
             <Button onClick={() => handleOpenForm()}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Article
             </Button>
           </DialogTrigger>
-          <DialogContent onInteractOutside={(e) => e.preventDefault()} className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingArticle ? 'Edit Article' : 'Add New Article'}</DialogTitle>
             </DialogHeader>
@@ -333,9 +333,19 @@ export default function AdminNewsPage() {
                       </TableCell>
                       <TableCell>{format(new Date(article.publishedDate), 'MMM dd, yyyy')}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenForm(article)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => handleOpenForm(article)}>
+                                  <Edit className="h-4 w-4" />
+                              </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                              <DialogHeader>
+                                  <DialogTitle>Edit Article</DialogTitle>
+                              </DialogHeader>
+                              <NewsArticleForm article={article} onFinished={handleCloseForm} />
+                          </DialogContent>
+                        </Dialog>
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
