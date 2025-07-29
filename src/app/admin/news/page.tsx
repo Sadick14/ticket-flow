@@ -265,7 +265,7 @@ export default function AdminNewsPage() {
           <h1 className="text-2xl font-bold">News Management</h1>
           <p className="text-muted-foreground">Create and manage news articles for the homepage.</p>
         </div>
-        <Dialog open={isFormOpen} onOpenChange={handleCloseForm}>
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => handleOpenForm()}>
               <PlusCircle className="mr-2 h-4 w-4" />
