@@ -110,8 +110,8 @@ export function Header() {
             <Button variant="ghost" asChild>
               <Link href="/news">News</Link>
             </Button>
-            <Button variant="ghost" asChild>
-              <Link href="/my-page">My Page</Link>
+             <Button variant="ghost" asChild>
+              <Link href="/create">For Organizers</Link>
             </Button>
             <Button variant="ghost" asChild>
               <Link href="/pricing">Pricing</Link>
@@ -123,7 +123,7 @@ export function Header() {
              {user ? (
                 <>
                     <Button asChild size="sm">
-                        <Link href="/dashboard/create"><PlusCircle className="mr-2 h-4 w-4" /> Create</Link>
+                        <Link href="/dashboard"><LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard</Link>
                     </Button>
                     <UserMenu />
                 </>
@@ -139,14 +139,7 @@ export function Header() {
           
           {/* Mobile Navigation */}
           <div className="flex lg:hidden items-center gap-2">
-            {user && (
-              <Button asChild size="sm" variant="outline" className="px-3">
-                <Link href="/dashboard/create">
-                  <PlusCircle className="h-4 w-4" />
-                  <span className="ml-1 inline">Create</span>
-                </Link>
-              </Button>
-            )}
+            {user && <UserMenu />}
             <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-9 w-9">
@@ -158,7 +151,7 @@ export function Header() {
                  <SheetHeader className="sr-only">
                   <SheetTitle>Mobile Navigation Menu</SheetTitle>
                   <SheetDescription>
-                    Main navigation links for TicketFlow, including pages for home, events, news, tickets, and user account management.
+                    Main navigation links for TicketFlow, including pages for home, events, news, and user account management.
                   </SheetDescription>
                 </SheetHeader>
                 <div className="flex flex-col h-full p-4">
@@ -183,9 +176,9 @@ export function Header() {
                         <Newspaper className="h-5 w-5" />
                         <span>News</span>
                       </NavLink>
-                      <NavLink href="/my-page" onClick={closeMobileMenu}>
-                        <User className="h-5 w-5" />
-                        <span>My Page</span>
+                       <NavLink href="/create" onClick={closeMobileMenu}>
+                        <PlusCircle className="h-5 w-5" />
+                        <span>For Organizers</span>
                       </NavLink>
                       <NavLink href="/pricing" onClick={closeMobileMenu}>
                         <DollarSign className="h-5 w-5" />
