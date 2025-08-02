@@ -120,7 +120,7 @@ export default function HomePageClient() {
       </div>
        <section className="py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Card className="text-center p-8 md:p-12 bg-gradient-to-br from-primary/80 to-accent/80 text-primary-foreground shadow-xl">
+          <Card className="text-center p-8 md:p-12 bg-primary text-primary-foreground shadow-xl">
             <CardHeader>
               <CardTitle className="text-3xl font-bold">Ready to Host? Our Audience is Waiting.</CardTitle>
               <CardDescription className="text-primary-foreground/80 mt-2 text-lg">
