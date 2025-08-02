@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Ticket as TicketIcon, Menu, LogOut, LayoutDashboard, Shield, PlusCircle, Home, Newspaper, DollarSign, User, BookOpen } from 'lucide-react';
+import { Ticket as TicketIcon, Menu, LogOut, LayoutDashboard, Shield, PlusCircle, Home, Newspaper, DollarSign, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import {
@@ -108,9 +108,6 @@ export function Header() {
               <Link href="/events">Events</Link>
             </Button>
             <Button variant="ghost" asChild>
-              <Link href="/courses">Courses</Link>
-            </Button>
-            <Button variant="ghost" asChild>
               <Link href="/news">News</Link>
             </Button>
             <Button variant="ghost" asChild>
@@ -181,10 +178,6 @@ export function Header() {
                       <NavLink href="/events" onClick={closeMobileMenu}>
                         <TicketIcon className="h-5 w-5" />
                         <span>Browse Events</span>
-                      </NavLink>
-                      <NavLink href="/courses" onClick={closeMobileMenu}>
-                        <BookOpen className="h-5 w-5" />
-                        <span>Courses</span>
                       </NavLink>
                       <NavLink href="/news" onClick={closeMobileMenu}>
                         <Newspaper className="h-5 w-5" />

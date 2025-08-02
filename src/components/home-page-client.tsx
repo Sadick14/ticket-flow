@@ -235,7 +235,7 @@ export default function HomePageClient() {
                         Start Creating
                     </Link>
                     </Button>
-                    <Button asChild variant="outline" size="lg" className="border-2 border-white/30 text-primary hover:bg-white/10 backdrop-blur-sm">
+                    <Button asChild variant="outline" size="lg" className="border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm">
                     <Link href="/events">
                         Explore Events
                     </Link>
@@ -414,9 +414,8 @@ export default function HomePageClient() {
                   <Image 
                     src={featuredArticle.imageUrl}
                     alt={featuredArticle.title}
-                    layout="fill"
-                    objectFit="cover"
-                    className="transition-transform duration-300 hover:scale-105"
+                    fill
+                    className="object-cover transition-transform duration-300 hover:scale-105"
                   />
                 </div>
                 <div className="p-8 lg:p-12">
