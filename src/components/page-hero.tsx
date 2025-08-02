@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import type { ReactNode } from 'react';
 
 interface PageHeroProps {
   title: string;
@@ -18,6 +19,7 @@ interface PageHeroProps {
   secondaryCtaLink?: string;
   height?: 'sm' | 'md' | 'lg' | 'xl';
   overlay?: 'light' | 'dark' | 'gradient';
+  children?: ReactNode;
 }
 
 export function PageHero({
@@ -31,7 +33,8 @@ export function PageHero({
   secondaryCtaText,
   secondaryCtaLink,
   height = 'xl',
-  overlay = 'dark'
+  overlay = 'dark',
+  children
 }: PageHeroProps) {
   const heightClasses = {
     sm: 'h-[400px] min-h-[400px]',
@@ -101,6 +104,8 @@ export function PageHero({
             </p>
           </div>
           
+          {children}
+
           {(ctaText || secondaryCtaText) && (
             <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
               {ctaText && ctaLink && (

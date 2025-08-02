@@ -51,8 +51,28 @@ export default function HomePageClient() {
       <PageHero
         title="Never Miss a Beat"
         description="Your hub for all events in Ghana and beyond. Discover what's happening now."
-        height="lg"
-      />
+        height="xl"
+        overlay="dark"
+      >
+        <div className="mt-8 flex justify-center">
+            <div className="relative w-full max-w-2xl bg-white/10 backdrop-blur-sm p-2 rounded-full">
+                <div className="relative flex items-center">
+                    <Search className="absolute left-4 h-5 w-5 text-gray-300" />
+                    <Input 
+                        placeholder="Search events by name or location..."
+                        className="pl-12 pr-28 h-12 w-full rounded-full bg-transparent text-white placeholder:text-gray-300 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+                        <Button asChild size="lg" className="rounded-full">
+                          <Link href={`/events?search=${searchTerm}`}>Find Events</Link>
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </PageHero>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
@@ -61,23 +81,6 @@ export default function HomePageClient() {
           <p className="mt-4 max-w-2xl mx-auto text-xl text-muted-foreground">
             Explore our curated feed of events and industry news.
           </p>
-        </div>
-
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-            <div className="relative flex-grow">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input 
-                  placeholder="Search events by name or location..."
-                  className="pl-9 w-full rounded-full"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </div>
-            <div className="flex-shrink-0">
-               <Button asChild size="lg" className="w-full">
-                  <Link href="/events">Find Your Next Experience <ArrowRight className="ml-2 h-4 w-4"/></Link>
-               </Button>
-            </div>
         </div>
 
         <div className="mb-8">
