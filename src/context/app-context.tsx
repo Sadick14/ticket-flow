@@ -218,15 +218,52 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  const notifyAllSubscribers = async (item: Event | NewsArticle, type: 'event' | 'news') => {
+    // Combine users and launch subscribers, ensuring unique emails
+    const allUserEmails = users.map(u => u.email).filter(Boolean) as string[];
+    const allSubscriberEmails = launchSubscribers.map(s => s.email);
+    const uniqueEmails = [...new Set([...allUserEmails, ...allSubscriberEmails])];
+    
+    if (uniqueEmails.length === 0) return;
+
+    const emailData = {
+      type: 'template',
+      recipientType: 'custom',
+      recipients: uniqueEmails,
+      senderRole: 'admin',
+      templateId: 'newContentAnnouncement',
+      templateContent: {
+        subject: type === 'event' 
+          ? `🎉 New Event: ${item.name}` 
+          : `📰 New Article: ${item.title}`,
+        headline: type === 'event' ? "Don't Miss This Event!" : "Latest News & Insights",
+        contentTitle: item.title || (item as Event).name,
+        imageUrl: item.imageUrl,
+        description: item.description.substring(0, 150) + '...',
+        buttonText: type === 'event' ? 'View Event & Register' : 'Read Full Article',
+        buttonUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${type === 'event' ? 'events' : 'news'}/${item.id}`
+      }
+    };
+    
+    // Fire-and-forget the email sending API call
+    fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emailData),
+    }).catch(error => console.error("Failed to trigger email notification:", error));
+  };
+
 
   const addEvent = async (eventData: Omit<Event, 'id' | 'collaboratorIds' | 'status'>) => {
     try {
-      await addDoc(collection(db, 'events'), { 
+      const docRef = await addDoc(collection(db, 'events'), { 
         ...eventData, 
         collaboratorIds: [],
         status: 'active' 
       });
       await fetchAllData();
+      // Notify subscribers after event is created
+      notifyAllSubscribers({ id: docRef.id, ...eventData }, 'event');
     } catch (error) {
        console.error("Error adding event:", error);
        throw error;
@@ -459,8 +496,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // News Functions
   const addNewsArticle = async (articleData: Omit<NewsArticle, 'id'>) => {
     try {
-      await addDoc(collection(db, 'news'), articleData);
+      const docRef = await addDoc(collection(db, 'news'), articleData);
       await fetchAllData();
+      notifyAllSubscribers({ id: docRef.id, ...articleData }, 'news');
     } catch (error) {
       console.error("Error adding news article:", error);
       throw error;
@@ -506,8 +544,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const q = query(collection(db, 'launch_subscribers'), where('email', '==', email), limit(1));
     const querySnapshot = await getDocs(q);
     if (!querySnapshot.empty) {
-      // Email already exists, but we don't throw an error to avoid crashes.
-      console.log(`Email ${email} is already subscribed.`);
       throw new Error("This email is already subscribed.");
     }
     
@@ -520,8 +556,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const deleteSubscriber = async (id: string) => {
-    const subToDelete = launchSubscribers.find(s => s.id === id);
-    if (!subToDelete) return;
     await deleteDoc(doc(db, 'launch_subscribers', id));
     setLaunchSubscribers(prev => prev.filter(s => s.id !== id));
   };
@@ -529,17 +563,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const bulkAddSubscribers = async (subscribers: { email: string; name?: string }[]) => {
     const batch = writeBatch(db);
     const subscribersRef = collection(db, "launch_subscribers");
-    const existingEmails = new Set(launchSubscribers.map(s => s.email));
 
     for (const sub of subscribers) {
-        if (sub.email && !existingEmails.has(sub.email)) {
+        if (sub.email && !launchSubscribers.some(s => s.email === sub.email)) {
             const docRef = doc(subscribersRef);
             batch.set(docRef, {
                 email: sub.email,
                 name: sub.name || '',
                 subscribedAt: serverTimestamp()
             });
-            existingEmails.add(sub.email); // Prevent duplicates within the same batch
         }
     }
     await batch.commit();

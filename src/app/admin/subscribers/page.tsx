@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { useDropzone } from 'react-dropzone';
 
 export default function AdminSubscribersPage() {
-  const { launchSubscribers, loading, addSubscriber, deleteSubscriber, bulkAddSubscribers } = useAppContext();
+  const { launchSubscribers, loading, addSubscriber, deleteSubscriber, bulkAddSubscribers } from useAppContext();
   const { toast } = useToast();
   const [isNotifying, setIsNotifying] = useState(false);
 

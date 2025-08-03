@@ -21,6 +21,7 @@ const emailWrapper = (title: string, content: string) => `
     .button { display: inline-block; background-color: #f76610; color: white !important; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 20px; }
     .footer { text-align: center; padding: 20px; color: #64748b; font-size: 14px; }
     .footer a { color: #f76610; text-decoration: none; }
+    .featured-image { max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 20px; }
   </style>
 </head>
 <body>
@@ -110,6 +111,31 @@ export const emailTemplates = {
       const text = `${headline}\n\n${intro}\n\n${feature1Title}\n${feature1Desc}\n\n${buttonText}: ${buttonUrl}`;
       return { subject, html, text };
     }
+  },
+  newContentAnnouncement: {
+    name: "New Content Announcement",
+    category: "announcement",
+    fields: {
+      subject: { label: "Subject", placeholder: "New Event: Event Name", defaultValue: "", type: "text" },
+      headline: { label: "Headline", placeholder: "Check out this new event!", defaultValue: "", type: "text" },
+      contentTitle: { label: "Content Title", placeholder: "Event or Article Title", defaultValue: "", type: "text" },
+      imageUrl: { label: "Image URL", placeholder: "https://...", defaultValue: "", type: "url" },
+      description: { label: "Short Description", placeholder: "A brief summary...", defaultValue: "", type: "textarea" },
+      buttonText: { label: "Button Text", placeholder: "View Event", defaultValue: "", type: "text" },
+      buttonUrl: { label: "Button URL", placeholder: "https://...", defaultValue: "", type: "url" },
+    },
+    generate: (content) => {
+      const { subject, headline, contentTitle, imageUrl, description, buttonText, buttonUrl } = content;
+      const html = emailWrapper(subject, `
+        <h2>${headline}</h2>
+        ${imageUrl ? `<img src="${imageUrl}" alt="${contentTitle}" class="featured-image">` : ''}
+        <h3>${contentTitle}</h3>
+        <p>${description.replace(/\n/g, '<br>')}</p>
+        <a href="${buttonUrl}" class="button">${buttonText}</a>
+      `);
+      const text = `${headline}\n\n${contentTitle}\n\n${description}\n\n${buttonText}: ${buttonUrl}`;
+      return { subject, html, text };
+    },
   },
   // --- Internal System Emails ---
   emailVerification: {
