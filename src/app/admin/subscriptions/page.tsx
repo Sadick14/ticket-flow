@@ -27,17 +27,24 @@ export default function AdminSubscriptionsPage() {
 
   const handleApprove = async (request: SubscriptionRequest) => {
     setProcessingId(request.id);
+    const user = getUserById(request.userId);
+    if (!user) {
+        toast({ variant: 'destructive', title: "Error", description: "Could not find user for this request."});
+        setProcessingId(null);
+        return;
+    }
+
     try {
-      await approveSubscriptionRequest(request.id, request.userId, request.plan);
+      await approveSubscriptionRequest(request.id, request.userId, request.plan, user.email, user.displayName);
       toast({
         title: "Subscription Approved!",
-        description: `User's plan has been upgraded to ${request.plan}.`
+        description: `User's plan has been upgraded to ${request.plan}.`,
       });
     } catch (error) {
        toast({
         variant: 'destructive',
         title: "Approval Failed",
-        description: "Could not approve the subscription."
+        description: "Could not approve the subscription.",
       });
     } finally {
         setProcessingId(null);
@@ -110,7 +117,7 @@ export default function AdminSubscriptionsPage() {
                                 <Badge variant="outline" className="font-mono">{request.bookingCode}</Badge>
                             </TableCell>
                              <TableCell>
-                                {format(parseISO(request.requestedAt), 'MMM dd, yyyy')}
+                                {request.requestedAt ? format(parseISO(request.requestedAt), 'MMM dd, yyyy') : 'N/A'}
                             </TableCell>
                              <TableCell className="text-right">
                                <Button 

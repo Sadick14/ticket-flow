@@ -41,7 +41,7 @@ const emailWrapper = (title: string, content: string) => `
 
 export interface EmailTemplate {
   name: string;
-  category: 'newsletter' | 'announcement';
+  category: 'newsletter' | 'announcement' | 'system';
   fields: {
     [key: string]: {
       label: string;
@@ -140,7 +140,7 @@ export const emailTemplates = {
   // --- Internal System Emails ---
   emailVerification: {
     name: "Email Verification",
-    category: "announcement",
+    category: "system",
     fields: {
       attendeeName: { label: 'Attendee Name', placeholder: '', defaultValue: '', type: 'text' },
       otpCode: { label: 'OTP Code', placeholder: '', defaultValue: '', type: 'text' },
@@ -160,7 +160,7 @@ export const emailTemplates = {
   },
   ticketConfirmation: {
     name: 'Ticket Confirmation',
-    category: 'announcement', // Not selectable in admin
+    category: 'system',
     fields: {
       eventName: { label: 'Event Name', placeholder: '', defaultValue: '', type: 'text'},
       eventDate: { label: 'Event Date', placeholder: '', defaultValue: '', type: 'text'},
@@ -183,7 +183,7 @@ export const emailTemplates = {
   },
   pendingPaymentInstructions: {
     name: 'Pending Payment Instructions',
-    category: 'announcement',
+    category: 'system',
     fields: {
       eventName: { label: 'Event Name', type: 'text', placeholder: '', defaultValue: '' },
       attendeeName: { label: 'Attendee Name', type: 'text', placeholder: '', defaultValue: '' },
@@ -209,9 +209,35 @@ export const emailTemplates = {
       return { subject, html, text };
     },
   },
+  subscriptionApproved: {
+    name: 'Subscription Approved',
+    category: 'system',
+    fields: {
+      userName: { label: 'User Name', type: 'text', placeholder: '', defaultValue: '' },
+      planName: { label: 'Plan Name', type: 'text', placeholder: '', defaultValue: '' },
+      planPrice: { label: 'Plan Price', type: 'text', placeholder: '', defaultValue: '' },
+      planBenefits: { label: 'Plan Benefits', type: 'textarea', placeholder: '', defaultValue: '' },
+    },
+    generate: (content) => {
+      const { userName, planName, planPrice, planBenefits } = content;
+      const subject = `✅ Your TicketFlow ${planName} Plan is Active!`;
+      const html = emailWrapper('Subscription Active!', `
+        <h2>Welcome to the ${planName} Plan, ${userName}!</h2>
+        <p>Your payment of <strong>${planPrice}</strong> has been confirmed, and your subscription is now active. You have unlocked new features to make your events even more successful.</p>
+        <h3>Your ${planName} Plan Benefits:</h3>
+        <ul>
+          ${planBenefits.split('\n').map(b => `<li>${b}</li>`).join('')}
+        </ul>
+        <p>You can start using these new features right away in your dashboard.</p>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="button">Go to Dashboard</a>
+      `);
+      const text = `Welcome to the ${planName} Plan, ${userName}!\n\nYour subscription is now active. Here are your benefits:\n${planBenefits}\n\nGo to your dashboard to start using them: ${process.env.NEXT_PUBLIC_APP_URL}/dashboard`;
+      return { subject, html, text };
+    },
+  },
   eventReminder: {
     name: 'Event Reminder',
-    category: 'announcement', // Not selectable in admin
+    category: 'system',
     fields: {
       eventName: { label: 'Event Name', placeholder: '', defaultValue: '', type: 'text'},
       eventDate: { label: 'Event Date', placeholder: '', defaultValue: '', type: 'text'},
@@ -234,7 +260,7 @@ export const emailTemplates = {
   },
   eventUpdate: {
     name: 'Event Update',
-    category: 'announcement', // Not selectable in admin
+    category: 'system',
     fields: {
         eventName: { label: 'Event Name', placeholder: '', defaultValue: '', type: 'text' },
         updateMessage: { label: 'Update Message', placeholder: '', defaultValue: '', type: 'textarea' },

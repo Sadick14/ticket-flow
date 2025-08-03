@@ -5,6 +5,8 @@ import { createContext, useContext, useState, ReactNode, useEffect, useCallback 
 import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission, Message, FeaturedArticle, SubscriptionRequest, SubscriptionPlan, Course, Lesson, CourseEnrollmentRequest } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy, serverTimestamp, writeBatch, documentId, setDoc } from 'firebase/firestore';
+import { renderTemplate } from '@/lib/email-templates';
+import { PaymentCalculator } from '@/lib/payment-config';
 
 interface AppContextType {
   events: Event[];
@@ -62,7 +64,7 @@ interface AppContextType {
   bulkAddSubscribers: (subscribers: {email: string, name?: string}[]) => Promise<void>;
   // Subscription Requests
   createSubscriptionRequest: (userId: string, plan: SubscriptionPlan, price: number, bookingCode: string) => Promise<void>;
-  approveSubscriptionRequest: (requestId: string, userId: string, plan: SubscriptionPlan) => Promise<void>;
+  approveSubscriptionRequest: (requestId: string, userId: string, plan: SubscriptionPlan, userEmail: string | null, userName: string | null) => Promise<void>;
   getUserSubscriptionRequests: (email: string) => Promise<SubscriptionRequest[]>;
   // Course Enrollment Requests
   createCourseEnrollmentRequest: (userId: string, courseId: string, courseTitle: string, price: number, bookingCode: string) => Promise<void>;
@@ -140,7 +142,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setCourses(fetchedCourses);
         setLaunchSubscribers(launchSubscribersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LaunchSubscriber)));
         setContactSubmissions(contactSubmissionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ContactSubmission)));
-        setSubscriptionRequests(subscriptionRequestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SubscriptionRequest)));
+        
+        setSubscriptionRequests(subscriptionRequestsSnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                ...data,
+                id: doc.id,
+                requestedAt: data.requestedAt?.toDate().toISOString() || new Date().toISOString()
+            } as SubscriptionRequest
+        }));
+
         setCourseEnrollmentRequests(courseEnrollmentRequestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CourseEnrollmentRequest)));
         
         if (featuredArticleDoc.exists()) {
@@ -263,7 +274,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
       await fetchAllData();
       // Notify subscribers after event is created
-      notifyAllSubscribers({ id: docRef.id, ...eventData }, 'event');
+      notifyAllSubscribers({ id: docRef.id, ...eventData, title: eventData.name }, 'event');
     } catch (error) {
        console.error("Error adding event:", error);
        throw error;
@@ -498,7 +509,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       const docRef = await addDoc(collection(db, 'news'), articleData);
       await fetchAllData();
-      notifyAllSubscribers({ id: docRef.id, ...articleData }, 'news');
+      notifyAllSubscribers({ id: docRef.id, ...articleData, name: articleData.title }, 'news');
     } catch (error) {
       console.error("Error adding news article:", error);
       throw error;
@@ -592,7 +603,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await fetchAllData();
   };
 
-  const approveSubscriptionRequest = async (requestId: string, userId: string, plan: SubscriptionPlan) => {
+  const approveSubscriptionRequest = async (requestId: string, userId: string, plan: SubscriptionPlan, userEmail: string | null, userName: string | null) => {
     const batch = writeBatch(db);
     const requestRef = doc(db, 'subscription_requests', requestId);
     batch.update(requestRef, { status: 'approved', approvedAt: serverTimestamp() });
@@ -601,6 +612,35 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     batch.update(userRef, { subscriptionPlan: plan });
 
     await batch.commit();
+
+    if (userEmail) {
+      const planBenefits = {
+        'Essential': 'Sell Paid Tickets\n3% commission rate\nPromotional Codes',
+        'Pro': 'Lowest commission (1%)\nMarketing & Analytics Tools\nEmbeddable Widget\nPriority Support',
+      };
+      const planPrices = { 'Essential': 5000, 'Pro': 15000 };
+
+      const emailContent = renderTemplate('subscriptionApproved', {
+        userName: userName || 'there',
+        planName: plan,
+        planPrice: PaymentCalculator.formatCurrency(planPrices[plan as keyof typeof planPrices] || 0, 'GHS'),
+        planBenefits: planBenefits[plan as keyof typeof planBenefits] || 'Custom benefits as discussed.'
+      });
+
+      fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              type: 'template',
+              templateId: 'subscriptionApproved',
+              templateContent: emailContent, // Pass the whole object
+              recipientType: 'custom',
+              recipients: [userEmail],
+              senderRole: 'admin',
+          }),
+      }).catch(err => console.error("Failed to send approval email:", err));
+    }
+
     await fetchAllData();
   };
   
