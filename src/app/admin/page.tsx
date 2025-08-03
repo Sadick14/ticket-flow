@@ -13,6 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+
 
 interface AnalyticsData {
     activeUsers: number;
@@ -48,8 +50,9 @@ export default function AdminDashboardPage() {
 
   const subscriptionPrices = {
     'Free': 0,
-    'Starter': 10, // Assuming $10/month
-    'Pro': 25,     // Assuming $25/month
+    'Essential': 10,
+    'Pro': 25,     
+    'Custom': 0,
   };
 
   const totalSubscriptionRevenue = useMemo(() => {
@@ -181,8 +184,8 @@ export default function AdminDashboardPage() {
             {analytics === null && !analyticsError ? (
                 <Loader2 className="h-6 w-6 animate-spin" />
             ) : analyticsError ? (
-                <div className="text-destructive text-sm" title={analyticsError}>
-                    <AlertCircle className="h-6 w-6" />
+                <div className="text-destructive text-sm flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5" /> Not Configured
                 </div>
             ) : (
                 <div className="text-2xl font-bold">{analytics?.activeUsers}</div>
@@ -191,6 +194,15 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
       </div>
+       {analyticsError && (
+        <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Analytics Service Error</AlertTitle>
+            <AlertDescription>
+                {analyticsError} Please ensure Google Analytics credentials (GA_PROPERTY_ID, GA_CLIENT_EMAIL, GA_PRIVATE_KEY) are set in your environment variables.
+            </AlertDescription>
+        </Alert>
+       )}
       <div className="grid gap-6 lg:grid-cols-2">
          <Card>
             <CardHeader>

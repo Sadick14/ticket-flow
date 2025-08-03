@@ -6,18 +6,19 @@ import { useAppContext } from '@/context/app-context';
 import { EventCard } from '@/components/event-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { Search, CalendarX, ArrowRight } from 'lucide-react';
-import type { Event, NewsArticle } from '@/lib/types';
+import { Search, CalendarX, ArrowRight, Star } from 'lucide-react';
+import type { Event, NewsArticle, UserProfile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { PageHero } from '@/components/page-hero';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CategoryFilters } from '@/components/category-filters';
 import { NewsCard } from './news-card';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
+
 
 export default function HomePageClient() {
-  const { events, news, loading } = useAppContext();
+  const { events, news, users, loading } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All Events');
 
@@ -31,6 +32,16 @@ export default function HomePageClient() {
       )
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [events, searchTerm, activeCategory]);
+
+  const popularEvents = useMemo(() => {
+    const creatorIdsForPaidPlans = new Set(
+        users
+            .filter(user => user.subscriptionPlan === 'Essential' || user.subscriptionPlan === 'Pro')
+            .map(user => user.uid)
+    );
+    return events.filter(event => creatorIdsForPaidPlans.has(event.creatorId));
+  }, [events, users]);
+
 
   const allContent = useMemo(() => {
     const combined = [
@@ -73,6 +84,38 @@ export default function HomePageClient() {
             </div>
         </div>
       </PageHero>
+
+       {popularEvents.length > 0 && (
+        <section className="py-16 bg-background">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold text-foreground">Popular Events</h2>
+              <p className="text-muted-foreground mt-1">Check out what's trending with our community.</p>
+            </div>
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              className="w-full"
+            >
+              <CarouselContent>
+                {popularEvents.map((event) => (
+                  <CarouselItem key={event.id} className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                    <div className="p-1 h-full">
+                      <EventCard event={event} />
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="hidden sm:flex" />
+              <CarouselNext className="hidden sm:flex" />
+            </Carousel>
+          </div>
+        </section>
+      )}
+
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">

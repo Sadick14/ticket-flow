@@ -18,7 +18,7 @@ function formatPrivateKey(key: string) {
 
 export async function GET(request: NextRequest) {
   if (!checkCredentials()) {
-    console.error('Google Analytics credentials are not set in environment variables.');
+    console.warn('Google Analytics credentials are not set in environment variables.');
     return NextResponse.json(
       { error: 'Analytics service is not configured on the server.' },
       { status: 500 }
