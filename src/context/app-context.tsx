@@ -730,9 +730,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-
-  return (
-    <AppContext.Provider value={{ 
+  const contextValue: AppContextType = {
       events, 
       tickets, 
       news,
@@ -782,7 +780,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       replyToSubmission,
       getChatHistory,
       saveChatMessage
-    }}>
+  };
+
+  return (
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );
