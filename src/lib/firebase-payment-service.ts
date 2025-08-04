@@ -269,16 +269,18 @@ export class FirebasePaymentService {
 
   static async getPendingPayouts(schedule?: string): Promise<Payout[]> {
     try {
+      // Simplified query to avoid composite index requirement.
+      // We will filter by date on the client-side.
       let payoutsQuery = query(
         collection(db, 'payouts'),
         where('status', '==', 'pending'),
-        where('scheduledDate', '<=', Timestamp.now())
+        orderBy('scheduledDate', 'asc') // Order by date to process oldest first
       );
 
-      // Filtering by schedule on client side for now as it requires composite index
       const querySnapshot = await getDocs(payoutsQuery);
+      const now = new Date();
       
-      return querySnapshot.docs.map(doc => {
+      const allPendingPayouts = querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
           ...data,
@@ -288,11 +290,16 @@ export class FirebasePaymentService {
           createdAt: data.createdAt?.toDate?.().toISOString() || new Date().toISOString(),
         } as Payout;
       });
+
+      // Filter for payouts that are due
+      return allPendingPayouts.filter(payout => new Date(payout.scheduledDate) <= now);
+      
     } catch (error) {
       console.error('Error getting pending payouts:', error);
       throw error;
     }
   }
+
 
   static async getCreatorPayouts(
     creatorId: string, 
