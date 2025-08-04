@@ -35,7 +35,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Event, SubscriptionPlan } from '@/lib/types';
 import { ImageUploader } from '@/components/image-uploader';
-import { AiAssistant } from './ai-assistant';
 
 const eventFormSchema = z.object({
   name: z.string().min(3, { message: 'Event name must be at least 3 characters.' }),
@@ -202,12 +201,6 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
   const watchVenueType = watchAllFields.venueType;
   const watchPrice = watchAllFields.price;
 
-  const aiAssistantEventDetails = {
-    name: watchAllFields.name,
-    category: watchAllFields.category,
-    location: watchAllFields.location,
-    capacity: watchAllFields.capacity,
-  };
 
   const handleGenerateDescription = async () => {
     setIsGenerating(true);
