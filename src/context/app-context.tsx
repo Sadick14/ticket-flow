@@ -620,24 +620,24 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       };
       const planPrices = { 'Essential': 5000, 'Pro': 15000 };
 
-      const emailContent = renderTemplate('subscriptionApproved', {
-        userName: userName || 'there',
-        planName: plan,
-        planPrice: PaymentCalculator.formatCurrency(planPrices[plan as keyof typeof planPrices] || 0, 'GHS'),
-        planBenefits: planBenefits[plan as keyof typeof planBenefits] || 'Custom benefits as discussed.'
-      });
+      const emailData = {
+        type: 'template',
+        recipientType: 'custom',
+        recipients: [userEmail],
+        senderRole: 'admin',
+        templateId: 'subscriptionApproved',
+        templateContent: {
+          userName: userName || 'there',
+          planName: plan,
+          planPrice: PaymentCalculator.formatCurrency(planPrices[plan as keyof typeof planPrices] || 0, 'GHS'),
+          planBenefits: planBenefits[plan as keyof typeof planBenefits] || 'Custom benefits as discussed.'
+        }
+      };
 
       fetch('/api/send-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-              type: 'template',
-              templateId: 'subscriptionApproved',
-              templateContent: emailContent, // Pass the whole object
-              recipientType: 'custom',
-              recipients: [userEmail],
-              senderRole: 'admin',
-          }),
+          body: JSON.stringify(emailData),
       }).catch(err => console.error("Failed to send approval email:", err));
     }
 
@@ -678,23 +678,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       adminReply: replyMessage,
       repliedAt: serverTimestamp()
     });
-    // Send email to user
-    await fetch('/api/send-email', {
+    
+    const emailData = {
+        type: 'template',
+        recipientType: 'custom',
+        recipients: [submission.email],
+        senderRole: 'admin',
+        templateId: 'simpleAnnouncement',
+        templateContent: {
+            subject: `Re: ${submission.subject}`,
+            headline: 'A reply from TicketFlow Support',
+            message: replyMessage,
+        }
+    };
+
+    fetch('/api/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            type: 'template',
-            templateId: 'simpleAnnouncement',
-            templateContent: {
-                subject: `Re: ${submission.subject}`,
-                headline: 'A reply from TicketFlow Support',
-                message: replyMessage,
-            },
-            recipientType: 'custom',
-            recipients: [submission.email],
-            senderRole: 'admin',
-        }),
-    });
+        body: JSON.stringify(emailData),
+    }).catch(err => console.error("Failed to send contact reply email:", err));
+    
     await fetchAllData();
   };
 
