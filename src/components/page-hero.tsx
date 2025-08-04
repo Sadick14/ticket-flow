@@ -44,7 +44,7 @@ export function PageHero({
   };
 
   const overlayClasses = {
-    dark: 'bg-black/95',
+    dark: 'bg-black/80',
   };
 
   return (
