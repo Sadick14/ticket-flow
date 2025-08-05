@@ -59,7 +59,13 @@ export class FirebasePaymentService {
         // 1. Save payment profile subcollection
         const profileRef = doc(db, 'users', profileData.userId, 'paymentProfile', 'main');
         const updateData: any = {
-            ...profileData,
+            userId: profileData.userId,
+            preferredGateway: profileData.preferredGateway,
+            paymentMethod: profileData.paymentMethod,
+            momoNumber: profileData.momoNumber,
+            momoNetwork: profileData.momoNetwork,
+            taxInformation: profileData.taxInformation,
+            isVerified: profileData.isVerified,
             updatedAt: serverTimestamp(),
         };
 

@@ -6,12 +6,10 @@ import { useAuth } from '@/context/auth-context';
 import { PaymentSetupForm } from '@/components/payment-setup-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle, Wallet, Calendar, Banknote } from 'lucide-react';
+import { Loader2, CheckCircle, Wallet } from 'lucide-react';
 import type { CreatorPaymentProfile } from '@/lib/payment-types';
 import { FirebasePaymentService } from '@/lib/firebase-payment-service';
 import { useToast } from '@/hooks/use-toast';
-import { PaymentCalculator } from '@/lib/payment-config';
-
 
 export default function PaymentSettingsClient() {
   const { user } = useAuth();
@@ -102,26 +100,11 @@ export default function PaymentSettingsClient() {
                 <p className="text-muted-foreground">Mobile Money Number</p>
                 <p className="font-semibold">{profile.momoNumber}</p>
             </div>
+             <div className="flex items-center justify-between p-3 border rounded-lg">
+                <p className="text-muted-foreground">Network</p>
+                <p className="font-semibold">{profile.momoNetwork}</p>
+            </div>
         </CardContent>
-      </Card>
-      
-      <Card>
-          <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Payout Schedule
-              </CardTitle>
-          </CardHeader>
-          <CardContent className="grid md:grid-cols-2 gap-4">
-               <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <p className="text-muted-foreground">Frequency</p>
-                    <p className="font-semibold capitalize">{profile.payoutSchedule}</p>
-                </div>
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <p className="text-muted-foreground">Minimum Payout</p>
-                    <p className="font-semibold">{PaymentCalculator.formatCurrency(profile.minimumPayoutAmount, 'GHS')}</p>
-                </div>
-          </CardContent>
       </Card>
 
     </div>

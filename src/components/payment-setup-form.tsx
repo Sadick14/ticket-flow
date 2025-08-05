@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { 
   Info,
@@ -27,13 +26,6 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
   const mtnGateway = PAYMENT_GATEWAYS.find(g => g.id === 'mtn-momo')!;
   const { user } = useAuth();
   
-  const [payoutSchedule, setPayoutSchedule] = useState<'daily' | 'weekly' | 'monthly'>(
-    existingProfile?.payoutSchedule || 'weekly'
-  );
-  const [minimumPayout, setMinimumPayout] = useState(
-    existingProfile?.minimumPayoutAmount || 2000
-  );
-  
   const [momoDetails, setMomoDetails] = useState({
     momoNumber: existingProfile?.momoNumber || '',
     momoNetwork: existingProfile?.momoNetwork || 'MTN'
@@ -52,8 +44,6 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
     const profile: Partial<CreatorPaymentProfile> = {
       userId: user.uid,
       preferredGateway: 'mtn-momo',
-      payoutSchedule,
-      minimumPayoutAmount: minimumPayout,
       momoNumber: momoDetails.momoNumber,
       momoNetwork: momoDetails.momoNetwork,
       taxInformation: taxInfo,
@@ -128,7 +118,7 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
           <CardHeader>
             <CardTitle>Payout Settings</CardTitle>
             <CardDescription>
-              Configure when and how you want to receive your earnings.
+              Configure how you want to receive your earnings.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -153,36 +143,6 @@ export function PaymentSetupForm({ onComplete, onSkip, existingProfile }: Paymen
                         <SelectItem value="AirtelTigo">AirtelTigo Money</SelectItem>
                     </SelectContent>
                 </Select>
-            </div>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="payoutSchedule">Payout Schedule</Label>
-                <Select value={payoutSchedule} onValueChange={(value: any) => setPayoutSchedule(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly (Recommended)</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="minimumPayout">Minimum Payout (GHS)</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">GH₵</span>
-                  <Input
-                    id="minimumPayout"
-                    type="number"
-                    min="10"
-                    step="10"
-                    value={minimumPayout / 100}
-                    onChange={(e) => setMinimumPayout(Math.max(1000, parseInt(e.target.value) * 100))}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
             </div>
           </CardContent>
         </Card>

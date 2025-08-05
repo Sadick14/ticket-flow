@@ -19,8 +19,6 @@ export interface CreatorPaymentProfile {
   paymentMethod: 'momo';
   momoNumber: string;
   momoNetwork: 'MTN' | 'Vodafone' | 'AirtelTigo';
-  payoutSchedule: 'daily' | 'weekly' | 'monthly';
-  minimumPayoutAmount: number; // in lowest denomination (e.g., pesewas)
   isVerified: boolean;
   taxInformation?: {
     taxId: string;
