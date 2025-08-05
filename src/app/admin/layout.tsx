@@ -6,7 +6,7 @@ import * as React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
-import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users, Archive, Users2, MessageSquare, Calendar, CreditCard, Image as ImageIcon, Star, BookOpen, UserCheck } from 'lucide-react';
+import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users, Archive, Users2, MessageSquare, Calendar, CreditCard, Image as ImageIcon, Star, BookOpen, UserCheck, Activity } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -75,6 +75,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <Link href="/admin">
                     <Home />
                     <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/admin/logs')}
+                  tooltip={{ children: 'Logs & Activity' }}
+                >
+                  <Link href="/admin/logs">
+                    <Activity />
+                    <span>Logs</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -296,6 +308,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   {pathname.startsWith('/admin/emails') && 'Email Management'}
                   {pathname.startsWith('/admin/archived-events') && 'Archived Events'}
                   {pathname.startsWith('/admin/settings') && 'Admin Settings'}
+                  {pathname.startsWith('/admin/logs') && 'Platform Logs'}
                 </h1> 
             </div>
         </header>

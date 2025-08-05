@@ -197,3 +197,16 @@ export interface CourseEnrollmentRequest {
   status: 'pending' | 'approved';
   requestedAt: string; // ISO string
 }
+
+export type LogLevel = 'info' | 'activity' | 'warning' | 'error' | 'fatal';
+
+export interface AppLog {
+  id: string;
+  timestamp: string; // ISO string
+  level: LogLevel;
+  message: string;
+  category: string; // e.g., 'auth', 'billing', 'event', 'ui-crash'
+  userId?: string;
+  userEmail?: string;
+  details?: Record<string, any>;
+}

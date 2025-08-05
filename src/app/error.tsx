@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -14,6 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { logEvent } from '@/lib/logger';
 
 export default function Error({
   error,
@@ -25,8 +27,18 @@ export default function Error({
   const router = useRouter();
 
   useEffect(() => {
-    // Log the error to an error reporting service
+    // Log the error to our new logging system
     console.error(error);
+    logEvent({
+        level: 'fatal',
+        category: 'ui-crash',
+        message: `Unhandled UI error: ${error.message}`,
+        details: {
+            name: error.name,
+            stack: error.stack,
+            digest: error.digest,
+        },
+    });
   }, [error]);
 
   const goHome = () => {

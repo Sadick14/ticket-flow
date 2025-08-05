@@ -15,6 +15,8 @@ import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/lib/types';
 import { useRouter } from 'next/navigation';
+import { logEvent } from '@/lib/logger';
+
 
 // In a real app, this should not be hardcoded in the client.
 const ADMIN_EMAIL = 'issakasaddick14@gmail.com';
@@ -55,6 +57,14 @@ const getOrCreateUserProfile = async (user: FirebaseUser): Promise<UserProfile> 
     lastSeen: new Date().toISOString(),
   };
   await setDoc(userRef, newUserProfile);
+  logEvent({
+    level: 'activity',
+    category: 'auth',
+    message: 'New user signed up',
+    userId: user.uid,
+    userEmail: user.email ?? undefined,
+    details: { name: user.displayName }
+  });
   return newUserProfile;
 };
 
@@ -76,6 +86,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             variant: 'destructive',
             title: "Account Deactivated",
             description: "Your account has been deactivated by an administrator.",
+          });
+          logEvent({
+            level: 'warning',
+            category: 'auth',
+            message: 'Deactivated user attempted to sign in',
+            userId: firebaseUser.uid,
+            userEmail: firebaseUser.email ?? undefined
           });
         } else {
           setUser(userProfile);
@@ -108,6 +125,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           title: "Signed In",
           description: "You have successfully signed in.",
         });
+        logEvent({
+            level: 'activity',
+            category: 'auth',
+            message: 'User signed in',
+            userId: userProfile.uid,
+            userEmail: userProfile.email ?? undefined
+        });
       }
     } catch (error) {
       console.error("Google Sign-In Error:", error);
@@ -116,12 +140,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         title: "Sign In Failed",
         description: "Could not sign in with Google. Please try again.",
       });
+      logEvent({
+        level: 'error',
+        category: 'auth',
+        message: 'Google Sign-In failed',
+        details: { error: error instanceof Error ? error.message : String(error) }
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const signOut = async () => {
+    const userId = user?.uid;
+    const userEmail = user?.email;
     try {
       await firebaseSignOut(auth);
       setUser(null);
@@ -130,6 +162,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "You have successfully signed out.",
       });
       router.push('/home');
+      logEvent({
+          level: 'activity',
+          category: 'auth',
+          message: 'User signed out',
+          userId,
+          userEmail: userEmail ?? undefined
+      });
     } catch (error) {
         console.error("Sign Out Error:", error);
         toast({
