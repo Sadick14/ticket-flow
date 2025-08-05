@@ -67,6 +67,7 @@ const eventFormSchema = z.object({
   })).optional(),
   activities: z.array(z.object({
     name: z.string().optional(),
+    date: z.date().optional(),
     time: z.string().optional(),
     description: z.string().optional(),
   })).optional(),
@@ -278,7 +279,11 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
       capacity: data.capacity,
       imageUrl: data.imageUrl,
       speakers: data.speakers?.filter(s => s && s.name && s.title).map(s => ({...s, imageUrl: s.imageUrl || 'https://placehold.co/100x100.png'})) || [],
-      activities: data.activities?.map(a => ({...a, time: a && a.time ? format(new Date(`1970-01-01T${a.time}`), 'hh:mm a') : ''})).filter(a => a && a.name && a.description) || [],
+      activities: data.activities?.map(a => ({
+        ...a,
+        date: a.date ? format(a.date, 'yyyy-MM-dd') : undefined,
+        time: a.time ? format(new Date(`1970-01-01T${a.time}`), 'hh:mm a') : ''
+      })).filter(a => a && a.name && a.description) || [],
       sponsors: data.sponsors?.filter(s => s && s.name).map(s => ({...s, logoUrl: s.logoUrl || 'https://placehold.co/150x75.png'})) || [],
       promoCodes: data.promoCodes?.filter(p => p.code && p.value > 0) || [],
     };
@@ -725,12 +730,51 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                 </div>
 
                  <div>
-                    <FormLabel>Activities</FormLabel>
-                    <FormDescription>Add activities or schedule for your event. (Optional)</FormDescription>
+                    <FormLabel>Activities / Schedule</FormLabel>
+                    <FormDescription>Add activities for your event. (Optional)</FormDescription>
                     <div className="space-y-4 mt-4">
                       {activityFields.map((field, index) => (
-                        <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-lg">
-                          <FormField
+                        <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end p-4 border rounded-lg">
+                           {watchEventType === 'multi' && (
+                            <FormField
+                                control={form.control}
+                                name={`activities.${index}.date`}
+                                render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>Activity Date</FormLabel>
+                                    <Popover>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                        <Button
+                                            variant="outline"
+                                            className={cn('w-full pl-3 text-left font-normal',!field.value && 'text-muted-foreground')}
+                                        >
+                                            {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                        </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={field.value}
+                                            onSelect={field.onChange}
+                                            disabled={(date) => {
+                                                const from = form.getValues('dateRange.from');
+                                                const to = form.getValues('dateRange.to');
+                                                if(from && to) return date < from || date > to;
+                                                return false;
+                                            }}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                    </Popover>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                           )}
+                           <FormField
                             control={form.control}
                             name={`activities.${index}.time`}
                             render={({ field }) => (

@@ -10,6 +10,7 @@ export interface Speaker {
 
 export interface Activity {
     name: string;
+    date?: string; // Optional date for multi-day events
     time: string;
     description: string;
 }
