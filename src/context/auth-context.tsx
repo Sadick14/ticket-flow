@@ -11,7 +11,7 @@ import {
   User as FirebaseUser
 } from 'firebase/auth';
 import { app, db } from '@/lib/firebase';
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/lib/types';
 import { useRouter } from 'next/navigation';
@@ -36,14 +36,19 @@ const getOrCreateUserProfile = async (user: FirebaseUser): Promise<UserProfile> 
 
   if (docSnap.exists()) {
     const existingProfile = docSnap.data() as UserProfile;
+    const updates: Partial<UserProfile> = { lastSeen: new Date().toISOString() };
+    
     // Ensure isAdmin status is correctly set on sign-in
     if (user.email === ADMIN_EMAIL && !existingProfile.isAdmin) {
-      await updateDoc(userRef, { isAdmin: true, status: 'active', lastSeen: new Date().toISOString() });
-      return { ...existingProfile, isAdmin: true, status: 'active', lastSeen: new Date().toISOString() };
+      updates.isAdmin = true;
     }
-    // Update last seen on sign-in
-    await updateDoc(userRef, { lastSeen: new Date().toISOString() });
-    return { ...existingProfile, lastSeen: new Date().toISOString() };
+    // Ensure active status on successful login for non-deactivated accounts
+    if (existingProfile.status !== 'deactivated') {
+        updates.status = 'active';
+    }
+
+    await updateDoc(userRef, updates);
+    return { ...existingProfile, ...updates };
   }
   
   const newUserProfile: UserProfile = {
@@ -55,6 +60,8 @@ const getOrCreateUserProfile = async (user: FirebaseUser): Promise<UserProfile> 
     status: 'active',
     subscriptionPlan: 'Free',
     lastSeen: new Date().toISOString(),
+    paymentProfileCompleted: false,
+    enrolledCourseIds: [],
   };
   await setDoc(userRef, newUserProfile);
   logEvent({

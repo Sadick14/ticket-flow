@@ -1,16 +1,16 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore';
+import { collection, query, orderBy, limit, onSnapshot, where, Query, DocumentData } from 'firebase/firestore';
 import type { AppLog, LogLevel } from '@/lib/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, AlertCircle, Activity, Info, Users } from 'lucide-react';
+import { Loader2, AlertCircle, Activity, Info, Users, XCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -25,8 +25,8 @@ const logConfig: Record<LogLevel, { color: string; icon: React.ReactNode }> = {
   info: { color: 'bg-blue-500', icon: <Info className="h-3 w-3" /> },
   activity: { color: 'bg-green-500', icon: <Users className="h-3 w-3" /> },
   warning: { color: 'bg-yellow-500', icon: <AlertCircle className="h-3 w-3" /> },
-  error: { color: 'bg-red-500', icon: <AlertCircle className="h-3 w-3" /> },
-  fatal: { color: 'bg-red-700', icon: <AlertCircle className="h-3 w-3" /> },
+  error: { color: 'bg-red-500', icon: <XCircle className="h-3 w-3" /> },
+  fatal: { color: 'bg-red-700', icon: <XCircle className="h-3 w-3" /> },
 };
 
 function LogDetailsDialog({ log }: { log: AppLog }) {
@@ -53,12 +53,13 @@ export default function AdminLogsPage() {
   const [logLevelFilter, setLogLevelFilter] = useState<LogLevel | 'all'>('all');
   const [logCategoryFilter, setLogCategoryFilter] = useState<string>('all');
   
-  const logCategories = useMemo(() => {
-    return [...new Set(logs.map(log => log.category))].sort();
-  }, [logs]);
+  const allCategories = useMemo(() => {
+    // This will collect all unique categories from the logs that have been loaded so far
+    return ['auth', 'billing', 'event', 'ui-crash', 'general'];
+  }, []);
 
-  useEffect(() => {
-    let q = query(collection(db, 'logs'), orderBy('timestamp', 'desc'), limit(100));
+  const buildQuery = useCallback(() => {
+    let q: Query<DocumentData> = collection(db, 'logs');
     
     if (logLevelFilter !== 'all') {
       q = query(q, where('level', '==', logLevelFilter));
@@ -67,7 +68,18 @@ export default function AdminLogsPage() {
     if (logCategoryFilter !== 'all') {
       q = query(q, where('category', '==', logCategoryFilter));
     }
+    
+    // Order by timestamp after filtering
+    q = query(q, orderBy('timestamp', 'desc'), limit(100));
 
+    return q;
+  }, [logLevelFilter, logCategoryFilter]);
+
+
+  useEffect(() => {
+    setLoading(true);
+    const q = buildQuery();
+    
     const unsubscribe = onSnapshot(q, 
       (snapshot) => {
         const fetchedLogs = snapshot.docs.map(doc => ({
@@ -85,7 +97,7 @@ export default function AdminLogsPage() {
     );
 
     return () => unsubscribe();
-  }, [logLevelFilter, logCategoryFilter]);
+  }, [buildQuery]);
 
 
   return (
@@ -120,7 +132,7 @@ export default function AdminLogsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                {logCategories.map(cat => (
+                {allCategories.map(cat => (
                   <SelectItem key={cat} value={cat}>
                     <span className="capitalize">{cat}</span>
                   </SelectItem>
