@@ -77,6 +77,7 @@ export interface UserProfile {
   subscriptionPlan: SubscriptionPlan;
   lastSeen?: string; // ISO String
   enrolledCourseIds?: string[];
+  paymentProfileCompleted?: boolean;
 }
 
 export interface NewsArticle {

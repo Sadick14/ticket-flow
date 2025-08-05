@@ -54,19 +54,26 @@ export class FirebasePaymentService {
 
   static async savePaymentProfile(profileData: Partial<CreatorPaymentProfile> & { userId: string }): Promise<void> {
     try {
+        const batch = writeBatch(db);
+
+        // 1. Save payment profile subcollection
         const profileRef = doc(db, 'users', profileData.userId, 'paymentProfile', 'main');
-        
-        const existingProfileSnap = await getDoc(profileRef);
         const updateData: any = {
             ...profileData,
             updatedAt: serverTimestamp(),
         };
 
+        const existingProfileSnap = await getDoc(profileRef);
         if (!existingProfileSnap.exists()) {
             updateData.createdAt = serverTimestamp();
         }
+        batch.set(profileRef, updateData, { merge: true });
 
-        await setDoc(profileRef, updateData, { merge: true });
+        // 2. Update the main user document
+        const userRef = doc(db, 'users', profileData.userId);
+        batch.update(userRef, { paymentProfileCompleted: true });
+
+        await batch.commit();
 
     } catch (error) {
         console.error('Error saving payment profile:', error);
@@ -284,7 +291,7 @@ export class FirebasePaymentService {
           id: doc.id,
           scheduledDate: data.scheduledDate?.toDate?.().toISOString() || new Date().toISOString(),
           processedDate: data.processedDate?.toDate?.().toISOString(),
-          createdAt: data.createdAt?.toDate?.().toISOString() || new Date().toISOString(),
+          createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
         } as Payout;
       });
       
