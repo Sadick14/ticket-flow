@@ -241,7 +241,7 @@ export class FirebasePaymentService {
     amount: number,
     transactionIds: string[],
     paymentMethod: 'momo',
-    scheduledDate: Date
+    requestedDate: Date
   ): Promise<string> {
     const batch = writeBatch(db);
     const payoutRef = doc(collection(db, 'payouts'));
@@ -253,13 +253,14 @@ export class FirebasePaymentService {
       status: 'pending',
       paymentMethod,
       transactionIds,
-      scheduledDate: scheduledDate.toISOString(),
+      // `scheduledDate` now represents the request date
+      scheduledDate: requestedDate.toISOString(), 
       createdAt: new Date().toISOString(),
     };
 
     batch.set(payoutRef, {
       ...payout,
-      scheduledDate: Timestamp.fromDate(scheduledDate),
+      scheduledDate: Timestamp.fromDate(requestedDate),
       createdAt: serverTimestamp(),
     });
 
@@ -271,6 +272,17 @@ export class FirebasePaymentService {
 
     await batch.commit();
     return payoutRef.id;
+  }
+
+  static async hasPendingPayout(creatorId: string): Promise<boolean> {
+    const q = query(
+        collection(db, 'payouts'),
+        where('creatorId', '==', creatorId),
+        where('status', '==', 'pending'),
+        limit(1)
+    );
+    const snapshot = await getDocs(q);
+    return !snapshot.empty;
   }
 
   static async updatePayout(payoutId: string, updates: Partial<Payout>): Promise<void> {
@@ -295,7 +307,8 @@ export class FirebasePaymentService {
     try {
       const payoutsQuery = query(
         collection(db, 'payouts'),
-        where('status', '==', 'pending')
+        where('status', '==', 'pending'),
+        orderBy('scheduledDate', 'asc') // Order by when it was requested
       );
       
       const querySnapshot = await getDocs(payoutsQuery);
@@ -306,10 +319,10 @@ export class FirebasePaymentService {
           ...data,
           id: doc.id,
           scheduledDate: data.scheduledDate?.toDate?.().toISOString() || new Date().toISOString(),
-          processedDate: data.processedDate?.toDate?.().toISOString(),
+          processedDate: data.processedDate?.toDate?.()?.toISOString(),
           createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
         } as Payout;
-      }).sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime());
+      });
 
     } catch (error) {
       console.error('Error getting pending payouts:', error);

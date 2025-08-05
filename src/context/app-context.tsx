@@ -7,6 +7,7 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy, serverTimestamp, writeBatch, documentId, setDoc } from 'firebase/firestore';
 import { renderTemplate } from '@/lib/email-templates';
 import { PaymentCalculator } from '@/lib/payment-config';
+import { FirebasePaymentService } from '@/lib/firebase-payment-service';
 
 interface AppContextType {
   events: Event[];
@@ -423,9 +424,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const getEventStats = (creatorId: string) => {
     const userEvents = getEventsByCreator(creatorId);
-    const userTickets = tickets.filter(ticket => 
-      userEvents.some(event => event.id === ticket.eventId)
-    );
+    
+    const userEventIds = new Set(userEvents.map(e => e.id));
+    const userTickets = tickets.filter(ticket => userEventIds.has(ticket.eventId));
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);

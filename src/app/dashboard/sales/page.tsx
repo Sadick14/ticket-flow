@@ -18,17 +18,24 @@ import {
   BarChart3,
   Download,
   Eye,
-  HandCoins
+  HandCoins,
+  Loader2,
+  CheckCircle
 } from 'lucide-react';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, subDays } from 'date-fns';
 import Link from 'next/link';
 import type { Ticket, Event } from '@/lib/types';
 import { PaymentCalculator, PAYMENT_CONFIG } from '@/lib/payment-config';
+import { FirebasePaymentService } from '@/lib/firebase-payment-service';
+import { useToast } from '@/hooks/use-toast';
 
 export default function SalesPage() {
   const { user } = useAuth();
   const { events, tickets, getEventsByCreator } = useAppContext();
   const [timeRange, setTimeRange] = useState('30d');
+  const { toast } = useToast();
+  const [isRequestingPayout, setIsRequestingPayout] = useState(false);
+  const [hasPendingPayout, setHasPendingPayout] = useState(false);
 
   const userEvents = user ? getEventsByCreator(user.uid) : [];
   
@@ -36,6 +43,55 @@ export default function SalesPage() {
     const userEventIds = new Set(userEvents.map(e => e.id));
     return tickets.filter((ticket: Ticket) => userEventIds.has(ticket.eventId) && ticket.status === 'confirmed');
   }, [tickets, userEvents]);
+  
+  const unpaidTransactions = useMemo(() => {
+    return allUserTickets.filter(t => !t.payoutId);
+  }, [allUserTickets]);
+  
+  const availableForPayout = useMemo(() => {
+    return unpaidTransactions.reduce((sum, tx) => sum + (tx.paymentSplit?.creatorPayout || 0), 0);
+  }, [unpaidTransactions]);
+
+
+  useEffect(() => {
+    const checkForPending = async () => {
+        if (user) {
+            const pending = await FirebasePaymentService.hasPendingPayout(user.uid);
+            setHasPendingPayout(pending);
+        }
+    };
+    checkForPending();
+  }, [user, availableForPayout]);
+
+
+  const handleRequestPayout = async () => {
+    if (!user || availableForPayout <= 0) return;
+    setIsRequestingPayout(true);
+    try {
+        const payoutId = await FirebasePaymentService.createPayout(
+            user.uid, 
+            availableForPayout, 
+            unpaidTransactions.map(t => t.id),
+            'momo', // Hardcoded as it's the only option
+            new Date()
+        );
+        toast({
+            title: "Payout Requested!",
+            description: `Your request for ${PaymentCalculator.formatCurrency(availableForPayout, 'GHS')} has been submitted.`
+        });
+        setHasPendingPayout(true);
+        // This is a client-side update for immediate feedback. A full re-fetch would be better in a larger app.
+        unpaidTransactions.forEach(t => t.payoutId = payoutId);
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Request Failed",
+            description: "Could not submit your payout request. Please try again later."
+        });
+    } finally {
+        setIsRequestingPayout(false);
+    }
+  };
 
   // Calculate time range
   const getDateRange = () => {
@@ -203,6 +259,30 @@ export default function SalesPage() {
           </Button>
         </div>
       </div>
+      
+       {/* Payout Card */}
+      <Card>
+          <CardHeader>
+              <CardTitle>Your Earnings</CardTitle>
+              <CardDescription>Request a payout for your available balance.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Available for Payout</p>
+                <p className="text-3xl font-bold">{PaymentCalculator.formatCurrency(availableForPayout, 'GHS')}</p>
+                {hasPendingPayout && <p className="text-xs text-yellow-600">You have a payout request pending processing.</p>}
+              </div>
+              <Button 
+                size="lg" 
+                onClick={handleRequestPayout}
+                disabled={isRequestingPayout || availableForPayout <= 0 || hasPendingPayout}
+              >
+                  {isRequestingPayout && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                  {hasPendingPayout ? <><CheckCircle className="mr-2 h-4 w-4"/> Requested</> : 'Request Payout'}
+              </Button>
+          </CardContent>
+      </Card>
+
 
       {/* Revenue Stats */}
       <div className="grid gap-4 md:grid-cols-4">
