@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useAppContext } from '@/context/app-context';
 import { useAuth } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +20,9 @@ import {
   Eye,
   HandCoins,
   Loader2,
-  CheckCircle
+  CheckCircle,
+  Banknote,
+  Hourglass
 } from 'lucide-react';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, subDays } from 'date-fns';
 import Link from 'next/link';
@@ -28,6 +30,7 @@ import type { Ticket, Event } from '@/lib/types';
 import { PaymentCalculator, PAYMENT_CONFIG } from '@/lib/payment-config';
 import { FirebasePaymentService } from '@/lib/firebase-payment-service';
 import { useToast } from '@/hooks/use-toast';
+import type { Payout } from '@/lib/payment-types';
 
 export default function SalesPage() {
   const { user } = useAuth();
@@ -36,6 +39,8 @@ export default function SalesPage() {
   const { toast } = useToast();
   const [isRequestingPayout, setIsRequestingPayout] = useState(false);
   const [hasPendingPayout, setHasPendingPayout] = useState(false);
+  const [payouts, setPayouts] = useState<Payout[]>([]);
+  const [payoutsLoading, setPayoutsLoading] = useState(true);
 
   const userEvents = user ? getEventsByCreator(user.uid) : [];
   
@@ -52,23 +57,33 @@ export default function SalesPage() {
     return unpaidTransactions.reduce((sum, tx) => sum + (tx.paymentSplit?.creatorPayout || 0), 0);
   }, [unpaidTransactions]);
 
+  const totalWithdrawn = useMemo(() => {
+    return payouts
+        .filter(p => p.status === 'completed')
+        .reduce((sum, p) => sum + p.amount, 0);
+  }, [payouts]);
+
+
+  const fetchPayouts = useCallback(async () => {
+    if (user) {
+      setPayoutsLoading(true);
+      const userPayouts = await FirebasePaymentService.getCreatorPayouts(user.uid);
+      setPayouts(userPayouts);
+      setHasPendingPayout(userPayouts.some(p => p.status === 'pending'));
+      setPayoutsLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
-    const checkForPending = async () => {
-        if (user) {
-            const pending = await FirebasePaymentService.hasPendingPayout(user.uid);
-            setHasPendingPayout(pending);
-        }
-    };
-    checkForPending();
-  }, [user, availableForPayout]);
+    fetchPayouts();
+  }, [fetchPayouts]);
 
 
   const handleRequestPayout = async () => {
     if (!user || availableForPayout <= 0) return;
     setIsRequestingPayout(true);
     try {
-        const payoutId = await FirebasePaymentService.createPayout(
+        await FirebasePaymentService.createPayout(
             user.uid, 
             availableForPayout, 
             unpaidTransactions.map(t => t.id),
@@ -79,9 +94,7 @@ export default function SalesPage() {
             title: "Payout Requested!",
             description: `Your request for ${PaymentCalculator.formatCurrency(availableForPayout, 'GHS')} has been submitted.`
         });
-        setHasPendingPayout(true);
-        // This is a client-side update for immediate feedback. A full re-fetch would be better in a larger app.
-        unpaidTransactions.forEach(t => t.payoutId = payoutId);
+        await fetchPayouts();
     } catch (error) {
         toast({
             variant: "destructive",
@@ -234,6 +247,18 @@ export default function SalesPage() {
     window.URL.revokeObjectURL(url);
   };
 
+  const getStatusBadge = (status: 'pending' | 'processing' | 'completed' | 'failed') => {
+    switch(status) {
+      case 'pending':
+        return <Badge variant="outline"><Hourglass className="mr-1 h-3 w-3 text-yellow-500" />Pending</Badge>;
+      case 'completed':
+        return <Badge className="bg-green-100 text-green-700"><CheckCircle className="mr-1 h-3 w-3" />Completed</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
+
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -266,20 +291,26 @@ export default function SalesPage() {
               <CardTitle>Your Earnings</CardTitle>
               <CardDescription>Request a payout for your available balance.</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div>
+          <CardContent className="grid md:grid-cols-3 gap-6">
+            <div className="p-4 border rounded-lg bg-muted/30">
+                <p className="text-sm text-muted-foreground">Total Withdrawn</p>
+                <p className="text-2xl font-bold">{PaymentCalculator.formatCurrency(totalWithdrawn, 'GHS')}</p>
+            </div>
+            <div className="p-4 border rounded-lg bg-muted/30">
                 <p className="text-sm text-muted-foreground">Available for Payout</p>
-                <p className="text-3xl font-bold">{PaymentCalculator.formatCurrency(availableForPayout, 'GHS')}</p>
-                {hasPendingPayout && <p className="text-xs text-yellow-600">You have a payout request pending processing.</p>}
-              </div>
+                <p className="text-2xl font-bold">{PaymentCalculator.formatCurrency(availableForPayout, 'GHS')}</p>
+            </div>
+            <div className="flex items-center justify-center">
               <Button 
                 size="lg" 
                 onClick={handleRequestPayout}
                 disabled={isRequestingPayout || availableForPayout <= 0 || hasPendingPayout}
+                className="w-full md:w-auto"
               >
                   {isRequestingPayout && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                  {hasPendingPayout ? <><CheckCircle className="mr-2 h-4 w-4"/> Requested</> : 'Request Payout'}
+                  {hasPendingPayout ? <><CheckCircle className="mr-2 h-4 w-4"/> Payout Requested</> : 'Request Payout'}
               </Button>
+            </div>
           </CardContent>
       </Card>
 
@@ -336,116 +367,41 @@ export default function SalesPage() {
         </Card>
       </div>
 
-      {/* Daily Sales Chart */}
+      {/* Payout History */}
       <Card>
         <CardHeader>
-          <CardTitle>Daily Sales</CardTitle>
-          <CardDescription>Revenue and ticket sales over time</CardDescription>
+          <CardTitle>Payout History</CardTitle>
+          <CardDescription>Your history of all requested payouts.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {dailySales.length === 0 ? (
-              <div className="text-center py-8">
-                <BarChart3 className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold">No sales data</h3>
-                <p className="text-muted-foreground">
-                  No ticket sales found for the selected period.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {dailySales.map((day, index) => (
-                  <div key={index} className="flex items-center gap-4">
-                    <div className="w-16 text-sm text-muted-foreground">{day.date}</div>
-                    <div className="flex-1">
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>{day.tickets} tickets</span>
-                        <span>{PaymentCalculator.formatCurrency(day.revenue * 100, 'GHS')}</span>
-                      </div>
-                      <Progress 
-                        value={Math.max((day.revenue / Math.max(...dailySales.map(d => d.revenue), 1)) * 100, 5)} 
-                        className="h-2"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Event Performance */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Event Performance</CardTitle>
-          <CardDescription>Sales performance by event</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {eventPerformance.length === 0 ? (
-            <div className="text-center py-8">
-              <Calendar className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold">No events found</h3>
-              <p className="text-muted-foreground">
-                Create your first event to start tracking sales.
-              </p>
-              <Button asChild className="mt-4">
-                <Link href="/create">Create Event</Link>
-              </Button>
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Event</TableHead>
-                    <TableHead>Revenue</TableHead>
-                    <TableHead>Commission</TableHead>
-                    <TableHead>Net Payout</TableHead>
-                    <TableHead>Sales Rate</TableHead>
-                    <TableHead className="w-[100px] text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {eventPerformance.map((event) => (
-                    <TableRow key={event.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{event.name}</div>
-                          <div className="text-sm text-muted-foreground">{event.location}</div>
-                        </div>
-                      </TableCell>
-                       <TableCell>
-                        <Badge variant="secondary">{PaymentCalculator.formatCurrency(event.totalRevenue * 100, 'GHS')}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{PaymentCalculator.formatCurrency(event.totalCommission * 100, 'GHS')}</Badge>
-                      </TableCell>
-                       <TableCell>
-                        <Badge variant="outline" className="text-green-600 font-semibold">{PaymentCalculator.formatCurrency(event.netPayout * 100, 'GHS')}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-sm">
-                             <span>{event.totalTicketsSold} / {event.capacity}</span>
-                            <span>{event.salesRate.toFixed(1)}%</span>
-                          </div>
-                          <Progress value={event.salesRate} className="h-1" />
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" asChild>
-                          <Link href={`/events/${event.id}`}>
-                            <Eye className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                      </TableCell>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Request Date</TableHead>
+                  <TableHead>Processed Date</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {payoutsLoading ? (
+                  <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin"/></TableCell></TableRow>
+                ) : payouts.length === 0 ? (
+                  <TableRow><TableCell colSpan={4} className="text-center py-8"><Banknote className="mx-auto h-12 w-12 text-muted-foreground mb-4"/>No payout history found.</TableCell></TableRow>
+                ) : (
+                  payouts.map(payout => (
+                    <TableRow key={payout.id}>
+                      <TableCell>{format(parseISO(payout.scheduledDate), 'MMM dd, yyyy')}</TableCell>
+                      <TableCell>{payout.processedDate ? format(parseISO(payout.processedDate), 'MMM dd, yyyy') : 'N/A'}</TableCell>
+                      <TableCell><Badge variant="secondary">{PaymentCalculator.formatCurrency(payout.amount, 'GHS')}</Badge></TableCell>
+                      <TableCell>{getStatusBadge(payout.status)}</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

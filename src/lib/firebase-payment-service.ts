@@ -63,7 +63,6 @@ export class FirebasePaymentService {
             paymentMethod: profileData.paymentMethod,
             momoNumber: profileData.momoNumber,
             momoNetwork: profileData.momoNetwork,
-            taxInformation: profileData.taxInformation,
             isVerified: profileData.isVerified,
             updatedAt: serverTimestamp(),
         };
