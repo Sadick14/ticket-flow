@@ -118,7 +118,7 @@ export class FirebasePaymentService {
     try {
       const transactionRef = doc(collection(db, 'transactions'));
       
-      const transaction: Omit<Transaction, 'id'> = {
+      const transaction: Omit<Transaction, 'id' | 'payoutId'> = {
         ticketId,
         eventId,
         creatorId,
@@ -168,6 +168,19 @@ export class FirebasePaymentService {
       throw error;
     }
   }
+
+  static async getUnpaidCompletedTransactions(creatorId: string): Promise<Transaction[]> {
+    const q = query(
+      collection(db, 'transactions'),
+      where('creatorId', '==', creatorId),
+      where('status', '==', 'completed'),
+      where('payoutId', '==', null)
+    );
+
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
+  }
+
 
   static async getTransaction(transactionId: string): Promise<Transaction | null> {
     try {
@@ -230,30 +243,34 @@ export class FirebasePaymentService {
     paymentMethod: 'momo',
     scheduledDate: Date
   ): Promise<string> {
-    try {
-      const payoutRef = doc(collection(db, 'payouts'));
-      
-      const payout: Omit<Payout, 'id'> = {
-        creatorId,
-        amount,
-        currency: 'GHS',
-        status: 'pending',
-        paymentMethod,
-        transactionIds,
-        scheduledDate: scheduledDate.toISOString(),
-      };
+    const batch = writeBatch(db);
+    const payoutRef = doc(collection(db, 'payouts'));
+    
+    const payout: Omit<Payout, 'id'> = {
+      creatorId,
+      amount,
+      currency: 'GHS',
+      status: 'pending',
+      paymentMethod,
+      transactionIds,
+      scheduledDate: scheduledDate.toISOString(),
+      createdAt: new Date().toISOString(),
+    };
 
-      await setDoc(payoutRef, {
-        ...payout,
-        scheduledDate: Timestamp.fromDate(scheduledDate),
-        createdAt: serverTimestamp(),
-      });
-      
-      return payoutRef.id;
-    } catch (error) {
-      console.error('Error creating payout:', error);
-      throw error;
-    }
+    batch.set(payoutRef, {
+      ...payout,
+      scheduledDate: Timestamp.fromDate(scheduledDate),
+      createdAt: serverTimestamp(),
+    });
+
+    // Mark transactions as part of this payout
+    transactionIds.forEach(txId => {
+      const txRef = doc(db, 'transactions', txId);
+      batch.update(txRef, { payoutId: payoutRef.id });
+    });
+
+    await batch.commit();
+    return payoutRef.id;
   }
 
   static async updatePayout(payoutId: string, updates: Partial<Payout>): Promise<void> {
@@ -282,9 +299,8 @@ export class FirebasePaymentService {
       );
       
       const querySnapshot = await getDocs(payoutsQuery);
-      const now = new Date();
       
-      const allPendingPayouts = querySnapshot.docs.map(doc => {
+      return querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
           ...data,
@@ -293,11 +309,7 @@ export class FirebasePaymentService {
           processedDate: data.processedDate?.toDate?.().toISOString(),
           createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
         } as Payout;
-      });
-      
-      // Filter for payouts that are due now in code to avoid composite index
-      return allPendingPayouts.filter(payout => new Date(payout.scheduledDate) <= now)
-        .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime());
+      }).sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime());
 
     } catch (error) {
       console.error('Error getting pending payouts:', error);

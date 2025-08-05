@@ -27,6 +27,7 @@ export interface CreatorPaymentProfile {
     country: string;
     businessType: 'individual' | 'business';
   };
+  lastPayoutDate?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -43,6 +44,7 @@ export interface Transaction {
   gatewayTransactionId: string; // From the gateway, if applicable
   status: 'pending' | 'completed' | 'failed' | 'refunded';
   paymentSplit: PaymentSplit;
+  payoutId: string | null; // ID of the Payout this transaction is part of
   createdAt: string;
   completedAt?: string;
   refundedAt?: string;

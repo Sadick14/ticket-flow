@@ -23,13 +23,14 @@ export default function AdminPayoutsPage() {
   const [payoutsLoading, setPayoutsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
+  const fetchPayouts = async () => {
+    setPayoutsLoading(true);
+    const fetchedPayouts = await FirebasePaymentService.getPendingPayouts();
+    setPayouts(fetchedPayouts);
+    setPayoutsLoading(false);
+  }
+
   useEffect(() => {
-    const fetchPayouts = async () => {
-        setPayoutsLoading(true);
-        const fetchedPayouts = await FirebasePaymentService.getPendingPayouts();
-        setPayouts(fetchedPayouts);
-        setPayoutsLoading(false);
-    }
     fetchPayouts();
   }, []);
 
@@ -37,26 +38,29 @@ export default function AdminPayoutsPage() {
     const fetchProfiles = async () => {
       if (payouts.length > 0) {
         const creatorIds = [...new Set(payouts.map(p => p.creatorId))];
-        const profiles: Record<string, CreatorPaymentProfile | null> = {};
-        for (const id of creatorIds) {
-          if (!paymentProfiles[id]) { // Fetch only if not already fetched
-            profiles[id] = await FirebasePaymentService.getPaymentProfile(id);
-          }
+        const profilesToFetch = creatorIds.filter(id => !paymentProfiles[id]);
+        
+        if (profilesToFetch.length > 0) {
+            const fetchedProfiles: Record<string, CreatorPaymentProfile | null> = {};
+            for (const id of profilesToFetch) {
+              fetchedProfiles[id] = await FirebasePaymentService.getPaymentProfile(id);
+            }
+            setPaymentProfiles(prev => ({...prev, ...fetchedProfiles}));
         }
-        setPaymentProfiles(prev => ({...prev, ...profiles}));
       }
     };
     fetchProfiles();
-  }, [payouts]);
+  }, [payouts, paymentProfiles]);
 
 
   const handleProcessPayout = async (payoutId: string) => {
     setProcessingId(payoutId);
     try {
+      // In a real app, this would trigger the actual money transfer via an API.
+      // Here, we just mark it as 'completed'.
       await FirebasePaymentService.updatePayout(payoutId, { status: 'completed' });
       
-      const updatedPayouts = await FirebasePaymentService.getPendingPayouts();
-      setPayouts(updatedPayouts);
+      await fetchPayouts();
       
       toast({
         title: "Payout Processed",
@@ -94,14 +98,14 @@ export default function AdminPayoutsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Payout Management</h1>
-        <p className="text-muted-foreground">Review and process creator payout requests.</p>
+        <p className="text-muted-foreground">Review and process creator payout requests scheduled by the system.</p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Payout Queue</CardTitle>
           <CardDescription>
-            {payouts.length} payout(s) currently pending.
+            {payouts.length} payout(s) currently pending approval.
           </CardDescription>
         </CardHeader>
         <CardContent>
