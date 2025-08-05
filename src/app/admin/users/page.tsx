@@ -6,7 +6,7 @@ import { useState, useMemo } from 'react';
 import { useAppContext } from '@/context/app-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Users, Search, MoreHorizontal, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, Users, Search, MoreHorizontal } from 'lucide-react';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -84,16 +84,15 @@ export default function AdminUsersPage() {
                   <TableHead>User</TableHead>
                   <TableHead>Subscription Plan</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Payouts Configured</TableHead>
                   <TableHead>Last Seen</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
                 ) : filteredUsers.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8">
+                  <TableRow><TableCell colSpan={5} className="text-center py-8">
                     <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                     No users found.
                   </TableCell></TableRow>
@@ -117,17 +116,6 @@ export default function AdminUsersPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={user.status === 'active' ? 'secondary' : 'destructive'}>{user.status}</Badge>
-                      </TableCell>
-                       <TableCell>
-                        {user.paymentProfileCompleted ? (
-                          <div className="flex items-center gap-1 text-green-600">
-                            <CheckCircle className="h-4 w-4" /> Yes
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <XCircle className="h-4 w-4" /> No
-                          </div>
-                        )}
                       </TableCell>
                       <TableCell>
                         {user.lastSeen ? format(new Date(user.lastSeen), 'MMM dd, yyyy') : 'N/A'}
