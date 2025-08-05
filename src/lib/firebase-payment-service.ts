@@ -13,7 +13,8 @@ import {
   getDocs,
   serverTimestamp,
   writeBatch,
-  Timestamp 
+  Timestamp,
+  documentId
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { 
@@ -339,16 +340,16 @@ export class FirebasePaymentService {
     limitCount: number = 20
   ): Promise<Payout[]> {
     try {
+      // Query without ordering by 'createdAt' to avoid needing a composite index
       const payoutsQuery = query(
         collection(db, 'payouts'),
-        where('creatorId', '==', creatorId),
-        orderBy('createdAt', 'desc'),
-        limit(limitCount)
+        where('creatorId', '==', creatorId)
       );
       
       const querySnapshot = await getDocs(payoutsQuery);
       
-      return querySnapshot.docs.map(doc => {
+      // Map and sort in JavaScript
+      const payouts = querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
           ...data,
@@ -364,6 +365,13 @@ export class FirebasePaymentService {
             : (typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString()),
         } as Payout;
       });
+      
+      // Sort by creation date descending
+      payouts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      // Apply limit after sorting
+      return payouts.slice(0, limitCount);
+
     } catch (error) {
       console.error('Error getting creator payouts:', error);
       throw error;
