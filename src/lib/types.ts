@@ -66,6 +66,8 @@ export interface Ticket {
   bookingCode: string;
   // This is added client-side after fetching
   event?: Event;
+  payoutId?: string;
+  paymentSplit?: any;
 }
 
 export interface UserProfile {
