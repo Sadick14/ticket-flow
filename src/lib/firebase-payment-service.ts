@@ -1,4 +1,3 @@
-
 // Firebase Payment Service for TicketFlow
 import { 
   collection, 
@@ -309,12 +308,12 @@ export class FirebasePaymentService {
     }
   }
 
-  static async getPendingPayouts(): Promise<Payout[]> {
+  static async getPayoutsByStatus(status: 'pending' | 'completed'): Promise<Payout[]> {
     try {
       const payoutsQuery = query(
         collection(db, 'payouts'),
-        where('status', '==', 'pending'),
-        orderBy('scheduledDate', 'asc') // Order by when it was requested
+        where('status', '==', status),
+        orderBy(status === 'pending' ? 'scheduledDate' : 'processedDate', 'desc')
       );
       
       const querySnapshot = await getDocs(payoutsQuery);
@@ -331,7 +330,7 @@ export class FirebasePaymentService {
       });
 
     } catch (error) {
-      console.error('Error getting pending payouts:', error);
+      console.error(`Error getting ${status} payouts:`, error);
       throw error;
     }
   }
