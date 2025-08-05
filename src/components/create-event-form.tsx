@@ -313,7 +313,6 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
 
   return (
     <>
-    {isAuthenticated && <AiAssistant eventDetails={aiAssistantEventDetails} />}
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         {!isAuthenticated && (
@@ -788,7 +787,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                         <FormControl>
                           <Input type="number" min="0" step="0.01" {...field} />
                         </FormControl>
-                        {watchPrice === 0 && <FormDescription>This is a free event.</FormDescription>}
+                        {watchAllFields.price === 0 && <FormDescription>This is a free event.</FormDescription>}
                         <FormMessage />
                       </FormItem>
                     )}

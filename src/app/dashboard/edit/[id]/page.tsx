@@ -8,7 +8,6 @@ import { useAuth } from '@/context/auth-context';
 import { useAppContext } from '@/context/app-context';
 import { Loader2 } from 'lucide-react';
 import type { Event } from '@/lib/types';
-import { AiAssistant } from '@/components/ai-assistant';
 
 export default function EditEventPage() {
   const { user, loading: authLoading } = useAuth();
@@ -54,17 +53,9 @@ export default function EditEventPage() {
     );
   }
   
-  const aiAssistantEventDetails = event ? {
-      name: event.name,
-      category: event.category,
-      location: event.location,
-      capacity: event.capacity,
-  } : { name: '', category: '', location: '', capacity: 0 };
-
 
   return (
     <>
-    <AiAssistant eventDetails={aiAssistantEventDetails} />
     <div className="max-w-4xl mx-auto">
         <div className="text-left mb-12">
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground font-headline">
