@@ -54,7 +54,8 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const isActive = (path: string) => pathname === path || (path !== '/dashboard' && pathname.startsWith(path));
   
-  const hasAdvancedFeatures = user?.subscriptionPlan === 'Pro';
+  const hasProFeatures = user?.subscriptionPlan === 'Pro';
+  const hasSalesAccess = user?.subscriptionPlan === 'Pro' || user?.subscriptionPlan === 'Essential';
 
   return (
     <SidebarProvider>
@@ -141,9 +142,10 @@ export default function DashboardLayout({
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {hasAdvancedFeatures && (
-                <>
-                  <Separator className="my-2 bg-sidebar-border" />
+              
+              {(hasSalesAccess || hasProFeatures) && <Separator className="my-2 bg-sidebar-border" />}
+              
+              {hasSalesAccess && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
@@ -158,6 +160,10 @@ export default function DashboardLayout({
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+              )}
+
+              {hasProFeatures && (
+                <>
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
