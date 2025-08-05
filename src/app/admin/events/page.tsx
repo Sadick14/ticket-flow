@@ -36,7 +36,7 @@ export default function AdminEventsPage() {
     const creatorPlan = creator?.subscriptionPlan || 'Free';
 
     // Simplified calculation for display
-    const commissionRate = PAYMENT_CONFIG.commissionRates[creatorPlan];
+    const commissionRate = PaymentCalculator.getCommissionRate(creatorPlan);
     const platformFeeRate = PAYMENT_CONFIG.platformFee;
     const adminCommission = totalRevenue * commissionRate;
     const platformCommission = totalRevenue * platformFeeRate;
