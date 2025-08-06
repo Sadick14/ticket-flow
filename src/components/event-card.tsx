@@ -3,11 +3,12 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { Event } from '@/lib/types';
 import { formatRelativeDate } from '@/lib/utils';
-import { usePathname, useRouter } from 'next/navigation';
+import { Calendar, MapPin, ArrowRight } from 'lucide-react';
+import { Badge } from './ui/badge';
 
 interface EventCardProps {
   event: Event;
@@ -15,18 +16,13 @@ interface EventCardProps {
 
 const getPriceDisplay = (price: number) => {
     if (price === 0) return 'FREE';
-    if (price < 1) { // Assuming GHS for prices less than 1
-        return `GH₵${(price * 100).toFixed(0)}`;
-    }
     return `GH₵${price.toFixed(2)}`;
 };
 
 
 export function EventCard({ event }: EventCardProps) {
   const eventDate = new Date(`${event.date}T${event.time}`);
-  const pathname = usePathname();
-  const router = useRouter();
-  const isDashboard = pathname.startsWith('/dashboard');
+  const formattedDate = formatRelativeDate(eventDate);
 
   return (
     <Card className="h-full overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 border-border/60 group flex flex-col">
@@ -42,22 +38,35 @@ export function EventCard({ event }: EventCardProps) {
           />
         </div>
       </Link>
-      <CardContent className="p-3 flex-grow flex flex-col justify-between">
-        <Link href={`/events/${event.id}`} className="block">
-          <div>
-            <h3 className="font-bold text-base leading-tight line-clamp-2 text-foreground mb-1 group-hover:text-primary transition-colors">
-              {event.name}
-            </h3>
-            <p className="text-sm font-semibold text-primary/80 mb-1">{formatRelativeDate(eventDate)}</p>
-            <p className="text-sm text-muted-foreground line-clamp-1">{event.location}</p>
+      <CardHeader className="p-4">
+          <Badge variant="secondary" className="w-fit mb-2">{event.category}</Badge>
+          <h3 className="font-bold text-base leading-tight line-clamp-2 text-foreground mb-1 group-hover:text-primary transition-colors h-12">
+            <Link href={`/events/${event.id}`}>{event.name}</Link>
+          </h3>
+          <div className="text-sm text-muted-foreground flex flex-col gap-1">
+            {formattedDate !== 'Invalid date' && (
+              <div className="flex items-center">
+                <Calendar className="mr-2 h-4 w-4" />
+                <span>{formattedDate}</span>
+              </div>
+            )}
+            <div className="flex items-center">
+                <MapPin className="mr-2 h-4 w-4" />
+                <span className="truncate">{event.location}</span>
+            </div>
           </div>
-        </Link>
-        <div className="mt-2">
-          <div className="inline-block bg-orange-100 text-orange-600 text-xs font-bold px-3 py-1 rounded-full">
-            {getPriceDisplay(event.price)}
-          </div>
-        </div>
+      </CardHeader>
+      <CardContent className="p-4 pt-0 flex-grow">
+          <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
       </CardContent>
+      <CardFooter className="p-4 border-t mt-auto">
+          <Button asChild className="w-full">
+            <Link href={`/events/${event.id}`}>
+              {getPriceDisplay(event.price)} - Get Ticket
+              <ArrowRight className="ml-2 h-4 w-4"/>
+            </Link>
+          </Button>
+      </CardFooter>
     </Card>
   );
 }
