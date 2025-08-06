@@ -1,13 +1,16 @@
 
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { format, isToday, isTomorrow, isYesterday, formatRelative } from 'date-fns';
+import { format, isToday, isTomorrow, isYesterday, formatRelative, isValid } from 'date-fns';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
 export function formatRelativeDate(date: Date): string {
+  if (!isValid(date)) {
+    return 'Invalid date';
+  }
   if (isToday(date)) {
     return `Today ${format(date, 'p')}`;
   }

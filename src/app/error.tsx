@@ -36,7 +36,7 @@ export default function Error({
         details: {
             name: error.name,
             stack: error.stack,
-            digest: error.digest,
+            digest: error.digest || null, // Ensure digest is not undefined
         },
     });
   }, [error]);
