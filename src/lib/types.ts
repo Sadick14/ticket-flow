@@ -1,11 +1,11 @@
 
-
 export type SubscriptionPlan = 'Free' | 'Essential' | 'Pro' | 'Custom';
 
 export interface Organization {
   id: string;
   name: string;
   logoUrl?: string;
+  description?: string;
   ownerId: string;
   memberIds: string[];
   followerIds?: string[];
@@ -73,6 +73,9 @@ export interface Event {
   promoCodes?: PromoCode[];
   collaboratorIds?: string[];
   ticketTypes?: TicketType[];
+  // Denormalized organization data for easier access
+  organizationName?: string;
+  organizationLogoUrl?: string;
 }
 
 export interface Ticket {

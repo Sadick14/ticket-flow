@@ -8,11 +8,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, PlusCircle, Building, ArrowRight, Users, Ticket, DollarSign } from 'lucide-react';
+import { Loader2, PlusCircle, Building, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUploader } from '@/components/image-uploader';
 import Link from 'next/link';
 import Image from 'next/image';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+  DialogClose
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import type { Organization } from '@/lib/types';
+
 
 export default function OrganizationsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -20,24 +33,30 @@ export default function OrganizationsPage() {
   const { toast } = useToast();
 
   const [isCreating, setIsCreating] = useState(false);
-  const [newOrgName, setNewOrgName] = useState('');
-  const [newOrgLogo, setNewOrgLogo] = useState('');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [newOrgData, setNewOrgData] = useState({
+    name: '',
+    logoUrl: '',
+    description: '',
+  });
 
   const handleCreateOrganization = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !newOrgName) return;
+    if (!user || !newOrgData.name) return;
 
     setIsCreating(true);
     try {
       await addOrganization({
-        name: newOrgName,
-        logoUrl: newOrgLogo,
+        name: newOrgData.name,
+        description: newOrgData.description,
+        logoUrl: newOrgData.logoUrl,
         ownerId: user.uid,
         memberIds: [user.uid],
+        socialLinks: {}, // Initialize empty social links
       });
-      toast({ title: 'Organization Created!', description: `${newOrgName} has been successfully created.` });
-      setNewOrgName('');
-      setNewOrgLogo('');
+      toast({ title: 'Organization Created!', description: `${newOrgData.name} has been successfully created.` });
+      setNewOrgData({ name: '', logoUrl: '', description: '' });
+      setIsFormOpen(false);
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -64,16 +83,19 @@ export default function OrganizationsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {userOrganizations.map(org => (
-          <Card key={org.id} className="group hover:shadow-lg transition-shadow">
-            <CardHeader className="flex-row items-center gap-4">
+          <Card key={org.id} className="group hover:shadow-lg transition-shadow flex flex-col">
+            <CardHeader className="flex-row items-start gap-4">
               <Image src={org.logoUrl || 'https://placehold.co/100x100.png'} alt={org.name} width={50} height={50} className="rounded-md" />
               <div>
                 <CardTitle>{org.name}</CardTitle>
                 <CardDescription>{org.ownerId === user?.uid ? 'Owner' : 'Member'}</CardDescription>
               </div>
             </CardHeader>
+             <CardContent className="flex-grow">
+               <p className="text-sm text-muted-foreground line-clamp-2">{org.description || 'No description provided.'}</p>
+            </CardContent>
             <CardContent>
-              <Button asChild className="w-full">
+              <Button asChild className="w-full mt-auto">
                 <Link href={`/dashboard/${org.id}/events`}>Manage <ArrowRight className="ml-2 h-4 w-4"/></Link>
               </Button>
             </CardContent>
@@ -81,36 +103,58 @@ export default function OrganizationsPage() {
         ))}
         
         {/* Create New Organization Card */}
-        <Card className="border-dashed">
-           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-                <PlusCircle className="h-5 w-5" />
-                Create New Organization
-            </CardTitle>
-            <CardDescription>Start a new team or brand profile.</CardDescription>
-           </CardHeader>
-           <CardContent>
-            <form onSubmit={handleCreateOrganization} className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="org-name">Organization Name</Label>
-                    <Input 
-                        id="org-name" 
-                        value={newOrgName} 
-                        onChange={(e) => setNewOrgName(e.target.value)}
-                        placeholder="e.g., My Awesome Company"
-                        required
-                    />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="org-logo">Logo</Label>
-                    <ImageUploader value={newOrgLogo} onUpload={setNewOrgLogo}/>
-                </div>
-                <Button type="submit" disabled={isCreating || !newOrgName} className="w-full">
-                    {isCreating ? <Loader2 className="animate-spin" /> : 'Create'}
-                </Button>
-            </form>
-           </CardContent>
-        </Card>
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <DialogTrigger asChild>
+                <Card className="border-dashed hover:border-primary hover:text-primary transition-colors cursor-pointer flex items-center justify-center min-h-[220px]">
+                    <div className="text-center">
+                        <PlusCircle className="h-12 w-12 mx-auto text-muted-foreground" />
+                        <h3 className="mt-4 text-lg font-medium">Create New Organization</h3>
+                    </div>
+                </Card>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Create a New Organization</DialogTitle>
+                    <DialogDescription>
+                        Set up a new profile for your brand, company, or community.
+                    </DialogDescription>
+                </DialogHeader>
+                 <form onSubmit={handleCreateOrganization} className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="org-name">Organization Name</Label>
+                        <Input 
+                            id="org-name" 
+                            value={newOrgData.name} 
+                            onChange={(e) => setNewOrgData({...newOrgData, name: e.target.value})}
+                            placeholder="e.g., My Awesome Company"
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="org-desc">Description</Label>
+                        <Textarea 
+                            id="org-desc" 
+                            value={newOrgData.description} 
+                            onChange={(e) => setNewOrgData({...newOrgData, description: e.target.value})}
+                            placeholder="Tell us about your organization..."
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="org-logo">Logo</Label>
+                        <ImageUploader 
+                          value={newOrgData.logoUrl} 
+                          onUpload={(url) => setNewOrgData({...newOrgData, logoUrl: url})}
+                        />
+                    </div>
+                    <DialogFooter>
+                      <DialogClose asChild><Button variant="outline" type="button">Cancel</Button></DialogClose>
+                       <Button type="submit" disabled={isCreating || !newOrgData.name}>
+                          {isCreating ? <Loader2 className="animate-spin" /> : 'Create Organization'}
+                      </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useParams } from 'next/navigation';
 import type { Organization, UserProfile } from '@/lib/types';
 import { ImageUploader } from '@/components/image-uploader';
+import { Textarea } from '@/components/ui/textarea';
 
 
 function TeamManager({ organization }: { organization: Organization }) {
@@ -207,7 +208,7 @@ export default function OrgSettingsPage() {
           <TabsTrigger value="team">Team</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="profile" className="space-y-4">
+        <TabsContent value="profile" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -217,14 +218,25 @@ export default function OrgSettingsPage() {
               <CardDescription>Update your organization's public information</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                    <Label htmlFor="orgName">Organization Name</Label>
-                    <Input 
-                      id="orgName" 
-                      value={organization.name}
-                      onChange={e => handleUpdate('name', e.target.value)}
-                    />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-2 space-y-4">
+                  <div className="space-y-2">
+                      <Label htmlFor="orgName">Organization Name</Label>
+                      <Input 
+                        id="orgName" 
+                        value={organization.name}
+                        onChange={e => handleUpdate('name', e.target.value)}
+                      />
+                  </div>
+                   <div className="space-y-2">
+                      <Label htmlFor="orgDesc">Description</Label>
+                      <Textarea 
+                        id="orgDesc" 
+                        value={organization.description || ''}
+                        onChange={e => handleUpdate('description', e.target.value)}
+                        placeholder="A short description of your organization"
+                      />
+                  </div>
                 </div>
                  <div className="space-y-2">
                     <Label>Logo</Label>
@@ -259,7 +271,7 @@ export default function OrgSettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="team">
+        <TabsContent value="team" className="mt-4">
           <TeamManager organization={organization} />
         </TabsContent>
       </Tabs>
