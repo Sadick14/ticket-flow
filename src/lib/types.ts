@@ -111,8 +111,9 @@ export interface UserProfile {
 
 export interface NewsArticle {
   id: string;
+  organizationId?: string; // To link news to an organization
   title: string;
-  source: string;
+  source: string; // Could be organization name or external source
   imageUrl: string;
   articleUrl: string;
   publishedDate: string; // ISO String

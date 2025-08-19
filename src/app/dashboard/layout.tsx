@@ -30,7 +30,8 @@ import {
   Mail,
   Globe,
   Building,
-  ArrowLeft
+  ArrowLeft,
+  Newspaper
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/context/auth-context';
@@ -203,6 +204,18 @@ export default function DashboardLayout({
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                   <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(`/dashboard/${organizationId}/news`)}
+                      tooltip={{ children: 'News Management' }}
+                    >
+                      <Link href={`/dashboard/${organizationId}/news`}>
+                        <Newspaper />
+                        <span>News</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
@@ -297,6 +310,7 @@ export default function DashboardLayout({
                   {pathname.endsWith('/sales') && 'Sales & Revenue'}
                   {pathname.endsWith('/analytics') && 'Analytics Dashboard'}
                   {pathname.endsWith('/marketing') && 'Marketing Tools'}
+                  {pathname.endsWith('/news') && 'News Management'}
                   {pathname.endsWith('/payment-settings') && 'Payment Settings'}
                   {pathname.endsWith('/settings') && 'Organization Settings'}
                   {pathname.includes('/edit/') && 'Edit Event'}
