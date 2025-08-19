@@ -106,7 +106,8 @@ export default function AdminEmailManagement() {
   const recipientType = form.watch('recipientType');
   const selectedTemplate: EmailTemplate | undefined = selectedTemplateId ? emailTemplates[selectedTemplateId] : undefined;
 
-  const handleGenerateContent = async (field: 'message' | 'intro' | `features.${number}.description`) => {
+  const handleGenerateContent = async (e: React.MouseEvent<HTMLButtonElement>, field: 'message' | 'intro' | `features.${number}.description`) => {
+      e.preventDefault(); // Prevent form submission
       const isFeature = field.startsWith('features');
       let topic: string | undefined;
 
@@ -272,7 +273,7 @@ export default function AdminEmailManagement() {
                         <div className="flex justify-between items-center mb-1">
                           <Label htmlFor={key}>{field.label}</Label>
                           {(key === 'message' || key === 'intro') && (
-                            <Button type="button" variant="ghost" size="sm" onClick={() => handleGenerateContent(key as 'message' | 'intro')} disabled={isGenerating}>
+                            <Button type="button" variant="ghost" size="sm" onClick={(e) => handleGenerateContent(e, key as 'message' | 'intro')} disabled={isGenerating}>
                                 {isGenerating && generatingField === key ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
                                 Generate with AI
                             </Button>
@@ -302,7 +303,7 @@ export default function AdminEmailManagement() {
                                       <div>
                                         <div className="flex justify-between items-center mb-1">
                                             <Label htmlFor={`features.${index}.description`}>Description</Label>
-                                            <Button type="button" variant="ghost" size="sm" onClick={() => handleGenerateContent(`features.${index}.description`)} disabled={isGenerating}>
+                                            <Button type="button" variant="ghost" size="sm" onClick={(e) => handleGenerateContent(e, `features.${index}.description`)} disabled={isGenerating}>
                                                 {isGenerating && generatingField === `features.${index}.description` ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
                                                 AI
                                             </Button>
