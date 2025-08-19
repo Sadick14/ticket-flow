@@ -6,7 +6,7 @@ import { useAppContext } from '@/context/app-context';
 import { EventCard } from '@/components/event-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { Search, CalendarX, ArrowRight, Building } from 'lucide-react';
+import { Search, CalendarX, ArrowRight, Building, Users } from 'lucide-react';
 import type { Event, Organization } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -15,11 +15,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CategoryFilters } from '@/components/category-filters';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Image from 'next/image';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 export default function EventsPageClient() {
-  const { events, organizations, loading } = useAppContext();
+  const { events, organizations, users, loading } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All Events');
   const [activeTab, setActiveTab] = useState('upcoming');
@@ -105,7 +106,7 @@ export default function EventsPageClient() {
             </div>
             {loading ? (
                 <div className="flex space-x-4">
-                    {Array.from({length: 5}).map((_, i) => <Skeleton key={i} className="h-24 w-64 rounded-lg"/>)}
+                    {Array.from({length: 5}).map((_, i) => <Skeleton key={i} className="h-40 w-64 rounded-lg"/>)}
                 </div>
             ) : organizations.length > 0 ? (
             <Carousel
@@ -116,18 +117,37 @@ export default function EventsPageClient() {
               className="w-full"
             >
               <CarouselContent>
-                {organizations.map((org) => (
+                {organizations.map((org) => {
+                  const followers = (org.followerIds || []).map(id => users.find(u => u.uid === id)).filter(Boolean);
+                  return (
                   <CarouselItem key={org.id} className="basis-auto">
                     <Link href={`/organization/${org.id}`}>
-                      <Card className="w-64 h-24 p-4 flex items-center gap-4 hover:bg-muted transition-colors">
-                          <Image src={org.logoUrl || 'https://placehold.co/64x64.png'} alt={org.name} width={64} height={64} className="rounded-md object-cover h-16 w-16"/>
-                          <div className="flex-1">
-                            <p className="font-semibold truncate">{org.name}</p>
+                      <Card className="w-64 h-40 p-4 flex flex-col justify-between hover:bg-muted transition-colors">
+                          <div className="flex items-start gap-4">
+                            <Image src={org.logoUrl || 'https://placehold.co/64x64.png'} alt={org.name} width={48} height={48} className="rounded-md object-cover h-12 w-12"/>
+                            <div className="flex-1">
+                                <p className="font-semibold truncate">{org.name}</p>
+                                <p className="text-xs text-muted-foreground line-clamp-2">{org.description}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                                <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+                                <span className="text-sm font-medium">{followers.length}</span>
+                            </div>
+                            <div className="flex -space-x-2">
+                                {followers.slice(0, 3).map(f => f && (
+                                    <Avatar key={f.uid} className="h-6 w-6 border-2 border-background">
+                                        <AvatarImage src={f.photoURL || ''} />
+                                        <AvatarFallback>{f.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                                    </Avatar>
+                                ))}
+                            </div>
                           </div>
                       </Card>
                     </Link>
                   </CarouselItem>
-                ))}
+                )})}
               </CarouselContent>
               <CarouselPrevious className="hidden sm:flex" />
               <CarouselNext className="hidden sm:flex" />
