@@ -71,9 +71,9 @@ export function generateMetadata(data: PageMetadata): Metadata {
 
 export function generateEventMetadata(event: {
   id: string;
-  title: string;
+  name: string;
   description: string;
-  imageUrl?: string; // Corrected to match Event type
+  imageUrl?: string;
   date: string;
   location: string;
   price?: number;
@@ -93,8 +93,8 @@ export function generateEventMetadata(event: {
   const priceText = event.price ? `Starting from $${event.price}` : 'Free Event';
   
   return generateMetadata({
-    title: `${event.title} | TicketFlow Events`,
-    description: `Join us for ${event.title} on ${formattedDate} at ${event.location}. ${event.description.substring(0, 120)}... ${priceText}`,
+    title: `${event.name} | TicketFlow Events`,
+    description: `Join us for ${event.name} on ${formattedDate} at ${event.location}. ${event.description.substring(0, 120)}... ${priceText}`,
     image: event.imageUrl,
     url: `/events/${event.id}`,
     type: 'event',

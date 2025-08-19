@@ -1,5 +1,4 @@
 
-
 export type SubscriptionPlan = 'Free' | 'Essential' | 'Pro' | 'Custom';
 
 export interface Speaker {
