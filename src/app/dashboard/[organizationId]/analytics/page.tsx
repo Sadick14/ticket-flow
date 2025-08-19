@@ -50,7 +50,7 @@ export default function AnalyticsPage() {
       case '90d':
         return { start: subDays(now, 90), end: now };
       case 'week':
-        return { start: startOfWeek(now), end: endOfWeek(now) };
+        return { start: startOfWeek(now), end: now };
       default:
         return { start: subDays(now, 30), end: now };
     }
