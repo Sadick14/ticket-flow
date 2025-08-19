@@ -22,20 +22,19 @@ async function getOrganizationData(id: string): Promise<{ organization: Organiza
         collection(db, 'events'),
         where('organizationId', '==', id),
         where('status', '==', 'active')
-        // orderBy('date', 'desc') // This requires a composite index. Removing it to prevent crash.
     );
     const eventsSnapshot = await getDocs(eventsQuery);
     const events = eventsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event))
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // Sorting in code instead.
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const newsQuery = query(
         collection(db, 'news'),
         where('organizationId', '==', id),
-        where('status', '==', 'published'),
-        orderBy('publishedDate', 'desc')
+        where('status', '==', 'published')
     );
     const newsSnapshot = await getDocs(newsQuery);
-    const news = newsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NewsArticle));
+    const news = newsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NewsArticle))
+      .sort((a, b) => new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime());
 
     return { organization, events, news };
 }
