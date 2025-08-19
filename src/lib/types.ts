@@ -14,7 +14,8 @@ export interface Organization {
     facebook?: string;
     instagram?: string;
     linkedin?: string;
-  }
+  };
+  gallery?: { url: string }[];
 }
 
 export interface Speaker {

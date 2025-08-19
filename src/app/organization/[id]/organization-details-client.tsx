@@ -13,6 +13,7 @@ import type { Organization, Event, NewsArticle } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { useAppContext } from '@/context/app-context';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 
 interface OrganizationDetailsClientProps {
   initialData: {
@@ -83,6 +84,31 @@ export default function OrganizationDetailsClient({ initialData }: OrganizationD
                     ))}
                 </CardContent>
             </Card>
+
+             {organization.gallery && organization.gallery.length > 0 && (
+                <section className="py-12 px-4 sm:px-6 lg:px-8">
+                     <h2 className="text-2xl font-bold text-center mb-6">Gallery</h2>
+                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {organization.gallery.map((image, index) => (
+                        <Dialog key={index}>
+                            <DialogTrigger asChild>
+                                <div className="relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg group">
+                                    <Image 
+                                        src={image.url} 
+                                        alt={`Gallery image ${index + 1}`} 
+                                        fill 
+                                        className="object-cover transition-transform duration-300 group-hover:scale-110" 
+                                    />
+                                </div>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-4xl h-[80vh]">
+                                    <Image src={image.url} alt={`Gallery image ${index + 1}`} fill className="object-contain" />
+                            </DialogContent>
+                        </Dialog>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             <div className="py-12 px-4 sm:px-6 lg:px-8">
               <Tabs defaultValue="events" className="w-full">

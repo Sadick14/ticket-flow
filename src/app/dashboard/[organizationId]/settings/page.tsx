@@ -21,13 +21,35 @@ import {
   Facebook,
   Twitter,
   Instagram,
-  Linkedin
+  Linkedin,
+  Trash2,
+  Camera
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useParams } from 'next/navigation';
 import type { Organization, UserProfile } from '@/lib/types';
 import { ImageUploader } from '@/components/image-uploader';
 import { Textarea } from '@/components/ui/textarea';
+import { useFieldArray, useForm, FormProvider } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const orgSettingsSchema = z.object({
+  name: z.string().min(2, "Name is required."),
+  description: z.string().optional(),
+  logoUrl: z.string().optional(),
+  socialLinks: z.object({
+    twitter: z.string().optional(),
+    facebook: z.string().optional(),
+    instagram: z.string().optional(),
+    linkedin: z.string().optional(),
+  }).optional(),
+  gallery: z.array(z.object({
+    url: z.string().min(1, 'Image is required.')
+  })).optional(),
+});
+
+type OrgSettingsFormValues = z.infer<typeof orgSettingsSchema>;
 
 
 function TeamManager({ organization }: { organization: Organization }) {
@@ -139,44 +161,47 @@ function TeamManager({ organization }: { organization: Organization }) {
 
 
 export default function OrgSettingsPage() {
-  const { user } = useAuth();
   const { organizations, updateOrganization } = useAppContext();
   const params = useParams();
   const organizationId = params.organizationId as string;
   const { toast } = useToast();
-
-  const [organization, setOrganization] = useState<Organization | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    const org = organizations.find(o => o.id === organizationId);
-    if(org) setOrganization(org);
-  }, [organizations, organizationId]);
+  const organization = organizations.find(o => o.id === organizationId);
   
-  const handleUpdate = (field: keyof Organization, value: any) => {
-    if (organization) {
-      setOrganization({ ...organization, [field]: value });
+  const form = useForm<OrgSettingsFormValues>({
+    resolver: zodResolver(orgSettingsSchema),
+    defaultValues: {
+      name: organization?.name || '',
+      description: organization?.description || '',
+      logoUrl: organization?.logoUrl || '',
+      socialLinks: organization?.socialLinks || {},
+      gallery: organization?.gallery || [],
     }
-  }
+  });
 
-  const handleSocialUpdate = (platform: keyof NonNullable<Organization['socialLinks']>, value: string) => {
+  const { fields: galleryFields, append: appendGallery, remove: removeGallery } = useFieldArray({
+    control: form.control,
+    name: "gallery"
+  });
+
+  useEffect(() => {
     if (organization) {
-      setOrganization({
-        ...organization,
-        socialLinks: {
-          ...organization.socialLinks,
-          [platform]: value
-        }
+      form.reset({
+        name: organization.name || '',
+        description: organization.description || '',
+        logoUrl: organization.logoUrl || '',
+        socialLinks: organization.socialLinks || {},
+        gallery: organization.gallery || [],
       });
     }
-  };
+  }, [organization, form]);
 
-
-  const handleSaveChanges = async () => {
+  const onSubmit = async (data: OrgSettingsFormValues) => {
     if (!organization) return;
     setIsSaving(true);
     try {
-      await updateOrganization(organization.id, organization);
+      await updateOrganization(organization.id, data);
       toast({ title: "Success!", description: "Organization details have been updated." });
     } catch {
       toast({ variant: 'destructive', title: "Error", description: "Failed to save changes." });
@@ -190,91 +215,101 @@ export default function OrgSettingsPage() {
   }
   
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Organization Settings</h1>
-          <p className="text-muted-foreground">Manage your organization's profile and members</p>
+    <FormProvider {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Organization Settings</h1>
+            <p className="text-muted-foreground">Manage your organization's profile and members</p>
+          </div>
+          <Button type="submit" disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+              Save Changes
+          </Button>
         </div>
-        <Button onClick={handleSaveChanges} disabled={isSaving}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-            Save Changes
-        </Button>
-      </div>
 
-      <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="team">Team</TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="profile" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="team">Team</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="profile" className="space-y-4 mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Organization Profile
-              </CardTitle>
-              <CardDescription>Update your organization's public information</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2 space-y-4">
+          <TabsContent value="profile" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><User className="h-5 w-5" />Organization Profile</CardTitle>
+                <CardDescription>Update your organization's public information</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="md:col-span-2 space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="orgName">Organization Name</Label>
+                        <Input id="orgName" {...form.register('name')} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="orgDesc">Description</Label>
+                        <Textarea id="orgDesc" {...form.register('description')} placeholder="A short description..."/>
+                    </div>
+                  </div>
                   <div className="space-y-2">
-                      <Label htmlFor="orgName">Organization Name</Label>
-                      <Input 
-                        id="orgName" 
-                        value={organization.name}
-                        onChange={e => handleUpdate('name', e.target.value)}
-                      />
-                  </div>
-                   <div className="space-y-2">
-                      <Label htmlFor="orgDesc">Description</Label>
-                      <Textarea 
-                        id="orgDesc" 
-                        value={organization.description || ''}
-                        onChange={e => handleUpdate('description', e.target.value)}
-                        placeholder="A short description of your organization"
-                      />
+                      <Label>Logo</Label>
+                      <ImageUploader value={form.watch('logoUrl')} onUpload={(url) => form.setValue('logoUrl', url)} />
                   </div>
                 </div>
-                 <div className="space-y-2">
-                    <Label>Logo</Label>
-                    <ImageUploader 
-                      value={organization.logoUrl || ''} 
-                      onUpload={(url) => handleUpdate('logoUrl', url)} 
-                    />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle className="flex items-center gap-2"><Globe className="h-5 w-5"/>Social Links</CardTitle></CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="twitter" className="flex items-center gap-2"><Twitter className="h-4 w-4"/> Twitter URL</Label>
+                    <Input id="twitter" {...form.register('socialLinks.twitter')} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="facebook" className="flex items-center gap-2"><Facebook className="h-4 w-4"/> Facebook URL</Label>
+                    <Input id="facebook" {...form.register('socialLinks.facebook')} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="instagram" className="flex items-center gap-2"><Instagram className="h-4 w-4"/> Instagram URL</Label>
+                    <Input id="instagram" {...form.register('socialLinks.instagram')} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="linkedin" className="flex items-center gap-2"><Linkedin className="h-4 w-4"/> LinkedIn URL</Label>
+                    <Input id="linkedin" {...form.register('socialLinks.linkedin')} />
+                  </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle className="flex items-center gap-2"><Camera className="h-5 w-5"/>Image Gallery</CardTitle></CardHeader>
+              <CardContent>
+                 <div className="space-y-4">
+                    {galleryFields.map((field, index) => (
+                    <div key={field.id} className="flex items-end gap-2">
+                        <div className="flex-grow">
+                            <ImageUploader
+                                value={field.url}
+                                onUpload={(url) => form.setValue(`gallery.${index}.url`, url)}
+                            />
+                        </div>
+                        <Button type="button" variant="destructive" size="icon" onClick={() => removeGallery(index)}>
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    ))}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader><CardTitle>Social Links</CardTitle></CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="twitter" className="flex items-center gap-2"><Twitter className="h-4 w-4"/> Twitter URL</Label>
-                  <Input id="twitter" value={organization.socialLinks?.twitter || ''} onChange={(e) => handleSocialUpdate('twitter', e.target.value)} />
-                </div>
-                 <div className="space-y-2">
-                  <Label htmlFor="facebook" className="flex items-center gap-2"><Facebook className="h-4 w-4"/> Facebook URL</Label>
-                  <Input id="facebook" value={organization.socialLinks?.facebook || ''} onChange={(e) => handleSocialUpdate('facebook', e.target.value)} />
-                </div>
-                 <div className="space-y-2">
-                  <Label htmlFor="instagram" className="flex items-center gap-2"><Instagram className="h-4 w-4"/> Instagram URL</Label>
-                  <Input id="instagram" value={organization.socialLinks?.instagram || ''} onChange={(e) => handleSocialUpdate('instagram', e.target.value)} />
-                </div>
-                 <div className="space-y-2">
-                  <Label htmlFor="linkedin" className="flex items-center gap-2"><Linkedin className="h-4 w-4"/> LinkedIn URL</Label>
-                  <Input id="linkedin" value={organization.socialLinks?.linkedin || ''} onChange={(e) => handleSocialUpdate('linkedin', e.target.value)} />
-                </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendGallery({ url: '' })}>
+                    Add Image
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="team" className="mt-4">
-          <TeamManager organization={organization} />
-        </TabsContent>
-      </Tabs>
-    </div>
+          <TabsContent value="team" className="mt-4">
+            <TeamManager organization={organization} />
+          </TabsContent>
+        </Tabs>
+      </form>
+    </FormProvider>
   );
 }
