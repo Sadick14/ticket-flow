@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission, Message, FeaturedArticle, SubscriptionRequest, SubscriptionPlan, Course, Lesson, CourseEnrollmentRequest, Organization } from '@/lib/types';
+import type { Event, Ticket, UserProfile, NewsArticle, LaunchSubscriber, ContactSubmission, Message, FeaturedArticle, SubscriptionRequest, SubscriptionPlan, Course, Lesson, CourseEnrollmentRequest, Organization, SavedEmail } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, limit, orderBy, serverTimestamp, writeBatch, documentId, setDoc } from 'firebase/firestore';
 import { renderTemplate } from '@/lib/email-templates';
@@ -16,6 +16,7 @@ interface AppContextType {
   users: UserProfile[];
   courses: Course[];
   organizations: Organization[];
+  savedEmails: SavedEmail[];
   launchSubscribers: LaunchSubscriber[];
   contactSubmissions: ContactSubmission[];
   featuredArticle: FeaturedArticle | null;
@@ -66,6 +67,10 @@ interface AppContextType {
   getCourseById: (courseId: string) => Promise<Course | undefined>;
   // Featured Article
   saveFeaturedArticle: (article: Omit<FeaturedArticle, 'id' | 'updatedAt'>) => Promise<void>;
+  // Saved Emails
+  addSavedEmail: (emailData: Omit<SavedEmail, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateSavedEmail: (id: string, emailData: Partial<Omit<SavedEmail, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
+  deleteSavedEmail: (id: string) => Promise<void>;
   // Subscribers
   addSubscriber: (email: string, name?: string) => Promise<void>;
   deleteSubscriber: (id: string) => Promise<void>;
@@ -104,6 +109,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [savedEmails, setSavedEmails] = useState<SavedEmail[]>([]);
   const [launchSubscribers, setLaunchSubscribers] = useState<LaunchSubscriber[]>([]);
   const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
   const [featuredArticle, setFeaturedArticle] = useState<FeaturedArticle | null>(null);
@@ -120,6 +126,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             usersSnapshot,
             coursesSnapshot,
             organizationsSnapshot,
+            savedEmailsSnapshot,
             launchSubscribersSnapshot,
             contactSubmissionsSnapshot,
             featuredArticleDoc,
@@ -132,6 +139,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             getDocs(query(collection(db, 'users'))),
             getDocs(query(collection(db, 'courses'), orderBy('title'))),
             getDocs(query(collection(db, 'organizations'), orderBy('name'))),
+            getDocs(query(collection(db, 'saved_emails'), orderBy('name'))),
             getDocs(query(collection(db, 'launch_subscribers'), orderBy('subscribedAt', 'desc'))),
             getDocs(query(collection(db, 'contact_submissions'), orderBy('submittedAt', 'desc'))),
             getDoc(doc(db, 'featured_content', 'current')),
@@ -152,6 +160,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setUsers(usersSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile)));
         setCourses(fetchedCourses);
         setOrganizations(organizationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Organization)));
+        setSavedEmails(savedEmailsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SavedEmail)));
         setLaunchSubscribers(launchSubscribersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LaunchSubscriber)));
         setContactSubmissions(contactSubmissionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ContactSubmission)));
         
@@ -616,7 +625,31 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error setting featured article:", error);
       throw error;
     }
-  }
+  };
+
+  // Saved Emails
+  const addSavedEmail = async (emailData: Omit<SavedEmail, 'id' | 'createdAt' | 'updatedAt'>) => {
+    await addDoc(collection(db, 'saved_emails'), {
+      ...emailData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    await fetchAllData();
+  };
+
+  const updateSavedEmail = async (id: string, emailData: Partial<Omit<SavedEmail, 'id' | 'createdAt' | 'updatedAt'>>) => {
+    const emailRef = doc(db, 'saved_emails', id);
+    await updateDoc(emailRef, {
+      ...emailData,
+      updatedAt: serverTimestamp(),
+    });
+    await fetchAllData();
+  };
+
+  const deleteSavedEmail = async (id: string) => {
+    await deleteDoc(doc(db, 'saved_emails', id));
+    await fetchAllData();
+  };
 
   // Subscribers
   const addSubscriber = async (email: string, name?: string) => {
@@ -808,6 +841,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       users,
       courses,
       organizations,
+      savedEmails,
       launchSubscribers,
       contactSubmissions,
       featuredArticle,
@@ -846,6 +880,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       deleteCourse,
       getCourseById,
       saveFeaturedArticle,
+      addSavedEmail,
+      updateSavedEmail,
+      deleteSavedEmail,
       addSubscriber,
       deleteSubscriber,
       bulkAddSubscribers,

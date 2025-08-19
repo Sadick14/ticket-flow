@@ -1,4 +1,6 @@
 
+import { type TemplateId } from '@/lib/email-templates';
+
 export type SubscriptionPlan = 'Free' | 'Essential' | 'Pro' | 'Custom';
 
 export interface Organization {
@@ -238,4 +240,13 @@ export interface AppLog {
   userId?: string;
   userEmail?: string;
   details?: Record<string, any>;
+}
+
+export interface SavedEmail {
+  id: string;
+  name: string;
+  templateId: TemplateId;
+  templateContent: Record<string, any>;
+  createdAt: any; // server timestamp
+  updatedAt: any; // server timestamp
 }

@@ -27,12 +27,18 @@ import {
   Palette,
   Trash2,
   PlusCircle,
-  Wand2
+  Wand2,
+  Save,
+  FileEdit,
+  History
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { emailTemplates, type EmailTemplate, type TemplateId } from '@/lib/email-templates';
 import { ImageUploader } from './image-uploader';
 import { generateEmailContent } from '@/ai/flows/generate-email-content';
+import { useAppContext } from '@/context/app-context';
+import type { SavedEmail } from '@/lib/types';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
 interface RecipientGroup {
     id: 'all-users' | 'event-creators' | 'launch-subscribers' | 'custom';
@@ -83,10 +89,13 @@ type EmailFormValues = z.infer<typeof formSchema>;
 
 
 export default function AdminEmailManagement() {
+  const { savedEmails, addSavedEmail, updateSavedEmail, deleteSavedEmail } = useAppContext();
   const [status, setStatus] = useState<EmailStatus>({ type: null, message: '', details: undefined });
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingField, setGeneratingField] = useState<string | null>(null);
   const { toast } = useToast();
+  const [selectedSavedEmailId, setSelectedSavedEmailId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const form = useForm<EmailFormValues>({
     resolver: zodResolver(formSchema),
@@ -107,7 +116,7 @@ export default function AdminEmailManagement() {
   const selectedTemplate: EmailTemplate | undefined = selectedTemplateId ? emailTemplates[selectedTemplateId] : undefined;
 
   const handleGenerateContent = async (e: React.MouseEvent<HTMLButtonElement>, field: 'message' | 'intro' | `features.${number}.description`) => {
-      e.preventDefault(); // Prevent form submission
+      e.preventDefault();
       const isFeature = field.startsWith('features');
       let topic: string | undefined;
 
@@ -175,12 +184,73 @@ export default function AdminEmailManagement() {
       if (response.ok) {
         setStatus({ type: 'success', message: 'Email batch processed!', details: result.details });
         toast({ title: 'Success', description: `Emails sent to ${result.details.successful} recipients.`});
-        form.reset();
       } else {
         setStatus({ type: 'error', message: result.error || 'Failed to send emails' });
       }
     } catch (error) {
        setStatus({ type: 'error', message: 'An unexpected error occurred.' });
+    }
+  };
+
+  const handleSaveEmail = async () => {
+    const templateName = prompt("Enter a name for this email template:");
+    if (!templateName) return;
+
+    setIsSaving(true);
+    const data = form.getValues();
+    const emailData = {
+        name: templateName,
+        templateId: data.selectedTemplateId as TemplateId,
+        templateContent: { ...data }
+    };
+    delete (emailData.templateContent as any).recipientType;
+    delete (emailData.templateContent as any).customEmails;
+    delete (emailData.templateContent as any).selectedTemplateId;
+
+    try {
+        await addSavedEmail(emailData);
+        toast({ title: "Email Saved!", description: "Your email has been saved as a template." });
+    } catch(e) {
+        toast({ variant: 'destructive', title: "Save Failed" });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
+  const handleUpdateEmail = async () => {
+    if (!selectedSavedEmailId) return;
+
+    setIsSaving(true);
+    const data = form.getValues();
+    const emailData = {
+        templateId: data.selectedTemplateId as TemplateId,
+        templateContent: { ...data }
+    };
+    delete (emailData.templateContent as any).recipientType;
+    delete (emailData.templateContent as any).customEmails;
+    delete (emailData.templateContent as any).selectedTemplateId;
+
+    try {
+        await updateSavedEmail(selectedSavedEmailId, emailData);
+        toast({ title: "Email Updated!", description: "Your changes have been saved." });
+    } catch(e) {
+        toast({ variant: 'destructive', title: "Update Failed" });
+    } finally {
+        setIsSaving(false);
+    }
+  }
+  
+  const handleLoadEmail = (id: string) => {
+    const email = savedEmails.find(e => e.id === id);
+    if(email) {
+      form.reset({
+        ...email.templateContent,
+        selectedTemplateId: email.templateId,
+        recipientType: 'all-users', // Reset recipient choice on load
+        customEmails: ''
+      });
+      setSelectedSavedEmailId(id);
+      toast({ title: `Loaded "${email.name}"` });
     }
   };
   
@@ -224,12 +294,65 @@ export default function AdminEmailManagement() {
                     )}
                 </CardContent>
             </Card>
-            <Card>
+             <Card>
                 <CardHeader>
-                    <CardTitle>2. Choose a Template</CardTitle>
-                    <CardDescription>Select a pre-designed template for your email.</CardDescription>
+                    <CardTitle>Load Saved Email</CardTitle>
+                    <CardDescription>Reuse a previously saved email template.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-2">
+                <CardContent>
+                    <Select onValueChange={handleLoadEmail}>
+                        <SelectTrigger><SelectValue placeholder="Load a template..." /></SelectTrigger>
+                        <SelectContent>
+                            {savedEmails.map(email => (
+                                <SelectItem key={email.id} value={email.id}>
+                                    {email.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {selectedSavedEmailId && (
+                         <div className="flex gap-2 mt-4">
+                            <Button onClick={handleUpdateEmail} variant="outline" size="sm" className="flex-1" disabled={isSaving}>
+                                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileEdit className="mr-2 h-4 w-4"/>}
+                                Update
+                            </Button>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="destructive" size="sm" className="flex-1">
+                                    <Trash2 className="mr-2 h-4 w-4"/> Delete
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will permanently delete the "{savedEmails.find(e=>e.id === selectedSavedEmailId)?.name}" template.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => {
+                                        deleteSavedEmail(selectedSavedEmailId);
+                                        form.reset();
+                                        setSelectedSavedEmailId(null);
+                                    }}>
+                                        Delete
+                                    </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                         </div>
+                    )}
+                </CardContent>
+            </Card>
+          </div>
+
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>2. Compose Email</CardTitle>
+                <CardDescription>Choose a template and fill in the content. No HTML needed!</CardDescription>
+                 <div className="pt-4">
                     <Select onValueChange={(value) => form.setValue('selectedTemplateId', value)} value={selectedTemplateId}>
                       <SelectTrigger><SelectValue placeholder="Select a template" /></SelectTrigger>
                       <SelectContent>
@@ -249,15 +372,7 @@ export default function AdminEmailManagement() {
                       </SelectContent>
                     </Select>
                     {form.formState.errors.selectedTemplateId && <p className="text-destructive text-sm mt-1">{form.formState.errors.selectedTemplateId.message}</p>}
-                </CardContent>
-            </Card>
-          </div>
-
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>3. Compose Content</CardTitle>
-                <CardDescription>Fill in the content for your chosen template. No HTML needed!</CardDescription>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {!selectedTemplate ? (
@@ -349,6 +464,9 @@ export default function AdminEmailManagement() {
                       </Alert>
                     )}
                     <div className="flex justify-end gap-3 pt-2">
+                      <Button type="button" variant="outline" onClick={handleSaveEmail} disabled={isSaving || selectedSavedEmailId}>
+                        <Save className="mr-2 h-4 w-4"/> Save as Template
+                      </Button>
                       <Button type="submit" disabled={status.type === 'loading' || !form.formState.isValid}>
                         {status.type === 'loading' ? ( <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending...</> ) : ( <><Send className="h-4 w-4 mr-2" /> Send Email</> )}
                       </Button>
