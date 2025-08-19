@@ -50,7 +50,7 @@ export interface EmailTemplate {
       type: 'text' | 'textarea' | 'url';
     }
   };
-  generate: (content: Record<string, string>) => { subject: string, html: string, text: string };
+  generate: (content: Record<string, any>) => { subject: string, html: string, text: string };
 }
 
 export const emailTemplates = {
@@ -93,22 +93,32 @@ export const emailTemplates = {
       subject: { label: 'Subject', placeholder: 'This Month at TicketFlow', defaultValue: 'What\'s New at TicketFlow - [Month] Edition', type: 'text' },
       headline: { label: 'Main Headline', placeholder: 'New Features to Explore', defaultValue: 'This Month\'s Top New Features', type: 'text' },
       intro: { label: 'Introduction', placeholder: 'We\'ve been busy building things...', defaultValue: 'Hello everyone,\n\nWe\'ve been working hard behind the scenes to bring you some powerful new tools to make your events even more successful. Here\'s what\'s new this month:', type: 'textarea' },
-      feature1Title: { label: 'Feature 1 Title', placeholder: 'Awesome New Feature', defaultValue: 'AI-Powered Event Descriptions', type: 'text' },
-      feature1Desc: { label: 'Feature 1 Description', placeholder: 'Details about the feature...', defaultValue: 'Struggling with what to write? Our new AI assistant can generate compelling, professional event descriptions for you in seconds. Just provide a few details and let the AI do the rest!', type: 'textarea' },
-      buttonText: { label: 'Button Text', placeholder: 'Explore Now', defaultValue: 'Explore All Features', type: 'text' },
-      buttonUrl: { label: 'Button URL', placeholder: 'https://ticket-flow.up.railway.app/features', defaultValue: 'https://ticket-flow.up.railway.app/home', type: 'url' },
     },
     generate: (content) => {
-       const { subject, headline, intro, feature1Title, feature1Desc, buttonText, buttonUrl } = content;
-      const html = emailWrapper('TicketFlow Newsletter', `
+      const { subject, headline, intro, features } = content;
+      
+      let featuresHtml = '';
+      let featuresText = '';
+
+      if (Array.isArray(features)) {
+        features.forEach((feature: any) => {
+          featuresHtml += `
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+            ${feature.imageUrl ? `<img src="${feature.imageUrl}" alt="${feature.title}" class="featured-image">` : ''}
+            <h3>${feature.title}</h3>
+            <p>${feature.description.replace(/\n/g, '<br>')}</p>
+            ${feature.buttonUrl && feature.buttonText ? `<a href="${feature.buttonUrl}" class="button">${feature.buttonText}</a>` : ''}
+          `;
+          featuresText += `\n\n---\n\n${feature.title}\n${feature.description}\n${feature.buttonUrl && feature.buttonText ? `${feature.buttonText}: ${feature.buttonUrl}` : ''}`;
+        });
+      }
+
+      const html = emailWrapper(headline, `
         <h2>${headline}</h2>
         <p>${intro.replace(/\n/g, '<br>')}</p>
-        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;">
-        <h3>${feature1Title}</h3>
-        <p>${feature1Desc.replace(/\n/g, '<br>')}</p>
-        <a href="${buttonUrl}" class="button">${buttonText}</a>
+        ${featuresHtml}
       `);
-      const text = `${headline}\n\n${intro}\n\n${feature1Title}\n${feature1Desc}\n\n${buttonText}: ${buttonUrl}`;
+      const text = `${headline}\n\n${intro}${featuresText}`;
       return { subject, html, text };
     }
   },
@@ -280,7 +290,7 @@ export const emailTemplates = {
 
 export type TemplateId = keyof typeof emailTemplates;
 
-export function renderTemplate(templateId: TemplateId, content: Record<string, string>) {
+export function renderTemplate(templateId: TemplateId, content: Record<string, any>) {
   const template = emailTemplates[templateId];
   if (!template) {
     throw new Error('Invalid template ID');

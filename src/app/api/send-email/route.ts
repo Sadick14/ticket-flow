@@ -20,7 +20,7 @@ interface EmailRequest {
 
   // For template-based emails
   templateId?: TemplateId;
-  templateContent?: Record<string, string>;
+  templateContent?: Record<string, any>; // Allow complex objects like arrays
 }
 
 async function getRecipientEmails(type: string, eventId?: string): Promise<string[]> {
