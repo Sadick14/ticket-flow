@@ -7,13 +7,16 @@ import { CreateEventForm } from '@/components/create-event-form';
 import { useAuth } from '@/context/auth-context';
 import { useAppContext } from '@/context/app-context';
 import { Loader2 } from 'lucide-react';
-import type { Event } from '@/lib/types';
+import type { Event, Organization } from '@/lib/types';
 
 export default function EditEventPage() {
   const { user, loading: authLoading } = useAuth();
-  const { getEventById } = useAppContext();
+  const { getEventById, organizations } = useAppContext();
   const router = useRouter();
-  const { id } = useParams();
+  const params = useParams();
+  const id = params.id as string;
+  const organizationId = params.organizationId as string;
+
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,13 +27,25 @@ export default function EditEventPage() {
       router.push('/');
       return;
     }
+    if (!organizationId) {
+        setError("No organization context. Please go back and select an organization.");
+        setLoading(false);
+        return;
+    }
+
+    const org = organizations.find(o => o.id === organizationId);
+    if (!org?.memberIds.includes(user.uid)) {
+        setError("You don't have permission to manage this organization.");
+        setLoading(false);
+        return;
+    }
 
     if (id) {
-      getEventById(id as string)
+      getEventById(id)
         .then(eventData => {
           if (eventData) {
-            if (eventData.creatorId !== user.uid) {
-               setError("You don't have permission to edit this event.");
+            if (eventData.organizationId !== organizationId) {
+               setError("This event does not belong to the selected organization.");
             } else {
                setEvent(eventData);
             }
@@ -43,7 +58,7 @@ export default function EditEventPage() {
     } else {
         setLoading(false);
     }
-  }, [id, user, authLoading, getEventById, router]);
+  }, [id, user, authLoading, getEventById, router, organizationId, organizations]);
 
   if (loading || authLoading) {
     return (

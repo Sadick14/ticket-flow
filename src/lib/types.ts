@@ -1,5 +1,21 @@
 
+
 export type SubscriptionPlan = 'Free' | 'Essential' | 'Pro' | 'Custom';
+
+export interface Organization {
+  id: string;
+  name: string;
+  logoUrl?: string;
+  ownerId: string;
+  memberIds: string[];
+  followerIds?: string[];
+  socialLinks?: {
+    twitter?: string;
+    facebook?: string;
+    instagram?: string;
+    linkedin?: string;
+  }
+}
 
 export interface Speaker {
   name: string;
@@ -34,20 +50,18 @@ export interface TicketType {
 
 export interface Event {
   id: string;
+  organizationId: string;
   creatorId: string;
   name: string;
   status: 'active' | 'archived' | 'cancelled';
-  organizationName?: string;
-  organizationLogoUrl?: string;
   category: string;
   venueType: 'in-person' | 'online';
   location: string; // Physical address or "Online"
   latitude?: number;
   longitude?: number;
   onlineUrl?: string; // URL for online events
-  // `date` will be the start date. For single day events, endDate will be the same.
-  date: string;
-  endDate?: string; 
+  date: string; // Start date
+  endDate?: string; // For multi-day events
   time: string;
   description: string;
   price: number; // Default price, used if no ticket types
@@ -64,6 +78,7 @@ export interface Event {
 export interface Ticket {
   id: string;
   eventId: string;
+  organizationId: string;
   attendeeName: string;
   attendeeEmail: string;
   purchaseDate: string;

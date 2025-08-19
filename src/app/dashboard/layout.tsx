@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import {
   Sidebar,
   SidebarContent,
@@ -28,7 +28,9 @@ import {
   CreditCard,
   QrCode,
   Mail,
-  Globe
+  Globe,
+  Building,
+  ArrowLeft
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/context/auth-context';
@@ -43,57 +45,86 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-
+import { useAppContext } from '@/context/app-context';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
+  const { organizations, loading: appLoading } = useAppContext();
   const pathname = usePathname();
-  const isActive = (path: string) => pathname === path || (path !== '/dashboard' && pathname.startsWith(path));
+  const params = useParams();
+  const organizationId = params.organizationId as string;
+
+  const selectedOrg = React.useMemo(() => {
+    return organizations.find(org => org.id === organizationId);
+  }, [organizations, organizationId]);
+
+  const isActive = (path: string) => {
+    const basePath = `/dashboard/${organizationId}`;
+    if (path === basePath) return pathname === path;
+    return pathname.startsWith(path);
+  }
   
   const hasProFeatures = user?.subscriptionPlan === 'Pro';
   const hasSalesAccess = user?.subscriptionPlan === 'Pro' || user?.subscriptionPlan === 'Essential';
+  
+  if (pathname === '/dashboard') {
+    return (
+      <div className="p-4 md:p-6 lg:p-8">{children}</div>
+    );
+  }
 
   return (
     <SidebarProvider>
       <Sidebar side="left" collapsible="icon" variant="sidebar">
           <SidebarHeader>
-            <Link
-              href="/home"
-              className="flex items-center gap-2 text-xl font-bold text-sidebar-foreground font-headline hover:opacity-80 transition-opacity"
-            >
-              <Ticket className="h-6 w-6 text-primary" />
-              <span className="group-data-[collapsible=icon]:hidden">TicketFlow</span>
-            </Link>
+            {selectedOrg ? (
+                 <div className="flex items-center gap-2 text-xl font-bold text-sidebar-foreground font-headline">
+                    <Avatar className="h-8 w-8">
+                        <AvatarImage src={selectedOrg.logoUrl || ''} />
+                        <AvatarFallback>{selectedOrg.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <span className="group-data-[collapsible=icon]:hidden">{selectedOrg.name}</span>
+                </div>
+            ) : (
+                <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <Skeleton className="h-4 w-24 group-data-[collapsible=icon]:hidden" />
+                </div>
+            )}
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
+               <SidebarMenuItem>
+                 <SidebarMenuButton asChild variant="ghost" className="mb-2">
+                    <Link href="/dashboard"><ArrowLeft/> Back to Orgs</Link>
+                 </SidebarMenuButton>
+              </SidebarMenuItem>
+              <Separator className="my-2 bg-sidebar-border" />
+
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={isActive('/dashboard')}
-                  tooltip={{
-                    children: 'My Events',
-                  }}
+                  isActive={isActive(`/dashboard/${organizationId}/events`)}
+                  tooltip={{ children: 'Events' }}
                 >
-                  <Link href="/dashboard">
+                  <Link href={`/dashboard/${organizationId}/events`}>
                     <Home />
-                    <span>My Events</span>
+                    <span>Events</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={isActive('/dashboard/create')}
-                  tooltip={{
-                    children: 'Create Event',
-                  }}
+                  isActive={isActive(`/dashboard/${organizationId}/create`)}
+                  tooltip={{ children: 'Create Event' }}
                 >
-                  <Link href="/dashboard/create">
+                  <Link href={`/dashboard/${organizationId}/create`}>
                     <PlusCircle />
                     <span>Create Event</span>
                   </Link>
@@ -103,12 +134,10 @@ export default function DashboardLayout({
                <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={isActive('/dashboard/attendees')}
-                  tooltip={{
-                    children: 'Attendees',
-                  }}
+                  isActive={isActive(`/dashboard/${organizationId}/attendees`)}
+                  tooltip={{ children: 'Attendees' }}
                 >
-                  <Link href="/dashboard/attendees">
+                  <Link href={`/dashboard/${organizationId}/attendees`}>
                     <Users />
                     <span>Attendees</span>
                   </Link>
@@ -117,12 +146,10 @@ export default function DashboardLayout({
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={isActive('/dashboard/scanner')}
-                  tooltip={{
-                    children: 'Ticket Scanner',
-                  }}
+                  isActive={isActive(`/dashboard/${organizationId}/scanner`)}
+                  tooltip={{ children: 'Ticket Scanner' }}
                 >
-                  <Link href="/dashboard/scanner">
+                  <Link href={`/dashboard/${organizationId}/scanner`}>
                     <QrCode />
                     <span>Ticket Scanner</span>
                   </Link>
@@ -131,12 +158,10 @@ export default function DashboardLayout({
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={isActive('/dashboard/emails')}
-                  tooltip={{
-                    children: 'Email Management',
-                  }}
+                  isActive={isActive(`/dashboard/${organizationId}/emails`)}
+                  tooltip={{ children: 'Email Management' }}
                 >
-                  <Link href="/dashboard/emails">
+                  <Link href={`/dashboard/${organizationId}/emails`}>
                     <Mail />
                     <span>Email Management</span>
                   </Link>
@@ -149,12 +174,10 @@ export default function DashboardLayout({
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
-                      isActive={isActive('/dashboard/sales')}
-                      tooltip={{
-                        children: 'Ticket Sales',
-                      }}
+                      isActive={isActive(`/dashboard/${organizationId}/sales`)}
+                      tooltip={{ children: 'Ticket Sales' }}
                     >
-                      <Link href="/dashboard/sales">
+                      <Link href={`/dashboard/${organizationId}/sales`}>
                         <CreditCard />
                         <span>Ticket Sales</span>
                       </Link>
@@ -167,12 +190,10 @@ export default function DashboardLayout({
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
-                      isActive={isActive('/dashboard/marketing')}
-                      tooltip={{
-                        children: 'Marketing',
-                      }}
+                      isActive={isActive(`/dashboard/${organizationId}/marketing`)}
+                      tooltip={{ children: 'Marketing' }}
                     >
-                      <Link href="/dashboard/marketing">
+                      <Link href={`/dashboard/${organizationId}/marketing`}>
                         <Megaphone />
                         <span>Marketing</span>
                       </Link>
@@ -181,12 +202,10 @@ export default function DashboardLayout({
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
-                      isActive={isActive('/dashboard/analytics')}
-                      tooltip={{
-                        children: 'Analytics',
-                      }}
+                      isActive={isActive(`/dashboard/${organizationId}/analytics`)}
+                      tooltip={{ children: 'Analytics' }}
                     >
-                      <Link href="/dashboard/analytics">
+                      <Link href={`/dashboard/${organizationId}/analytics`}>
                         <LineChart />
                         <span>Analytics</span>
                       </Link>
@@ -198,12 +217,10 @@ export default function DashboardLayout({
                <SidebarMenuItem>
                  <SidebarMenuButton
                   asChild
-                  isActive={isActive('/dashboard/payment-settings')}
-                  tooltip={{
-                    children: 'Payments',
-                  }}
+                  isActive={isActive(`/dashboard/${organizationId}/payment-settings`)}
+                  tooltip={{ children: 'Payments' }}
                 >
-                  <Link href="/dashboard/payment-settings">
+                  <Link href={`/dashboard/${organizationId}/payment-settings`}>
                     <CreditCard />
                     <span>Payments</span>
                   </Link>
@@ -212,14 +229,12 @@ export default function DashboardLayout({
                <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={isActive('/dashboard/settings')}
-                  tooltip={{
-                    children: 'Settings',
-                  }}
+                  isActive={isActive(`/dashboard/${organizationId}/settings`)}
+                  tooltip={{ children: 'Org Settings' }}
                 >
-                  <Link href="/dashboard/settings">
+                  <Link href={`/dashboard/${organizationId}/settings`}>
                     <Settings />
-                    <span>Settings</span>
+                    <span>Org Settings</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -270,17 +285,17 @@ export default function DashboardLayout({
             <SidebarTrigger className="md:hidden" />
             <div className="flex-1">
                 <h1 className="text-lg font-semibold text-foreground">
-                  {pathname === '/dashboard' && 'My Events'}
-                  {pathname === '/dashboard/create' && 'Create Event'}
-                  {pathname === '/dashboard/attendees' && 'Attendees'}
-                  {pathname === '/dashboard/scanner' && 'Ticket Scanner'}
-                  {pathname === '/dashboard/emails' && 'Email Management'}
-                  {pathname === '/dashboard/sales' && 'Sales & Revenue'}
-                  {pathname === '/dashboard/analytics' && 'Analytics Dashboard'}
-                  {pathname === '/dashboard/marketing' && 'Marketing Tools'}
-                  {pathname === '/dashboard/payment-settings' && 'Payment Settings'}
-                  {pathname === '/dashboard/settings' && 'Settings'}
-                  {pathname.startsWith('/dashboard/edit/') && 'Edit Event'}
+                  {pathname.endsWith('/events') && 'Events Dashboard'}
+                  {pathname.endsWith('/create') && 'Create Event'}
+                  {pathname.endsWith('/attendees') && 'Attendees'}
+                  {pathname.endsWith('/scanner') && 'Ticket Scanner'}
+                  {pathname.endsWith('/emails') && 'Email Management'}
+                  {pathname.endsWith('/sales') && 'Sales & Revenue'}
+                  {pathname.endsWith('/analytics') && 'Analytics Dashboard'}
+                  {pathname.endsWith('/marketing') && 'Marketing Tools'}
+                  {pathname.endsWith('/payment-settings') && 'Payment Settings'}
+                  {pathname.endsWith('/settings') && 'Organization Settings'}
+                  {pathname.includes('/edit/') && 'Edit Event'}
                 </h1> 
             </div>
         </header>

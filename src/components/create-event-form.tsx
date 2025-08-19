@@ -31,14 +31,13 @@ import type { DateRange } from 'react-day-picker';
 import { useAppContext } from '@/context/app-context';
 import { useAuth } from '@/context/auth-context';
 import { generateEventDescription } from '@/ai/flows/generate-event-description';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { Event, SubscriptionPlan } from '@/lib/types';
 import { ImageUploader } from '@/components/image-uploader';
 
 const eventFormSchema = z.object({
   name: z.string().min(3, { message: 'Event name must be at least 3 characters.' }),
-  organizationName: z.string().optional(),
   category: z.string({ required_error: 'Please select a category.' }),
   eventType: z.enum(['single', 'multi'], { required_error: 'Please select an event type.' }),
   venueType: z.enum(['in-person', 'online'], { required_error: 'Please select a venue type.' }),
@@ -56,7 +55,6 @@ const eventFormSchema = z.object({
     (val) => val.startsWith('http') || val.startsWith('/uploads/'),
     { message: 'Please upload an image.' }
   ),
-  organizationLogoUrl: z.string().url({ message: 'Please enter a valid URL.' }).optional().or(z.literal('')),
   speakers: z.array(z.object({
     name: z.string().optional(),
     title: z.string().optional(),
@@ -114,6 +112,8 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
   const { user, signInWithGoogle } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  const params = useParams();
+  const organizationId = params.organizationId as string;
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -123,7 +123,6 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
       name: '',
-      organizationName: '',
       eventType: 'single',
       venueType: 'in-person',
       date: new Date(),
@@ -136,7 +135,6 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
       price: 0,
       capacity: 100,
       imageUrl: '',
-      organizationLogoUrl: '',
       speakers: [],
       activities: [],
       sponsors: [],
@@ -158,7 +156,6 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
       const isMultiDay = eventToEdit.date !== eventToEdit.endDate;
       form.reset({
         name: eventToEdit.name,
-        organizationName: eventToEdit.organizationName || '',
         category: eventToEdit.category,
         eventType: isMultiDay ? 'multi' : 'single',
         venueType: eventToEdit.venueType || 'in-person',
@@ -173,7 +170,6 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
         price: eventToEdit.price,
         capacity: eventToEdit.capacity,
         imageUrl: eventToEdit.imageUrl,
-        organizationLogoUrl: eventToEdit.organizationLogoUrl || '',
         speakers: eventToEdit.speakers?.map(s => ({...s, imageUrl: s.imageUrl || 'https://placehold.co/100x100.png'})) || [],
         activities: eventToEdit.activities?.map(a => ({...a, time: a && a.time ? format(new Date(`1970-01-01T${a.time.replace(/(am|pm)/i, '').trim()}`), 'HH:mm') : '' })) || [],
         sponsors: eventToEdit.sponsors?.map(s => ({...s, logoUrl: s.logoUrl || 'https://placehold.co/150x75.png'})) || [],
@@ -254,6 +250,14 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
         });
         return;
     }
+    if (!organizationId) {
+        toast({
+            variant: 'destructive',
+            title: 'Organization Error',
+            description: 'No organization selected. Please go back and select an organization.',
+        });
+        return;
+    }
 
     setIsSubmitting(true);
 
@@ -262,9 +266,8 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
 
     const eventPayload = {
       creatorId: user.uid,
+      organizationId: organizationId,
       name: data.name,
-      organizationName: data.organizationName || '',
-      organizationLogoUrl: data.organizationLogoUrl || '',
       category: data.category,
       venueType: data.venueType,
       location: data.venueType === 'in-person' ? data.location : 'Online',
@@ -303,8 +306,8 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
             });
             form.reset();
         }
-        router.push('/dashboard');
-        router.refresh(); // To reflect changes immediately on the dashboard
+        router.push(`/dashboard/${organizationId}/events`);
+        router.refresh();
     } catch(error) {
         toast({
           variant: 'destructive',
@@ -372,27 +375,13 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                     </FormItem>
                   )}
                 />
-                 <FormField
-                  control={form.control}
-                  name="organizationName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Organization / Community Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Acme Inc." {...field} />
-                      </FormControl>
-                      <FormDescription>Optional</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
               <CardTitle>Branding &amp; Media</CardTitle>
-              <CardDescription>Upload images to represent your event and organization.</CardDescription>
+              <CardDescription>Upload images to represent your event.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
               <FormField
@@ -408,23 +397,6 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
                         />
                       </FormControl>
                        <FormDescription>This is the main banner image for your event.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="organizationLogoUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Organization Logo</FormLabel>
-                      <FormControl>
-                         <ImageUploader 
-                          onUpload={(url) => field.onChange(url)}
-                          value={field.value}
-                          />
-                      </FormControl>
-                       <FormDescription>Optional. Upload a logo for the organization.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -952,7 +924,7 @@ export function CreateEventForm({ eventToEdit }: CreateEventFormProps) {
 
 
           <div className="flex justify-end space-x-4 mt-8">
-             <Button type="button" variant="outline" onClick={() => router.push('/dashboard')}>Cancel</Button>
+             <Button type="button" variant="outline" onClick={() => router.push(`/dashboard/${organizationId}/events`)}>Cancel</Button>
              <Button type="submit" disabled={isSubmitting || !isAuthenticated}>
                {isSubmitting ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

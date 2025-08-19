@@ -8,53 +8,41 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   User, 
-  CreditCard, 
-  Bell, 
-  Shield, 
-  Download,
-  Trash2,
-  Upload,
-  AlertTriangle,
-  Crown,
-  Zap,
-  Star,
+  Shield,
   Users2,
   Loader2,
-  X
+  X,
+  Globe,
+  Facebook,
+  Twitter,
+  Instagram,
+  Linkedin
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import Link from 'next/link';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { Event, UserProfile } from '@/lib/types';
+import { useParams } from 'next/navigation';
+import type { Organization, UserProfile } from '@/lib/types';
+import { ImageUploader } from '@/components/image-uploader';
 
 
-function TeamManager() {
-  const { user } = useAuth();
-  const { events, getEventsByCreator, addCollaborator, removeCollaborator, getUsersByUids, loading: appLoading } = useAppContext();
+function TeamManager({ organization }: { organization: Organization }) {
+  const { addCollaborator, removeCollaborator, getUsersByUids, loading: appLoading } = useAppContext();
   const { toast } = useToast();
   
-  const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [collaborators, setCollaborators] = useState<UserProfile[]>([]);
   const [newCollabEmail, setNewCollabEmail] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [loadingCollabs, setLoadingCollabs] = useState(false);
 
-  const userEvents = user ? getEventsByCreator(user.uid) : [];
-  const selectedEvent = events.find(e => e.id === selectedEventId);
-
   useEffect(() => {
     const fetchCollaborators = async () => {
-      if (selectedEvent && selectedEvent.collaboratorIds) {
+      if (organization && organization.memberIds) {
         setLoadingCollabs(true);
-        const users = await getUsersByUids(selectedEvent.collaboratorIds);
+        const users = await getUsersByUids(organization.memberIds);
         setCollaborators(users);
         setLoadingCollabs(false);
       } else {
@@ -62,21 +50,17 @@ function TeamManager() {
       }
     };
     fetchCollaborators();
-  }, [selectedEvent, getUsersByUids]);
+  }, [organization, getUsersByUids]);
 
   const handleAddCollaborator = async () => {
-    if (!newCollabEmail || !selectedEventId) return;
+    if (!newCollabEmail || !organization.id) return;
     setIsAdding(true);
-    const result = await addCollaborator(selectedEventId, newCollabEmail);
+    const result = await addCollaborator(organization.id, newCollabEmail);
     if(result.success) {
       toast({ title: "Success", description: result.message });
       setNewCollabEmail('');
-      // Manually trigger a refetch
-      const updatedEvent = await getEventsByCreator(user!.uid).find(e => e.id === selectedEventId);
-      if (updatedEvent?.collaboratorIds) {
-          const users = await getUsersByUids(updatedEvent.collaboratorIds);
-          setCollaborators(users);
-      }
+      const users = await getUsersByUids([...organization.memberIds, result.userId!]);
+      setCollaborators(users);
     } else {
       toast({ variant: 'destructive', title: "Error", description: result.message });
     }
@@ -84,8 +68,8 @@ function TeamManager() {
   };
 
   const handleRemoveCollaborator = async (collaboratorId: string) => {
-    if (!selectedEventId) return;
-    await removeCollaborator(selectedEventId, collaboratorId);
+    if (!organization.id) return;
+    await removeCollaborator(organization.id, collaboratorId);
     setCollaborators(prev => prev.filter(c => c.uid !== collaboratorId));
     toast({ title: "Collaborator Removed" });
   };
@@ -97,154 +81,130 @@ function TeamManager() {
           <Users2 className="h-5 w-5" />
           Team Management
         </CardTitle>
-        <CardDescription>Add or remove collaborators for your events. Collaborators can scan tickets.</CardDescription>
+        <CardDescription>Add or remove members from this organization.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <Select value={selectedEventId} onValueChange={setSelectedEventId} disabled={userEvents.length === 0}>
-            <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select an event to manage its team" />
-            </SelectTrigger>
-            <SelectContent>
-                {userEvents.map(event => (
-                    <SelectItem key={event.id} value={event.id}>{event.name}</SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
-
-        {selectedEventId && (
-          <div>
-            <div className="space-y-4">
-              <Label>Add Collaborator</Label>
-              <div className="flex gap-2">
-                <Input 
-                  type="email" 
-                  placeholder="collaborator@email.com" 
-                  value={newCollabEmail}
-                  onChange={e => setNewCollabEmail(e.target.value)}
-                  disabled={isAdding}
-                />
-                <Button onClick={handleAddCollaborator} disabled={isAdding || !newCollabEmail}>
-                  {isAdding && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                  Add
-                </Button>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <h4 className="font-medium mb-2">Current Collaborators</h4>
-              {loadingCollabs ? (
-                <div className="flex items-center justify-center p-4"><Loader2 className="h-6 w-6 animate-spin text-primary"/></div>
-              ) : collaborators.length > 0 ? (
-                <div className="space-y-2">
-                  {collaborators.map(c => (
-                    <div key={c.uid} className="flex items-center justify-between p-2 border rounded-md">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={c.photoURL || ''} />
-                          <AvatarFallback>{c.displayName?.charAt(0) || 'C'}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-sm">{c.displayName}</p>
-                          <p className="text-xs text-muted-foreground">{c.email}</p>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={() => handleRemoveCollaborator(c.uid)}>
-                        <X className="h-4 w-4 text-destructive"/>
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">No collaborators added yet.</p>
-              )}
-            </div>
+        <div className="space-y-4">
+          <Label>Add Member</Label>
+          <div className="flex gap-2">
+            <Input 
+              type="email" 
+              placeholder="member@email.com" 
+              value={newCollabEmail}
+              onChange={e => setNewCollabEmail(e.target.value)}
+              disabled={isAdding}
+            />
+            <Button onClick={handleAddCollaborator} disabled={isAdding || !newCollabEmail}>
+              {isAdding && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+              Add
+            </Button>
           </div>
-        )}
+        </div>
+
+        <div className="mt-6">
+          <h4 className="font-medium mb-2">Current Members</h4>
+          {loadingCollabs ? (
+            <div className="flex items-center justify-center p-4"><Loader2 className="h-6 w-6 animate-spin text-primary"/></div>
+          ) : collaborators.length > 0 ? (
+            <div className="space-y-2">
+              {collaborators.map(c => (
+                <div key={c.uid} className="flex items-center justify-between p-2 border rounded-md">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={c.photoURL || ''} />
+                      <AvatarFallback>{c.displayName?.charAt(0) || 'C'}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium text-sm">{c.displayName}</p>
+                      <p className="text-xs text-muted-foreground">{c.uid === organization.ownerId ? 'Owner' : 'Member'}</p>
+                    </div>
+                  </div>
+                  {c.uid !== organization.ownerId && (
+                     <Button variant="ghost" size="icon" onClick={() => handleRemoveCollaborator(c.uid)}>
+                        <X className="h-4 w-4 text-destructive"/>
+                     </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">No members added yet.</p>
+          )}
+        </div>
       </CardContent>
     </Card>
   )
 }
 
 
-export default function SettingsPage() {
-  const { user, signOut } = useAuth();
+export default function OrgSettingsPage() {
+  const { user } = useAuth();
+  const { organizations, updateOrganization } = useAppContext();
+  const params = useParams();
+  const organizationId = params.organizationId as string;
   const { toast } = useToast();
+
+  const [organization, setOrganization] = useState<Organization | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const org = organizations.find(o => o.id === organizationId);
+    if(org) setOrganization(org);
+  }, [organizations, organizationId]);
   
-  // Profile settings
-  const [profileData, setProfileData] = useState({
-    displayName: user?.displayName || '',
-    email: user?.email || '',
-    bio: '',
-    website: '',
-    organization: '',
-  });
+  const handleUpdate = (field: keyof Organization, value: any) => {
+    if (organization) {
+      setOrganization({ ...organization, [field]: value });
+    }
+  }
 
-  // Notification settings
-  const [notifications, setNotifications] = useState({
-    emailUpdates: true,
-    eventReminders: true,
-    marketingEmails: false,
-    weeklyReports: true,
-    ticketSales: true,
-  });
-
-  const handleProfileUpdate = async () => {
-    try {
-      // In a real app, you would update the user profile in Firebase
-      // await updateProfile({ displayName: profileData.displayName });
-      toast({
-        title: 'Profile Updated',
-        description: 'Your profile has been successfully updated.',
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Update Failed',
-        description: 'Could not update your profile. Please try again.',
+  const handleSocialUpdate = (platform: keyof NonNullable<Organization['socialLinks']>, value: string) => {
+    if (organization) {
+      setOrganization({
+        ...organization,
+        socialLinks: {
+          ...organization.socialLinks,
+          [platform]: value
+        }
       });
     }
   };
 
-  const handleAvatarUpload = () => {
-    // In a real app, this would open a file picker and upload to storage
-    toast({
-      title: 'Avatar Upload',
-      description: 'Avatar upload functionality would be implemented here.',
-    });
-  };
 
-  const handleDeleteAccount = () => {
-    // In a real app, this would show a confirmation dialog and delete the account
-    toast({
-      variant: 'destructive',
-      title: 'Delete Account',
-      description: 'Account deletion requires additional confirmation.',
-    });
+  const handleSaveChanges = async () => {
+    if (!organization) return;
+    setIsSaving(true);
+    try {
+      await updateOrganization(organization.id, organization);
+      toast({ title: "Success!", description: "Organization details have been updated." });
+    } catch {
+      toast({ variant: 'destructive', title: "Error", description: "Failed to save changes." });
+    } finally {
+      setIsSaving(false);
+    }
   };
-
-  const exportData = () => {
-    // In a real app, this would export user data
-    toast({
-      title: 'Data Export',
-      description: 'Your data export will be emailed to you within 24 hours.',
-    });
-  };
+  
+  if (!organization) {
+    return <div className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div>
+  }
   
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Settings</h1>
-          <p className="text-muted-foreground">Manage your account and preferences</p>
+          <h1 className="text-2xl font-bold">Organization Settings</h1>
+          <p className="text-muted-foreground">Manage your organization's profile and members</p>
         </div>
+        <Button onClick={handleSaveChanges} disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+            Save Changes
+        </Button>
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="team">Team</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="space-y-4">
@@ -252,227 +212,55 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
-                Profile Information
+                Organization Profile
               </CardTitle>
-              <CardDescription>Update your public profile information</CardDescription>
+              <CardDescription>Update your organization's public information</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Avatar Section */}
-              <div className="flex items-center gap-4">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || 'User'} />
-                  <AvatarFallback className="text-lg">
-                    {user?.displayName?.charAt(0) || 'U'}
-                  </AvatarFallback>
-                </Avatar>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Button variant="outline" onClick={handleAvatarUpload}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload Photo
-                  </Button>
-                  <p className="text-sm text-muted-foreground">
-                    JPG, PNG up to 2MB
-                  </p>
+                    <Label htmlFor="orgName">Organization Name</Label>
+                    <Input 
+                      id="orgName" 
+                      value={organization.name}
+                      onChange={e => handleUpdate('name', e.target.value)}
+                    />
+                </div>
+                 <div className="space-y-2">
+                    <Label>Logo</Label>
+                    <ImageUploader 
+                      value={organization.logoUrl || ''} 
+                      onUpload={(url) => handleUpdate('logoUrl', url)} 
+                    />
                 </div>
               </div>
-
-              {/* Profile Form */}
-              <div className="grid gap-4 md:grid-cols-2">
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle>Social Links</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="displayName">Display Name</Label>
-                  <Input
-                    id="displayName"
-                    value={profileData.displayName}
-                    onChange={(e) => setProfileData({ ...profileData, displayName: e.target.value })}
-                    placeholder="Your display name"
-                  />
+                  <Label htmlFor="twitter" className="flex items-center gap-2"><Twitter className="h-4 w-4"/> Twitter URL</Label>
+                  <Input id="twitter" value={organization.socialLinks?.twitter || ''} onChange={(e) => handleSocialUpdate('twitter', e.target.value)} />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={profileData.email}
-                    onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                    placeholder="your@email.com"
-                  />
+                 <div className="space-y-2">
+                  <Label htmlFor="facebook" className="flex items-center gap-2"><Facebook className="h-4 w-4"/> Facebook URL</Label>
+                  <Input id="facebook" value={organization.socialLinks?.facebook || ''} onChange={(e) => handleSocialUpdate('facebook', e.target.value)} />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="organization">Organization</Label>
-                  <Input
-                    id="organization"
-                    value={profileData.organization}
-                    onChange={(e) => setProfileData({ ...profileData, organization: e.target.value })}
-                    placeholder="Your organization"
-                  />
+                 <div className="space-y-2">
+                  <Label htmlFor="instagram" className="flex items-center gap-2"><Instagram className="h-4 w-4"/> Instagram URL</Label>
+                  <Input id="instagram" value={organization.socialLinks?.instagram || ''} onChange={(e) => handleSocialUpdate('instagram', e.target.value)} />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="website">Website</Label>
-                  <Input
-                    id="website"
-                    value={profileData.website}
-                    onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
-                    placeholder="https://yourwebsite.com"
-                  />
+                 <div className="space-y-2">
+                  <Label htmlFor="linkedin" className="flex items-center gap-2"><Linkedin className="h-4 w-4"/> LinkedIn URL</Label>
+                  <Input id="linkedin" value={organization.socialLinks?.linkedin || ''} onChange={(e) => handleSocialUpdate('linkedin', e.target.value)} />
                 </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    value={profileData.bio}
-                    onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                    placeholder="Tell us about yourself..."
-                    rows={3}
-                  />
-                </div>
-              </div>
-
-              <Button onClick={handleProfileUpdate}>
-                Save Profile Changes
-              </Button>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="team">
-          <TeamManager />
-        </TabsContent>
-
-        <TabsContent value="notifications" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                Notification Preferences
-              </CardTitle>
-              <CardDescription>Choose what notifications you want to receive</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="emailUpdates">Email Updates</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive updates about your events and tickets
-                    </p>
-                  </div>
-                  <Switch
-                    id="emailUpdates"
-                    checked={notifications.emailUpdates}
-                    onCheckedChange={(checked) => 
-                      setNotifications({ ...notifications, emailUpdates: checked })
-                    }
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="eventReminders">Event Reminders</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Get reminded about upcoming events
-                    </p>
-                  </div>
-                  <Switch
-                    id="eventReminders"
-                    checked={notifications.eventReminders}
-                    onCheckedChange={(checked) => 
-                      setNotifications({ ...notifications, eventReminders: checked })
-                    }
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="ticketSales">Ticket Sales</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Notifications when someone buys your tickets
-                    </p>
-                  </div>
-                  <Switch
-                    id="ticketSales"
-                    checked={notifications.ticketSales}
-                    onCheckedChange={(checked) => 
-                      setNotifications({ ...notifications, ticketSales: checked })
-                    }
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="weeklyReports">Weekly Reports</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Weekly summary of your event performance
-                    </p>
-                  </div>
-                  <Switch
-                    id="weeklyReports"
-                    checked={notifications.weeklyReports}
-                    onCheckedChange={(checked) => 
-                      setNotifications({ ...notifications, weeklyReports: checked })
-                    }
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="marketingEmails">Marketing Emails</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Tips, best practices, and product updates
-                    </p>
-                  </div>
-                  <Switch
-                    id="marketingEmails"
-                    checked={notifications.marketingEmails}
-                    onCheckedChange={(checked) => 
-                      setNotifications({ ...notifications, marketingEmails: checked })
-                    }
-                  />
-                </div>
-              </div>
-
-              <Button>Save Notification Settings</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="account" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Data & Security</CardTitle>
-              <CardDescription>Manage your account data and security settings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Button variant="outline" onClick={exportData} className="w-full justify-start">
-                  <Download className="mr-2 h-4 w-4" />
-                  Export My Data
-                </Button>
-                <p className="text-sm text-muted-foreground">
-                  Download a copy of all your data including events, tickets, and settings.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-destructive">
-            <CardHeader>
-              <CardTitle className="text-destructive">Danger Zone</CardTitle>
-              <CardDescription>Irreversible and destructive actions</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Alert className="border-destructive/50">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  Once you delete your account, there is no going back. All your events, tickets, and data will be permanently deleted.
-                </AlertDescription>
-              </Alert>
-              
-              <Button variant="destructive" onClick={handleDeleteAccount}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Account
-              </Button>
-            </CardContent>
-          </Card>
+          <TeamManager organization={organization} />
         </TabsContent>
       </Tabs>
     </div>
