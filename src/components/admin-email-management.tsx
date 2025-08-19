@@ -85,6 +85,7 @@ type EmailFormValues = z.infer<typeof formSchema>;
 export default function AdminEmailManagement() {
   const [status, setStatus] = useState<EmailStatus>({ type: null, message: '', details: undefined });
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingField, setGeneratingField] = useState<string | null>(null);
   const { toast } = useToast();
 
   const form = useForm<EmailFormValues>({
@@ -105,13 +106,25 @@ export default function AdminEmailManagement() {
   const recipientType = form.watch('recipientType');
   const selectedTemplate: EmailTemplate | undefined = selectedTemplateId ? emailTemplates[selectedTemplateId] : undefined;
 
-  const handleGenerateContent = async (field: 'message' | 'intro') => {
-      const topic = form.getValues('subject') || form.getValues('headline');
+  const handleGenerateContent = async (field: 'message' | 'intro' | `features.${number}.description`) => {
+      const isFeature = field.startsWith('features');
+      let topic: string | undefined;
+
+      if (isFeature) {
+          const featureIndex = parseInt(field.split('.')[1], 10);
+          topic = form.getValues(`features.${featureIndex}.title`);
+      } else {
+          topic = form.getValues('subject') || form.getValues('headline');
+      }
+      
       if (!topic) {
-          toast({ variant: 'destructive', title: 'Topic required', description: 'Please fill in a Subject or Headline to generate content.' });
+          toast({ variant: 'destructive', title: 'Topic required', description: `Please fill in a ${isFeature ? 'Feature Title' : 'Subject or Headline'} to generate content.` });
           return;
       }
+
+      setGeneratingField(field);
       setIsGenerating(true);
+      
       try {
           const audience = recipientGroups.find(g => g.id === recipientType)?.name || 'general users';
           const result = await generateEmailContent({ topic, audience });
@@ -121,6 +134,7 @@ export default function AdminEmailManagement() {
           toast({ variant: 'destructive', title: "Generation Failed", description: "Could not generate content."});
       } finally {
           setIsGenerating(false);
+          setGeneratingField(null);
       }
   };
 
@@ -258,8 +272,8 @@ export default function AdminEmailManagement() {
                         <div className="flex justify-between items-center mb-1">
                           <Label htmlFor={key}>{field.label}</Label>
                           {(key === 'message' || key === 'intro') && (
-                            <Button type="button" variant="ghost" size="sm" onClick={() => handleGenerateContent(key)} disabled={isGenerating}>
-                                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
+                            <Button type="button" variant="ghost" size="sm" onClick={() => handleGenerateContent(key as 'message' | 'intro')} disabled={isGenerating}>
+                                {isGenerating && generatingField === key ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
                                 Generate with AI
                             </Button>
                           )}
@@ -285,7 +299,16 @@ export default function AdminEmailManagement() {
                                     </div>
                                     <div className="space-y-3">
                                       <Input placeholder="Feature Title" {...form.register(`features.${index}.title`)} />
-                                      <Textarea placeholder="Feature Description" {...form.register(`features.${index}.description`)} />
+                                      <div>
+                                        <div className="flex justify-between items-center mb-1">
+                                            <Label htmlFor={`features.${index}.description`}>Description</Label>
+                                            <Button type="button" variant="ghost" size="sm" onClick={() => handleGenerateContent(`features.${index}.description`)} disabled={isGenerating}>
+                                                {isGenerating && generatingField === `features.${index}.description` ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
+                                                AI
+                                            </Button>
+                                        </div>
+                                        <Textarea id={`features.${index}.description`} placeholder="Feature Description" {...form.register(`features.${index}.description`)} />
+                                      </div>
                                       <Input placeholder="Button Text (Optional)" {...form.register(`features.${index}.buttonText`)} />
                                       <Input placeholder="Button URL (Optional)" {...form.register(`features.${index}.buttonUrl`)} />
                                       <div>
