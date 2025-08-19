@@ -116,6 +116,9 @@ export function Header() {
             <Button variant="ghost" asChild>
               <Link href="/pricing">Pricing</Link>
             </Button>
+             <Button variant="ghost" asChild>
+              <Link href="/tickets">My Tickets</Link>
+            </Button>
           </div>
           
           {/* Desktop Auth Section */}
@@ -184,6 +187,10 @@ export function Header() {
                         <DollarSign className="h-5 w-5" />
                         <span>Pricing</span>
                       </NavLink>
+                       <NavLink href="/tickets" onClick={closeMobileMenu}>
+                        <TicketIcon className="h-5 w-5" />
+                        <span>My Tickets</span>
+                      </NavLink>
                     </div>
                     
                     {user ? (
@@ -191,7 +198,7 @@ export function Header() {
                         <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
-                            <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                            <AvatarFallback>{user.displayName?.charA(0) || 'U'}</AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{user.displayName}</p>

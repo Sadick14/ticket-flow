@@ -1,15 +1,7 @@
 
-import { Metadata } from 'next';
-import { generatePageMetadata } from '@/lib/metadata';
-import MyPageClient from './my-page-client';
+import { redirect } from 'next/navigation';
 
-export const metadata: Metadata = generatePageMetadata({
-  slug: 'my-page',
-  title: 'My Page - TicketFlow',
-  description: 'View and manage all your pending tickets and subscriptions in one place.',
-  image: '/og-tickets.jpg',
-});
-
+// This page is deprecated and now redirects to /tickets
 export default function MyPage() {
-  return <MyPageClient />;
+    redirect('/tickets');
 }

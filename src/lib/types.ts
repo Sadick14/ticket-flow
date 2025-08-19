@@ -25,6 +25,13 @@ export interface PromoCode {
   value: number;
 }
 
+export interface TicketType {
+  id: string;
+  name: string;
+  price: number;
+  capacity?: number;
+}
+
 export interface Event {
   id: string;
   creatorId: string;
@@ -43,7 +50,7 @@ export interface Event {
   endDate?: string; 
   time: string;
   description: string;
-  price: number;
+  price: number; // Default price, used if no ticket types
   capacity: number;
   imageUrl: string;
   speakers?: Speaker[];
@@ -51,6 +58,7 @@ export interface Event {
   sponsors?: Sponsor[];
   promoCodes?: PromoCode[];
   collaboratorIds?: string[];
+  ticketTypes?: TicketType[];
 }
 
 export interface Ticket {
@@ -61,6 +69,7 @@ export interface Ticket {
   purchaseDate: string;
   checkedIn: boolean;
   price: number;
+  ticketTypeName?: string;
   status: 'pending' | 'confirmed';
   bookingCode: string;
   // This is added client-side after fetching

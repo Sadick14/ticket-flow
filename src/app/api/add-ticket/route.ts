@@ -10,6 +10,7 @@ import { PaymentCalculator } from '@/lib/payment-config';
 interface AddTicketRequest {
   eventId: string;
   attendees: { attendeeName: string; attendeeEmail: string }[];
+  ticketTypeName: string;
   price: number;
   bookingCode: string;
   status: 'pending' | 'confirmed';
@@ -26,7 +27,7 @@ async function getEventById(id: string): Promise<Event | null> {
 
 export async function POST(request: NextRequest) {
   try {
-    const { eventId, attendees, price, bookingCode, status }: AddTicketRequest = await request.json();
+    const { eventId, attendees, price, bookingCode, status, ticketTypeName }: AddTicketRequest = await request.json();
 
     if (!eventId || !attendees || attendees.length === 0 || !bookingCode) {
       return NextResponse.json({ error: 'Missing required booking data' }, { status: 400 });
@@ -47,6 +48,7 @@ export async function POST(request: NextRequest) {
         attendeeName: attendee.attendeeName,
         attendeeEmail: attendee.attendeeEmail,
         price,
+        ticketTypeName,
         purchaseDate: new Date().toISOString(),
         checkedIn: false,
         status: status,
@@ -71,7 +73,7 @@ export async function POST(request: NextRequest) {
               eventName: event.name,
               eventDate: format(eventDate, 'PPP p'),
               attendeeName: finalTicket.attendeeName,
-              ticketUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://ticket-flow.up.railway.app'}/my-page`,
+              ticketUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://ticket-flow.up.railway.app'}/tickets`,
           });
           
           await sendEmail({
@@ -88,7 +90,7 @@ export async function POST(request: NextRequest) {
           const emailContent = renderTemplate('pendingPaymentInstructions', {
               eventName: event.name,
               attendeeName: finalTicket.attendeeName,
-              totalPrice: PaymentCalculator.formatCurrency(totalPrice, 'GHS'),
+              totalPrice: PaymentCalculator.formatCurrency(totalPrice * 100, 'GHS'),
               bookingCode: bookingCode,
               paymentNumber: "0597479994"
           });
