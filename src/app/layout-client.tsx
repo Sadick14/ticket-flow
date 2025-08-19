@@ -11,9 +11,10 @@ import { SubscriptionPopup } from '@/components/subscription-popup';
 export default function RootLayoutClient({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isLaunchPage = pathname === '/';
-    const isAdminOrDashboard = pathname.startsWith('/admin') || pathname.startsWith('/dashboard');
+    // Only apply the special dashboard/admin layout if the path is not the root dashboard page
+    const isAdminOrDashboard = pathname.startsWith('/admin') || (pathname.startsWith('/dashboard') && pathname !== '/dashboard');
 
-    // For admin or dashboard, the layout is handled by their own layout files.
+    // For admin or specific organization dashboard pages, the layout is handled by their own layout files.
     if (isAdminOrDashboard) {
         return (
             <>
@@ -33,7 +34,7 @@ export default function RootLayoutClient({ children }: { children: React.ReactNo
         )
     }
 
-    // For all other public pages, show the full layout with header and footer
+    // For all other public pages (including /dashboard), show the full layout with header and footer
     return (
         <div className="flex flex-col min-h-screen">
             <Header />
