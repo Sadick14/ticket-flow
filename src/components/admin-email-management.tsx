@@ -27,10 +27,12 @@ import {
   Palette,
   Trash2,
   PlusCircle,
+  Wand2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { emailTemplates, type EmailTemplate, type TemplateId } from '@/lib/email-templates';
 import { ImageUploader } from './image-uploader';
+import { generateEmailContent } from '@/ai/flows/generate-email-content';
 
 interface RecipientGroup {
     id: 'all-users' | 'event-creators' | 'launch-subscribers' | 'custom';
@@ -82,6 +84,7 @@ type EmailFormValues = z.infer<typeof formSchema>;
 
 export default function AdminEmailManagement() {
   const [status, setStatus] = useState<EmailStatus>({ type: null, message: '', details: undefined });
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<EmailFormValues>({
@@ -101,6 +104,26 @@ export default function AdminEmailManagement() {
   const selectedTemplateId = form.watch('selectedTemplateId') as TemplateId | '';
   const recipientType = form.watch('recipientType');
   const selectedTemplate: EmailTemplate | undefined = selectedTemplateId ? emailTemplates[selectedTemplateId] : undefined;
+
+  const handleGenerateContent = async (field: 'message' | 'intro') => {
+      const topic = form.getValues('subject') || form.getValues('headline');
+      if (!topic) {
+          toast({ variant: 'destructive', title: 'Topic required', description: 'Please fill in a Subject or Headline to generate content.' });
+          return;
+      }
+      setIsGenerating(true);
+      try {
+          const audience = recipientGroups.find(g => g.id === recipientType)?.name || 'general users';
+          const result = await generateEmailContent({ topic, audience });
+          form.setValue(field, result.emailBody, { shouldValidate: true });
+          toast({ title: "Content Generated!", description: "AI-generated content has been added."});
+      } catch (error) {
+          toast({ variant: 'destructive', title: "Generation Failed", description: "Could not generate content."});
+      } finally {
+          setIsGenerating(false);
+      }
+  };
+
 
   const handleSendEmail = async (data: EmailFormValues) => {
     setStatus({ type: 'loading', message: 'Sending emails...', details: undefined });
@@ -232,11 +255,19 @@ export default function AdminEmailManagement() {
                   <div className="space-y-4">
                     {Object.entries(selectedTemplate.fields).map(([key, field]) => (
                       <div key={key}>
-                        <Label htmlFor={key}>{field.label}</Label>
+                        <div className="flex justify-between items-center mb-1">
+                          <Label htmlFor={key}>{field.label}</Label>
+                          {(key === 'message' || key === 'intro') && (
+                            <Button type="button" variant="ghost" size="sm" onClick={() => handleGenerateContent(key)} disabled={isGenerating}>
+                                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
+                                Generate with AI
+                            </Button>
+                          )}
+                        </div>
                         {field.type === 'textarea' ? (
-                          <Textarea id={key} placeholder={field.placeholder} {...form.register(key as any)} className="mt-1" rows={5}/>
+                          <Textarea id={key} placeholder={field.placeholder} {...form.register(key as any)} rows={5}/>
                         ) : (
-                          <Input id={key} type={field.type} placeholder={field.placeholder} {...form.register(key as any)} className="mt-1"/>
+                          <Input id={key} type={field.type} placeholder={field.placeholder} {...form.register(key as any)}/>
                         )}
                       </div>
                     ))}
