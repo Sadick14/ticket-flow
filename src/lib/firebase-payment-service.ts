@@ -1,3 +1,4 @@
+
 // Firebase Payment Service for TicketFlow
 import { 
   collection, 
@@ -312,13 +313,13 @@ export class FirebasePaymentService {
     try {
       const payoutsQuery = query(
         collection(db, 'payouts'),
-        where('status', '==', status),
-        orderBy(status === 'pending' ? 'scheduledDate' : 'processedDate', 'desc')
+        where('status', '==', status)
+        // REMOVED: orderBy clause to prevent index error
       );
       
       const querySnapshot = await getDocs(payoutsQuery);
       
-      return querySnapshot.docs.map(doc => {
+      const payouts = querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
           ...data,
@@ -328,6 +329,16 @@ export class FirebasePaymentService {
           createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
         } as Payout;
       });
+
+      // Sort in application code instead of in the query
+      const sortField = status === 'pending' ? 'scheduledDate' : 'processedDate';
+      payouts.sort((a, b) => {
+        const dateA = new Date(a[sortField] || 0).getTime();
+        const dateB = new Date(b[sortField] || 0).getTime();
+        return dateB - dateA;
+      });
+
+      return payouts;
 
     } catch (error) {
       console.error(`Error getting ${status} payouts:`, error);
