@@ -53,7 +53,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { organizations, loading: appLoading } = useAppContext();
   const pathname = usePathname();
   const params = useParams();
