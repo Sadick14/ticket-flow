@@ -102,18 +102,14 @@ export default function OrganizationsPage() {
   if (authLoading || appLoading) {
     return <div className="flex justify-center items-center h-full"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
   }
-
-  const sortedOrganizations = [
-      ...userOrganizations
-  ];
   
   const glowColors = [
-    'hover:shadow-primary/30',
-    'hover:shadow-emerald-500/30',
-    'hover:shadow-sky-500/30',
-    'hover:shadow-indigo-500/30',
-    'hover:shadow-purple-500/30',
-    'hover:shadow-pink-500/30',
+    'shadow-lg shadow-primary/40',
+    'shadow-lg shadow-emerald-500/40',
+    'shadow-lg shadow-sky-500/40',
+    'shadow-lg shadow-indigo-500/40',
+    'shadow-lg shadow-purple-500/40',
+    'shadow-lg shadow-pink-500/40',
   ];
 
   return (
@@ -179,13 +175,13 @@ export default function OrganizationsPage() {
             </DialogContent>
         </Dialog>
         
-        {sortedOrganizations.map((org, index) => {
+        {userOrganizations.map((org, index) => {
             const eventCount = events.filter(event => event.organizationId === org.id).length;
             const followerCount = org.followerIds?.length || 0;
             const glowClass = glowColors[index % glowColors.length];
 
             return (
-                <Card key={org.id} className={`flex flex-col h-full min-h-[240px] shadow-md transition-shadow duration-300 ${glowClass}`}>
+                <Card key={org.id} className={`flex flex-col h-full min-h-[240px] transition-shadow duration-300 ${glowClass}`}>
                     <CardHeader className="flex-row items-start gap-4">
                         <Link href={`/dashboard/${org.id}/events`} className="flex items-start gap-4 flex-grow">
                           <Image src={org.logoUrl || 'https://placehold.co/100x100.png'} alt={org.name} width={50} height={50} className="rounded-md" />
