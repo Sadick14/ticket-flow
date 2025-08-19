@@ -49,7 +49,7 @@ export default function OrganizationsPage() {
     }
   };
 
-  const userOrganizations = organizations.filter(org => org.memberIds.includes(user?.uid || ''));
+  const userOrganizations = (organizations || []).filter(org => org.memberIds.includes(user?.uid || ''));
 
   if (authLoading || appLoading) {
     return <div className="flex justify-center items-center h-full"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
@@ -74,7 +74,7 @@ export default function OrganizationsPage() {
             </CardHeader>
             <CardContent>
               <Button asChild className="w-full">
-                <Link href={`/dashboard/${org.id}`}>Manage <ArrowRight className="ml-2 h-4 w-4"/></Link>
+                <Link href={`/dashboard/${org.id}/events`}>Manage <ArrowRight className="ml-2 h-4 w-4"/></Link>
               </Button>
             </CardContent>
           </Card>
