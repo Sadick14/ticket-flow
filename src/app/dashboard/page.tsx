@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, PlusCircle, Users, Calendar } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Calendar, Eye, Settings, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUploader } from '@/components/image-uploader';
 import Link from 'next/link';
@@ -23,13 +23,24 @@ import {
   DialogTrigger,
   DialogClose
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Textarea } from '@/components/ui/textarea';
 import type { Organization } from '@/lib/types';
 
 
 export default function OrganizationsPage() {
   const { user, loading: authLoading } = useAuth();
-  const { organizations, events, loading: appLoading, addOrganization } = useAppContext();
+  const { organizations, events, loading: appLoading, addOrganization, deleteOrganization } = useAppContext();
   const { toast } = useToast();
 
   const [isCreating, setIsCreating] = useState(false);
@@ -52,7 +63,6 @@ export default function OrganizationsPage() {
         logoUrl: newOrgData.logoUrl,
         ownerId: user.uid,
         memberIds: [user.uid],
-        followerIds: [], // Explicitly initialize followers
         socialLinks: {}, 
       });
       toast({ title: 'Organization Created!', description: `${newOrgData.name} has been successfully created.` });
@@ -69,11 +79,25 @@ export default function OrganizationsPage() {
     }
   };
 
+  const handleDeleteOrganization = async (id: string) => {
+    try {
+        await deleteOrganization(id);
+        toast({ title: "Organization Deleted" });
+    } catch (e) {
+        toast({ variant: 'destructive', title: "Error", description: "Failed to delete organization." });
+    }
+  };
+
+
   const userOrganizations = (organizations || []).filter(org => org.memberIds.includes(user?.uid || ''));
 
   if (authLoading || appLoading) {
     return <div className="flex justify-center items-center h-full"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
   }
+
+  const sortedOrganizations = [
+      ...userOrganizations
+  ];
 
   return (
     <div className="space-y-8">
@@ -87,7 +111,7 @@ export default function OrganizationsPage() {
         {/* Create New Organization Card */}
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
-                <Card className="border-dashed hover:border-primary hover:text-primary transition-colors cursor-pointer flex items-center justify-center min-h-[240px]">
+                <Card className="order-first border-dashed hover:border-primary hover:text-primary transition-colors cursor-pointer flex items-center justify-center min-h-[240px]">
                     <div className="text-center">
                         <PlusCircle className="h-12 w-12 mx-auto text-muted-foreground" />
                         <h3 className="mt-4 text-lg font-medium">Create New Organization</h3>
@@ -138,38 +162,66 @@ export default function OrganizationsPage() {
             </DialogContent>
         </Dialog>
         
-        {userOrganizations.map(org => {
+        {sortedOrganizations.map(org => {
             const eventCount = events.filter(event => event.organizationId === org.id).length;
             const followerCount = org.followerIds?.length || 0;
 
             return (
-              <Link key={org.id} href={`/dashboard/${org.id}/events`} className="block group">
-                <Card className="hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col h-full min-h-[240px]">
-                  <CardHeader className="flex-row items-start gap-4">
-                    <Image src={org.logoUrl || 'https://placehold.co/100x100.png'} alt={org.name} width={50} height={50} className="rounded-md" />
-                    <div>
-                      <CardTitle className="group-hover:text-primary transition-colors">{org.name}</CardTitle>
-                      <CardDescription>{org.ownerId === user?.uid ? 'Owner' : 'Member'}</CardDescription>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <p className="text-sm text-muted-foreground line-clamp-2">{org.description || 'No description provided.'}</p>
-                  </CardContent>
-                  <CardFooter className="border-t pt-4 flex justify-between text-sm text-muted-foreground">
-                     <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>{eventCount} Event{eventCount !== 1 ? 's' : ''}</span>
-                     </div>
-                     <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        <span>{followerCount} Follower{followerCount !== 1 ? 's' : ''}</span>
-                     </div>
-                  </CardFooter>
+                <Card key={org.id} className="flex flex-col h-full min-h-[240px] hover:shadow-lg transition-shadow">
+                    <Link href={`/dashboard/${org.id}/events`} className="block group flex-grow">
+                        <CardHeader className="flex-row items-start gap-4">
+                            <Image src={org.logoUrl || 'https://placehold.co/100x100.png'} alt={org.name} width={50} height={50} className="rounded-md" />
+                            <div>
+                                <CardTitle className="group-hover:text-primary transition-colors">{org.name}</CardTitle>
+                                <CardDescription>{org.ownerId === user?.uid ? 'Owner' : 'Member'}</CardDescription>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground line-clamp-2">{org.description || 'No description provided.'}</p>
+                            <div className="flex justify-between text-sm text-muted-foreground mt-4">
+                                <div className="flex items-center gap-2">
+                                    <Calendar className="h-4 w-4" />
+                                    <span>{eventCount} Event{eventCount !== 1 ? 's' : ''}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Users className="h-4 w-4" />
+                                    <span>{followerCount} Follower{followerCount !== 1 ? 's' : ''}</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Link>
+                    <CardFooter className="border-t pt-3 flex justify-end gap-2">
+                        <Button variant="ghost" size="sm" asChild>
+                            <Link href={`/organization/${org.id}`} target="_blank"><Eye className="mr-2 h-4 w-4" />View</Link>
+                        </Button>
+                        <Button variant="ghost" size="sm" asChild>
+                            <Link href={`/dashboard/${org.id}/settings`}><Settings className="mr-2 h-4 w-4" />Settings</Link>
+                        </Button>
+                        {org.ownerId === user?.uid && (
+                           <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the organization and all its associated events and data.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteOrganization(org.id)}>
+                                    Delete
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+                    </CardFooter>
                 </Card>
-              </Link>
             )
         })}
-
       </div>
     </div>
   );

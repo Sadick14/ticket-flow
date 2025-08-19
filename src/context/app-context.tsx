@@ -25,6 +25,7 @@ interface AppContextType {
   // Organizations
   addOrganization: (orgData: Omit<Organization, 'id' | 'followerIds'>) => Promise<void>;
   updateOrganization: (id: string, orgData: Partial<Omit<Organization, 'id'>>) => Promise<void>;
+  deleteOrganization: (id: string) => Promise<void>;
   followOrganization: (orgId: string, userId: string) => Promise<void>;
   unfollowOrganization: (orgId: string, userId: string) => Promise<void>;
   // Events
@@ -204,6 +205,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       await fetchAllData();
     } catch (error) {
         console.error("Error updating organization:", error);
+        throw error;
+    }
+  };
+
+  const deleteOrganization = async (id: string) => {
+    try {
+        // This is a destructive action. In a real app, you might want to "soft delete"
+        // or ensure the user is the owner and has confirmed.
+        await deleteDoc(doc(db, 'organizations', id));
+        await fetchAllData();
+    } catch (error) {
+        console.error("Error deleting organization:", error);
         throw error;
     }
   };
@@ -803,6 +816,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       loading,
       addOrganization,
       updateOrganization,
+      deleteOrganization,
       followOrganization,
       unfollowOrganization,
       addEvent, 
