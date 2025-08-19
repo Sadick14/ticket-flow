@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, PlusCircle, Users, Calendar, Eye, Settings, Trash2 } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Calendar, Eye, Settings, Trash2, MoreHorizontal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUploader } from '@/components/image-uploader';
 import Link from 'next/link';
@@ -23,6 +23,14 @@ import {
   DialogTrigger,
   DialogClose
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -168,40 +176,40 @@ export default function OrganizationsPage() {
 
             return (
                 <Card key={org.id} className="flex flex-col h-full min-h-[240px] hover:shadow-lg transition-shadow">
-                    <Link href={`/dashboard/${org.id}/events`} className="block group flex-grow">
-                        <CardHeader className="flex-row items-start gap-4">
-                            <Image src={org.logoUrl || 'https://placehold.co/100x100.png'} alt={org.name} width={50} height={50} className="rounded-md" />
-                            <div>
-                                <CardTitle className="group-hover:text-primary transition-colors">{org.name}</CardTitle>
-                                <CardDescription>{org.ownerId === user?.uid ? 'Owner' : 'Member'}</CardDescription>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground line-clamp-2">{org.description || 'No description provided.'}</p>
-                            <div className="flex justify-between text-sm text-muted-foreground mt-4">
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="h-4 w-4" />
-                                    <span>{eventCount} Event{eventCount !== 1 ? 's' : ''}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Users className="h-4 w-4" />
-                                    <span>{followerCount} Follower{followerCount !== 1 ? 's' : ''}</span>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Link>
-                    <CardFooter className="border-t pt-3 flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/organization/${org.id}`} target="_blank"><Eye className="mr-2 h-4 w-4" />View</Link>
-                        </Button>
-                        <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/dashboard/${org.id}/settings`}><Settings className="mr-2 h-4 w-4" />Settings</Link>
-                        </Button>
-                        {org.ownerId === user?.uid && (
-                           <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
-                            </AlertDialogTrigger>
+                    <CardHeader className="flex-row items-start gap-4">
+                        <Link href={`/dashboard/${org.id}/events`} className="flex items-start gap-4 flex-grow">
+                          <Image src={org.logoUrl || 'https://placehold.co/100x100.png'} alt={org.name} width={50} height={50} className="rounded-md" />
+                          <div>
+                              <CardTitle className="group-hover:text-primary transition-colors">{org.name}</CardTitle>
+                              <CardDescription>{org.ownerId === user?.uid ? 'Owner' : 'Member'}</CardDescription>
+                          </div>
+                        </Link>
+                         <AlertDialog>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="flex-shrink-0 -mr-2 -mt-2">
+                                        <MoreHorizontal className="h-5 w-5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem asChild>
+                                      <Link href={`/organization/${org.id}`} target="_blank"><Eye className="mr-2 h-4 w-4" />View Page</Link>
+                                    </DropdownMenuItem>
+                                     <DropdownMenuItem asChild>
+                                      <Link href={`/dashboard/${org.id}/settings`}><Settings className="mr-2 h-4 w-4" />Settings</Link>
+                                    </DropdownMenuItem>
+                                    {org.ownerId === user?.uid && (
+                                        <>
+                                            <DropdownMenuSeparator />
+                                            <AlertDialogTrigger asChild>
+                                                <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                                  <Trash2 className="mr-2 h-4 w-4" />Delete
+                                                </DropdownMenuItem>
+                                            </AlertDialogTrigger>
+                                        </>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                             <AlertDialogContent>
                                 <AlertDialogHeader>
                                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
@@ -216,9 +224,23 @@ export default function OrganizationsPage() {
                                 </AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
-                            </AlertDialog>
-                        )}
-                    </CardFooter>
+                        </AlertDialog>
+                    </CardHeader>
+                    <Link href={`/dashboard/${org.id}/events`} className="block group flex-grow">
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground line-clamp-2">{org.description || 'No description provided.'}</p>
+                            <div className="flex justify-between text-sm text-muted-foreground mt-4 pt-4 border-t">
+                                <div className="flex items-center gap-2">
+                                    <Calendar className="h-4 w-4" />
+                                    <span>{eventCount} Event{eventCount !== 1 ? 's' : ''}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Users className="h-4 w-4" />
+                                    <span>{followerCount} Follower{followerCount !== 1 ? 's' : ''}</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Link>
                 </Card>
             )
         })}
