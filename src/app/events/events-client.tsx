@@ -6,17 +6,20 @@ import { useAppContext } from '@/context/app-context';
 import { EventCard } from '@/components/event-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { Search, CalendarX, ArrowRight } from 'lucide-react';
-import type { Event } from '@/lib/types';
+import { Search, CalendarX, ArrowRight, Building } from 'lucide-react';
+import type { Event, Organization } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { PageHero } from '@/components/page-hero';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CategoryFilters } from '@/components/category-filters';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import Image from 'next/image';
+import { Card } from '@/components/ui/card';
 
 
 export default function EventsPageClient() {
-  const { events, loading } = useAppContext();
+  const { events, organizations, loading } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All Events');
   const [activeTab, setActiveTab] = useState('upcoming');
@@ -92,6 +95,56 @@ export default function EventsPageClient() {
         description="Browse thousands of events, from local meetups to global conferences. Your next adventure awaits."
         height="lg"
       />
+      
+      {/* Organizations Carousel */}
+      <section className="py-16 bg-background">
+          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold text-foreground">Featured Organizers</h2>
+              <p className="text-muted-foreground mt-1">Discover events from our top organizers.</p>
+            </div>
+            {loading ? (
+                <div className="flex space-x-4">
+                    {Array.from({length: 5}).map((_, i) => <Skeleton key={i} className="h-24 w-64 rounded-lg"/>)}
+                </div>
+            ) : organizations.length > 0 ? (
+            <Carousel
+              opts={{
+                align: "start",
+                loop: false,
+              }}
+              className="w-full"
+            >
+              <CarouselContent>
+                {organizations.map((org) => (
+                  <CarouselItem key={org.id} className="basis-auto">
+                    <Link href={`/organization/${org.id}`}>
+                      <Card className="w-64 h-24 p-4 flex items-center gap-4 hover:bg-muted transition-colors">
+                          <Image src={org.logoUrl || 'https://placehold.co/64x64.png'} alt={org.name} width={64} height={64} className="rounded-md object-cover h-16 w-16"/>
+                          <div className="flex-1">
+                            <p className="font-semibold truncate">{org.name}</p>
+                          </div>
+                      </Card>
+                    </Link>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="hidden sm:flex" />
+              <CarouselNext className="hidden sm:flex" />
+            </Carousel>
+             ) : (
+                <div className="text-center py-8 border-2 border-dashed rounded-lg col-span-full">
+                    <Building className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-medium text-foreground">No Organizations Found</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Event organizers will be featured here.
+                    </p>
+                </div>
+            )}
+          </div>
+        </section>
+
+
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-4xl font-bold text-primary mb-8">All Events</h1>
 
