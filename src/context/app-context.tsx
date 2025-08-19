@@ -25,6 +25,8 @@ interface AppContextType {
   // Organizations
   addOrganization: (orgData: Omit<Organization, 'id' | 'followerIds'>) => Promise<void>;
   updateOrganization: (id: string, orgData: Partial<Omit<Organization, 'id'>>) => Promise<void>;
+  followOrganization: (orgId: string, userId: string) => Promise<void>;
+  unfollowOrganization: (orgId: string, userId: string) => Promise<void>;
   // Events
   addEvent: (event: Omit<Event, 'id' | 'collaboratorIds' | 'status'>) => Promise<void>;
   updateEvent: (id: string, eventData: Partial<Omit<Event, 'id'>>) => Promise<void>;
@@ -205,7 +207,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         throw error;
     }
   };
+  
+  const followOrganization = async (orgId: string, userId: string) => {
+    const batch = writeBatch(db);
+    const orgRef = doc(db, 'organizations', orgId);
+    batch.update(orgRef, { followerIds: arrayUnion(userId) });
+    const userRef = doc(db, 'users', userId);
+    batch.update(userRef, { followingOrganizationIds: arrayUnion(orgId) });
+    await batch.commit();
+    await fetchAllData();
+  };
 
+  const unfollowOrganization = async (orgId: string, userId: string) => {
+    const batch = writeBatch(db);
+    const orgRef = doc(db, 'organizations', orgId);
+    batch.update(orgRef, { followerIds: arrayRemove(userId) });
+    const userRef = doc(db, 'users', userId);
+    batch.update(userRef, { followingOrganizationIds: arrayRemove(orgId) });
+    await batch.commit();
+    await fetchAllData();
+  };
 
   // --- Course Functions ---
   const addCourse = async (courseData: Omit<Course, 'id'>) => {
@@ -782,6 +803,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       loading,
       addOrganization,
       updateOrganization,
+      followOrganization,
+      unfollowOrganization,
       addEvent, 
       updateEvent, 
       deleteEvent,
@@ -836,4 +859,3 @@ export const useAppContext = (): AppContextType => {
   }
   return context;
 };
-

@@ -51,7 +51,7 @@ export interface TicketType {
 export interface Event {
   id: string;
   organizationId: string;
-  creatorId: string;
+  creatorId: string; // Keep for legacy/ownership checks, but org is primary
   name: string;
   status: 'active' | 'archived' | 'cancelled';
   category: string;
@@ -71,7 +71,7 @@ export interface Event {
   activities?: Activity[];
   sponsors?: Sponsor[];
   promoCodes?: PromoCode[];
-  collaboratorIds?: string[];
+  collaboratorIds?: string[]; // Legacy, consider removing in favor of organization members
   ticketTypes?: TicketType[];
   // Denormalized organization data for easier access
   organizationName?: string;
@@ -107,6 +107,7 @@ export interface UserProfile {
   lastSeen?: string; // ISO String
   enrolledCourseIds?: string[];
   paymentProfileCompleted?: boolean;
+  followingOrganizationIds?: string[];
 }
 
 export interface NewsArticle {

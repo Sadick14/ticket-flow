@@ -13,6 +13,7 @@ import type { NewsArticle } from '@/lib/types';
 import { generateArticleStructuredData } from '@/lib/metadata';
 import { PageHero } from '@/components/page-hero';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import Link from 'next/link';
 
 interface NewsDetailsClientProps {
     article: NewsArticle | null;
@@ -80,6 +81,13 @@ export default function NewsDetailsClient({ article }: NewsDetailsClientProps) {
                     <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground font-headline mt-2">
                         {article.title}
                     </h1>
+                    {article.organizationId && (
+                        <div className="mt-4">
+                            <Link href={`/organization/${article.organizationId}`} className="text-primary hover:underline">
+                                Read more from {article.source}
+                            </Link>
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

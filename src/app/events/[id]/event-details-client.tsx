@@ -11,7 +11,7 @@ import { PurchaseTicketDialog } from '@/components/purchase-ticket-dialog';
 import { Calendar, MapPin, Clock, Loader2, Share2, Twitter, Facebook, Linkedin, Building, Users, Video, Link as LinkIcon, Tag } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Event, Ticket } from '@/lib/types';
+import type { Event, Ticket, TicketType } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
@@ -97,6 +97,24 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
   const eventDate = new Date(`${event.date}T${event.time}`);
   const isPastEvent = eventDate < new Date();
 
+  const renderTicketPrice = () => {
+    if (event.price === 0 && (!event.ticketTypes || event.ticketTypes.length === 0)) {
+        return <div className="text-3xl font-bold">Free</div>;
+    }
+    if (event.ticketTypes && event.ticketTypes.length > 0) {
+        const prices = event.ticketTypes.map(t => t.price);
+        const minPrice = Math.min(...prices);
+        if (minPrice === 0) return <div className="text-3xl font-bold">Free</div>;
+        return (
+            <div>
+                <div className="text-3xl font-bold">GH₵{minPrice.toFixed(2)}+</div>
+                <p className="text-sm text-muted-foreground">Multiple ticket types</p>
+            </div>
+        );
+    }
+    return <div className="text-3xl font-bold">GH₵{event.price.toFixed(2)}</div>;
+  };
+
   return (
     <>
       <PageHero
@@ -142,21 +160,21 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
               </div>
 
               <Card>
-                  <CardHeader>
-                      <CardTitle>Event Organizer</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                      <div className="flex items-center gap-4">
-                          <Avatar className="h-12 w-12">
-                              <AvatarImage src={event.organizationLogoUrl} alt={event.organizationName} />
-                              <AvatarFallback><Building/></AvatarFallback>
-                          </Avatar>
-                          <div>
-                              <p className="font-bold">{event.organizationName || 'Event Creator'}</p>
-                              <p className="text-sm text-muted-foreground">Event Creator</p>
-                          </div>
-                      </div>
-                  </CardContent>
+                <CardHeader>
+                    <CardTitle>Event Organizer</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Link href={`/organization/${event.organizationId}`} className="flex items-center gap-4 hover:bg-muted/50 p-2 rounded-md transition-colors">
+                        <Avatar className="h-12 w-12">
+                            <AvatarImage src={event.organizationLogoUrl} alt={event.organizationName} />
+                            <AvatarFallback><Building/></AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="font-bold">{event.organizationName || 'Event Creator'}</p>
+                            <p className="text-sm text-muted-foreground">View Profile</p>
+                        </div>
+                    </Link>
+                </CardContent>
               </Card>
 
               <Card>
@@ -243,10 +261,7 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
                   {ticketsAvailableForPurchase ? (
                     <>
                       <div className="text-center">
-                        <div className="text-3xl font-bold text-gray-900">
-                          {event.price === 0 ? 'Free' : `GH₵${event.price.toFixed(2)}`}
-                        </div>
-                        <p className="text-sm text-gray-600">per ticket</p>
+                        {renderTicketPrice()}
                       </div>
 
                       {event.capacity > 0 && (
@@ -272,7 +287,7 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
                           ? 'Event Ended' 
                           : (event.capacity > 0 && totalTicketsSold >= totalTicketsAvailable) 
                             ? 'Sold Out' 
-                            : event.price === 0 ? 'Get Free Ticket' : 'Buy Tickets'
+                            : 'Get Tickets'
                         }
                       </Button>
                     </>

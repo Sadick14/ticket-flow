@@ -62,6 +62,7 @@ const getOrCreateUserProfile = async (user: FirebaseUser): Promise<UserProfile> 
     lastSeen: new Date().toISOString(),
     paymentProfileCompleted: false,
     enrolledCourseIds: [],
+    followingOrganizationIds: [],
   };
   await setDoc(userRef, newUserProfile);
   logEvent({
