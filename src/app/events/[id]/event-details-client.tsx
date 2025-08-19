@@ -17,18 +17,20 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { PageHero } from '@/components/page-hero';
+import { EventCard } from '@/components/event-card';
 
 interface EventDetailsClientProps {
   eventId: string;
 }
 
 export default function EventDetailsClient({ eventId }: EventDetailsClientProps) {
-  const { getEventById, getTicketsByEvent, loading } = useAppContext();
+  const { getEventById, getTicketsByEvent, loading, events: allEvents } = useAppContext();
   const { toast } = useToast();
   const [event, setEvent] = useState<Event | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const [recommendedEvents, setRecommendedEvents] = useState<Event[]>([]);
 
   useEffect(() => {
     if (!eventId) return;
@@ -40,12 +42,20 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
         setEvent(eventData);
         const ticketData = getTicketsByEvent(eventData.id);
         setTickets(ticketData);
+
+        // Find recommended events
+        const recommendations = allEvents
+            .filter(
+                (e) => e.category === eventData.category && e.id !== eventData.id
+            )
+            .slice(0, 4);
+        setRecommendedEvents(recommendations);
       }
       setPageLoading(false);
     };
 
     fetchEventData();
-  }, [eventId, getEventById, getTicketsByEvent]);
+  }, [eventId, getEventById, getTicketsByEvent, allEvents]);
 
   if (pageLoading || loading) {
     return (
@@ -325,6 +335,16 @@ export default function EventDetailsClient({ eventId }: EventDetailsClientProps)
 
             </div>
           </div>
+          {recommendedEvents.length > 0 && (
+            <div className="mt-12 pt-8 border-t">
+              <h2 className="text-2xl font-bold mb-6">More Like This</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {recommendedEvents.map((recEvent) => (
+                  <EventCard key={recEvent.id} event={recEvent} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {ticketsAvailableForPurchase && (
