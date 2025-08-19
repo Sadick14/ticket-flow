@@ -60,6 +60,10 @@ export default function DashboardLayout({
   const organizationId = params.organizationId as string;
 
   const selectedOrg = React.useMemo(() => {
+    // Guard against organizations being undefined during initial load
+    if (!organizations) {
+        return null;
+    }
     return organizations.find(org => org.id === organizationId);
   }, [organizations, organizationId]);
 
