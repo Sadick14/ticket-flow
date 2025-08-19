@@ -199,7 +199,7 @@ export default function OrganizationsPage() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem asChild>
-                                      <Link href={`/organization/${org.id}`} target="_blank"><Eye className="mr-2 h-4 w-4" />View Page</Link>
+                                      <Link href={`/organization/${org.id}`}><Eye className="mr-2 h-4 w-4" />View Page</Link>
                                     </DropdownMenuItem>
                                      <DropdownMenuItem asChild>
                                       <Link href={`/dashboard/${org.id}/settings`}><Settings className="mr-2 h-4 w-4" />Settings</Link>
