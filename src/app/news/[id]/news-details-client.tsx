@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,27 @@ interface NewsDetailsClientProps {
 
 export default function NewsDetailsClient({ article }: NewsDetailsClientProps) {
     const { toast } = useToast();
+    const [shareLinks, setShareLinks] = useState({
+        twitter: '#',
+        facebook: '#',
+        linkedin: '#',
+    });
+    const [pageUrl, setPageUrl] = useState('');
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && article) {
+            const currentUrl = window.location.href;
+            setPageUrl(currentUrl);
+
+            const text = `Check out this article: ${article.title}!`;
+            setShareLinks({
+                twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(text)}`,
+                facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`,
+                linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`,
+            });
+        }
+    }, [article]);
+
 
     if (!article) {
         return (
@@ -29,24 +51,9 @@ export default function NewsDetailsClient({ article }: NewsDetailsClientProps) {
         );
     }
 
-
-  const getShareUrl = (platform: 'twitter' | 'facebook' | 'linkedin') => {
-    if (typeof window === 'undefined') return '#';
-    const url = window.location.href;
-    const text = `Check out this article: ${article.title}!`;
-    switch (platform) {
-      case 'twitter':
-        return `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
-      case 'facebook':
-        return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
-      case 'linkedin':
-        return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
-    }
-  };
-
   const copyLink = () => {
-    if (typeof window !== 'undefined') {
-        navigator.clipboard.writeText(window.location.href);
+    if (pageUrl) {
+        navigator.clipboard.writeText(pageUrl);
         toast({ title: 'Link Copied!', description: 'Article link copied to clipboard.' });
     }
   }
@@ -95,13 +102,13 @@ export default function NewsDetailsClient({ article }: NewsDetailsClientProps) {
                             </CardHeader>
                             <CardContent className="flex flex-wrap gap-2">
                                 <Button variant="outline" size="icon" asChild>
-                                    <a href={getShareUrl('twitter')} target="_blank" rel="noopener noreferrer"><Twitter /></a>
+                                    <a href={shareLinks.twitter} target="_blank" rel="noopener noreferrer"><Twitter /></a>
                                 </Button>
                                   <Button variant="outline" size="icon" asChild>
-                                    <a href={getShareUrl('facebook')} target="_blank" rel="noopener noreferrer"><Facebook /></a>
+                                    <a href={shareLinks.facebook} target="_blank" rel="noopener noreferrer"><Facebook /></a>
                                 </Button>
                                   <Button variant="outline" size="icon" asChild>
-                                    <a href={getShareUrl('linkedin')} target="_blank" rel="noopener noreferrer"><Linkedin /></a>
+                                    <a href={shareLinks.linkedin} target="_blank" rel="noopener noreferrer"><Linkedin /></a>
                                 </Button>
                                 <Button variant="outline" className="flex-1" onClick={copyLink}><LinkIcon className="mr-2 h-4 w-4" />Copy Link</Button>
                             </CardContent>
