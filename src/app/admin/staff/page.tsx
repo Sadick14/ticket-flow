@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -28,6 +29,8 @@ const permissionLabels: Record<keyof AdminPermissions, string> = {
     canManageCourses: 'Manage Courses',
     canManageSettings: 'Platform Settings',
     canViewLogs: 'View Logs',
+    canManageEmails: 'Manage Emails',
+    canManageContactMessages: 'Manage Contact Messages',
 };
 
 export default function StaffManagementPage() {
@@ -83,6 +86,8 @@ export default function StaffManagementPage() {
                     canManageCourses: true,
                     canManageSettings: false,
                     canViewLogs: false,
+                    canManageEmails: false,
+                    canManageContactMessages: false,
                 }
             });
             

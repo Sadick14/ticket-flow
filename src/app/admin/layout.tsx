@@ -46,8 +46,8 @@ const pagePermissions: Record<string, keyof AdminPermissions | 'isSuperAdmin'> =
     '/admin/settings': 'canManageSettings',
     '/admin/logs': 'canViewLogs',
     '/admin/staff': 'isSuperAdmin',
-    '/admin/contact-messages': 'isSuperAdmin',
-    '/admin/emails': 'isSuperAdmin',
+    '/admin/contact-messages': 'canManageContactMessages',
+    '/admin/emails': 'canManageEmails',
     '/admin/subscribers': 'isSuperAdmin',
     '/admin/archived-events': 'isSuperAdmin',
 };
@@ -92,14 +92,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { path: '/admin/course-enrollments', icon: <UserCheck />, label: 'Enrollments', permission: 'canManageCourses' },
     { path: '/admin/news', icon: <Newspaper />, label: 'News', permission: 'canManageNews' },
     { path: '/admin/featured-article', icon: <ImageIcon />, label: 'Featured Article', permission: 'canManageNews' },
+    { path: '/admin/emails', icon: <Mail />, label: 'Email Management', permission: 'canManageEmails' },
+    { path: '/admin/contact-messages', icon: <MessageSquare />, label: 'Contact Messages', permission: 'canManageContactMessages' },
     { path: '/admin/logs', icon: <Activity />, label: 'Logs', permission: 'canViewLogs' },
     { path: '/admin/settings', icon: <Settings />, label: 'Settings', permission: 'canManageSettings' },
   ];
 
   const superAdminNavItems = [
     { path: '/admin/staff', icon: <UserCog />, label: 'Staff' },
-    { path: '/admin/contact-messages', icon: <MessageSquare />, label: 'Contact Messages' },
-    { path: '/admin/emails', icon: <Mail />, label: 'Email Management' },
     { path: '/admin/subscribers', icon: <Users />, label: 'Subscribers' },
     { path: '/admin/archived-events', icon: <Archive />, label: 'Archived Events' },
   ];

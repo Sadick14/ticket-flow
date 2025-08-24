@@ -13,6 +13,8 @@ export interface AdminPermissions {
   canManageCourses: boolean;
   canManageSettings: boolean;
   canViewLogs: boolean;
+  canManageEmails: boolean;
+  canManageContactMessages: boolean;
 }
 
 

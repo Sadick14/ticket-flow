@@ -31,6 +31,8 @@ const defaultPermissions: AdminPermissions = {
   canManageCourses: true,
   canManageSettings: false,
   canViewLogs: false,
+  canManageEmails: false,
+  canManageContactMessages: false,
 };
 
 interface AuthContextType {
