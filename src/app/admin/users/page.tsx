@@ -47,6 +47,15 @@ export default function AdminUsersPage() {
     }
   };
   
+  const handleRoleChange = async (userId: string, newRole: 'admin' | 'user') => {
+     try {
+      await updateUser(userId, { role: newRole });
+      toast({ title: 'Success', description: `User role updated.` });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update role.' });
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -82,6 +91,7 @@ export default function AdminUsersPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
+                  <TableHead>Role</TableHead>
                   <TableHead>Subscription Plan</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Last Seen</TableHead>
@@ -90,9 +100,9 @@ export default function AdminUsersPage() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={5} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
                 ) : filteredUsers.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-8">
+                  <TableRow><TableCell colSpan={6} className="text-center py-8">
                     <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                     No users found.
                   </TableCell></TableRow>
@@ -110,6 +120,9 @@ export default function AdminUsersPage() {
                             <div className="text-sm text-muted-foreground">{user.email}</div>
                           </div>
                         </div>
+                      </TableCell>
+                       <TableCell>
+                        <Badge variant={user.role === 'user' ? 'outline' : 'destructive'} className="capitalize">{user.role}</Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant={user.subscriptionPlan === 'Free' ? 'outline' : 'default'}>{user.subscriptionPlan}</Badge>
@@ -137,6 +150,12 @@ export default function AdminUsersPage() {
                             <DropdownMenuItem onClick={() => handleStatusChange(user)}>
                               {user.status === 'active' ? 'Deactivate Account' : 'Activate Account'}
                             </DropdownMenuItem>
+                             <DropdownMenuSeparator />
+                             {user.role === 'admin' ? (
+                                <DropdownMenuItem onClick={() => handleRoleChange(user.uid, 'user')}>Demote to User</DropdownMenuItem>
+                             ) : (
+                                <DropdownMenuItem onClick={() => handleRoleChange(user.uid, 'admin')}>Promote to Admin</DropdownMenuItem>
+                             )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

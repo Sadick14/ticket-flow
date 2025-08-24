@@ -1,5 +1,20 @@
 
+
 import { type TemplateId } from '@/lib/email-templates';
+
+export type UserRole = 'super-admin' | 'admin' | 'user';
+
+export interface AdminPermissions {
+  canManageEvents: boolean;
+  canManageUsers: boolean;
+  canManagePayouts: boolean;
+  canManageSubscriptions: boolean;
+  canManageNews: boolean;
+  canManageCourses: boolean;
+  canManageSettings: boolean;
+  canViewLogs: boolean;
+}
+
 
 export type SubscriptionPlan = 'Free' | 'Essential' | 'Pro' | 'Custom';
 
@@ -104,7 +119,8 @@ export interface UserProfile {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
-  isAdmin?: boolean;
+  role: UserRole;
+  permissions?: AdminPermissions;
   status: 'active' | 'deactivated';
   subscriptionPlan: SubscriptionPlan;
   lastSeen?: string; // ISO String

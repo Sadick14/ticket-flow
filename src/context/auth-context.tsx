@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -13,13 +14,24 @@ import {
 import { app, db } from '@/lib/firebase';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import type { UserProfile } from '@/lib/types';
+import type { UserProfile, AdminPermissions } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { logEvent } from '@/lib/logger';
 
 
 // In a real app, this should not be hardcoded in the client.
 const ADMIN_EMAIL = 'issakasaddick14@gmail.com';
+
+const defaultPermissions: AdminPermissions = {
+  canManageEvents: true,
+  canManageUsers: false,
+  canManagePayouts: false,
+  canManageSubscriptions: false,
+  canManageNews: true,
+  canManageCourses: true,
+  canManageSettings: false,
+  canViewLogs: false,
+};
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -38,9 +50,9 @@ const getOrCreateUserProfile = async (user: FirebaseUser): Promise<UserProfile> 
     const existingProfile = docSnap.data() as UserProfile;
     const updates: Partial<UserProfile> = { lastSeen: new Date().toISOString() };
     
-    // Ensure isAdmin status is correctly set on sign-in
-    if (user.email === ADMIN_EMAIL && !existingProfile.isAdmin) {
-      updates.isAdmin = true;
+    // Ensure role is correctly set on sign-in
+    if (user.email === ADMIN_EMAIL && existingProfile.role !== 'super-admin') {
+      updates.role = 'super-admin';
     }
     // Ensure active status on successful login for non-deactivated accounts
     if (existingProfile.status !== 'deactivated') {
@@ -51,12 +63,14 @@ const getOrCreateUserProfile = async (user: FirebaseUser): Promise<UserProfile> 
     return { ...existingProfile, ...updates };
   }
   
+  const isSuperAdmin = user.email === ADMIN_EMAIL;
   const newUserProfile: UserProfile = {
     uid: user.uid,
     email: user.email,
     displayName: user.displayName,
     photoURL: user.photoURL,
-    isAdmin: user.email === ADMIN_EMAIL,
+    role: isSuperAdmin ? 'super-admin' : 'user',
+    permissions: isSuperAdmin ? undefined : defaultPermissions,
     status: 'active',
     subscriptionPlan: 'Free',
     lastSeen: new Date().toISOString(),

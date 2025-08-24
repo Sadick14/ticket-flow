@@ -6,7 +6,7 @@ import * as React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
-import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users, Archive, Users2, MessageSquare, Calendar, CreditCard, Image as ImageIcon, Star, BookOpen, UserCheck, Activity } from 'lucide-react';
+import { Loader2, Shield, Mail, LogOut, Settings, Home, Globe, Newspaper, Users, Archive, Users2, MessageSquare, Calendar, CreditCard, Image as ImageIcon, Star, BookOpen, UserCheck, Activity, UserCog } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -30,6 +30,28 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import type { AdminPermissions } from '@/lib/types';
+
+
+// Define which permission controls which page
+const pagePermissions: Record<string, keyof AdminPermissions | 'isSuperAdmin'> = {
+    '/admin/events': 'canManageEvents',
+    '/admin/subscriptions': 'canManageSubscriptions',
+    '/admin/payouts': 'canManagePayouts',
+    '/admin/users': 'canManageUsers',
+    '/admin/courses': 'canManageCourses',
+    '/admin/course-enrollments': 'canManageCourses',
+    '/admin/news': 'canManageNews',
+    '/admin/featured-article': 'canManageNews',
+    '/admin/settings': 'canManageSettings',
+    '/admin/logs': 'canViewLogs',
+    '/admin/staff': 'isSuperAdmin',
+    '/admin/contact-messages': 'isSuperAdmin',
+    '/admin/emails': 'isSuperAdmin',
+    '/admin/subscribers': 'isSuperAdmin',
+    '/admin/archived-events': 'isSuperAdmin',
+};
+
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth();
@@ -37,12 +59,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
 
   React.useEffect(() => {
-    if (!loading && !user?.isAdmin) {
+    if (!loading && (user?.role !== 'admin' && user?.role !== 'super-admin')) {
       router.push('/');
     }
   }, [user, loading, router]);
   
-  if (loading || !user?.isAdmin) {
+  if (loading || !user || (user.role !== 'admin' && user.role !== 'super-admin')) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -51,6 +73,37 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   const isActive = (path: string) => pathname.startsWith(path);
+  const isSuperAdmin = user.role === 'super-admin';
+  
+  const hasPermission = (path: string): boolean => {
+      if (isSuperAdmin) return true;
+      const permissionKey = pagePermissions[path];
+      if (!permissionKey) return false; // Default to no access if not defined
+      if (permissionKey === 'isSuperAdmin') return false; // Only super admin can access
+      return user.permissions?.[permissionKey] ?? false;
+  };
+
+  const navItems = [
+    { path: '/admin/events', icon: <Calendar />, label: 'Events', permission: 'canManageEvents' },
+    { path: '/admin/subscriptions', icon: <Star />, label: 'Subscriptions', permission: 'canManageSubscriptions' },
+    { path: '/admin/payouts', icon: <CreditCard />, label: 'Payouts', permission: 'canManagePayouts' },
+    { path: '/admin/users', icon: <Users2 />, label: 'Users', permission: 'canManageUsers' },
+    { path: '/admin/courses', icon: <BookOpen />, label: 'Courses', permission: 'canManageCourses' },
+    { path: '/admin/course-enrollments', icon: <UserCheck />, label: 'Enrollments', permission: 'canManageCourses' },
+    { path: '/admin/news', icon: <Newspaper />, label: 'News', permission: 'canManageNews' },
+    { path: '/admin/featured-article', icon: <ImageIcon />, label: 'Featured Article', permission: 'canManageNews' },
+    { path: '/admin/logs', icon: <Activity />, label: 'Logs', permission: 'canViewLogs' },
+    { path: '/admin/settings', icon: <Settings />, label: 'Settings', permission: 'canManageSettings' },
+  ];
+
+  const superAdminNavItems = [
+    { path: '/admin/staff', icon: <UserCog />, label: 'Staff' },
+    { path: '/admin/contact-messages', icon: <MessageSquare />, label: 'Contact Messages' },
+    { path: '/admin/emails', icon: <Mail />, label: 'Email Management' },
+    { path: '/admin/subscribers', icon: <Users />, label: 'Subscribers' },
+    { path: '/admin/archived-events', icon: <Archive />, label: 'Archived Events' },
+  ];
+
 
   return (
     <SidebarProvider>
@@ -67,185 +120,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <SidebarContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === '/admin'}
-                  tooltip={{ children: 'Dashboard' }}
-                >
-                  <Link href="/admin">
-                    <Home />
-                    <span>Dashboard</span>
-                  </Link>
+                <SidebarMenuButton asChild isActive={pathname === '/admin'} tooltip={{ children: 'Dashboard' }}>
+                  <Link href="/admin"><Home /><span>Dashboard</span></Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive('/admin/logs')}
-                  tooltip={{ children: 'Logs & Activity' }}
-                >
-                  <Link href="/admin/logs">
-                    <Activity />
-                    <span>Logs</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive('/admin/events')}
-                  tooltip={{ children: 'Event Management' }}
-                >
-                  <Link href="/admin/events">
-                    <Calendar />
-                    <span>Events</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive('/admin/subscriptions')}
-                  tooltip={{ children: 'Subscriptions' }}
-                >
-                  <Link href="/admin/subscriptions">
-                    <Star />
-                    <span>Subscriptions</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive('/admin/payouts')}
-                  tooltip={{ children: 'Payout Management' }}
-                >
-                  <Link href="/admin/payouts">
-                    <CreditCard />
-                    <span>Payouts</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive('/admin/users')}
-                  tooltip={{ children: 'User Management' }}
-                >
-                  <Link href="/admin/users">
-                    <Users2 />
-                    <span>Users</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive('/admin/contact-messages')}
-                  tooltip={{ children: 'Contact Messages' }}
-                >
-                  <Link href="/admin/contact-messages">
-                    <MessageSquare />
-                    <span>Contact Messages</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive('/admin/courses')}
-                  tooltip={{ children: 'Course Management' }}
-                >
-                  <Link href="/admin/courses">
-                    <BookOpen />
-                    <span>Courses</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive('/admin/course-enrollments')}
-                  tooltip={{ children: 'Course Enrollments' }}
-                >
-                  <Link href="/admin/course-enrollments">
-                    <UserCheck />
-                    <span>Course Enrollments</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive('/admin/news')}
-                  tooltip={{ children: 'News Management' }}
-                >
-                  <Link href="/admin/news">
-                    <Newspaper />
-                    <span>News Management</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive('/admin/featured-article')}
-                  tooltip={{ children: 'Featured Article' }}
-                >
-                  <Link href="/admin/featured-article">
-                    <ImageIcon />
-                    <span>Featured Article</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive('/admin/subscribers')}
-                  tooltip={{ children: 'Subscribers' }}
-                >
-                  <Link href="/admin/subscribers">
-                    <Users />
-                    <span>Subscribers</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive('/admin/emails')}
-                  tooltip={{ children: 'Email Management' }}
-                >
-                  <Link href="/admin/emails">
-                    <Mail />
-                    <span>Email Management</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive('/admin/archived-events')}
-                  tooltip={{ children: 'Archived Events' }}
-                >
-                  <Link href="/admin/archived-events">
-                    <Archive />
-                    <span>Archived Events</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isActive('/admin/settings')}
-                  tooltip={{ children: 'Settings' }}
-                >
-                  <Link href="/admin/settings">
-                    <Settings />
-                    <span>Settings</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+
+              {navItems.map(item => hasPermission(item.path) && (
+                <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton asChild isActive={isActive(item.path)} tooltip={{ children: item.label }}>
+                        <Link href={item.path}>{item.icon}<span>{item.label}</span></Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+
+              {isSuperAdmin && superAdminNavItems.map(item => (
+                 <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton asChild isActive={isActive(item.path)} tooltip={{ children: item.label }}>
+                        <Link href={item.path}>{item.icon}<span>{item.label}</span></Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
@@ -259,7 +154,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             </Avatar>
                             <div className="flex-1 text-left overflow-hidden group-data-[collapsible=icon]:hidden">
                                 <p className="text-sm font-medium truncate">{user.displayName}</p>
-                                <Badge variant="destructive" className="mt-1">Admin</Badge>
+                                <Badge variant="destructive" className="mt-1 capitalize">{user.role}</Badge>
                             </div>
                         </Button>
                     </DropdownMenuTrigger>
@@ -292,23 +187,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <header className="flex h-14 items-center gap-4 border-b bg-background px-6 flex-shrink-0">
             <SidebarTrigger className="md:hidden"/>
             <div className="flex-1">
-                <h1 className="text-lg font-semibold">
-                  {pathname === '/admin' && 'Admin Dashboard'}
-                  {pathname.startsWith('/admin/events/') && 'Event Attendee Management'}
-                  {pathname === '/admin/events' && 'Event Management'}
-                  {pathname.startsWith('/admin/subscriptions') && 'Subscription Management'}
-                  {pathname.startsWith('/admin/payouts') && 'Payout Management'}
-                  {pathname.startsWith('/admin/users') && 'User Management'}
-                  {pathname.startsWith('/admin/contact-messages') && 'Contact Messages'}
-                  {pathname.startsWith('/admin/news') && 'News Management'}
-                  {pathname.startsWith('/admin/courses') && 'Course Management'}
-                  {pathname.startsWith('/admin/course-enrollments') && 'Course Enrollments'}
-                  {pathname.startsWith('/admin/featured-article') && 'Featured Article'}
-                  {pathname.startsWith('/admin/subscribers') && 'Subscriber Management'}
-                  {pathname.startsWith('/admin/emails') && 'Email Management'}
-                  {pathname.startsWith('/admin/archived-events') && 'Archived Events'}
-                  {pathname.startsWith('/admin/settings') && 'Admin Settings'}
-                  {pathname.startsWith('/admin/logs') && 'Platform Logs'}
+                <h1 className="text-lg font-semibold capitalize">
+                  {pathname.split('/').pop()?.replace('-', ' ') || 'Dashboard'}
                 </h1> 
             </div>
         </header>
