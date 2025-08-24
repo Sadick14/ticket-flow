@@ -58,7 +58,7 @@ export function Header() {
                 <span>Dashboard</span>
               </Link>
             </DropdownMenuItem>
-            {user.isAdmin && (
+            {(user.role === 'admin' || user.role === 'super-admin') && (
             <DropdownMenuItem asChild>
                 <Link href="/admin">
                   <Shield className="mr-2 h-4 w-4" />
@@ -211,7 +211,7 @@ export function Header() {
                           <span>Dashboard</span>
                         </NavLink>
                         
-                        {user.isAdmin && (
+                        {(user.role === 'admin' || user.role === 'super-admin') && (
                           <NavLink href="/admin" onClick={closeMobileMenu}>
                             <Shield className="h-5 w-5" />
                             <span>Admin</span>
